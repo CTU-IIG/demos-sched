@@ -4,17 +4,20 @@ project('libev', 'c',
 cc = meson.get_compiler('c')
 libm_dep = cc.find_library('m')
 
+inc = include_directories('inc')
+
 libev = library(
   'ev',
   [ 'ev.c', 'event.c' ],
   version : '4.0.0',
   install : true,
   dependencies : [ libm_dep ],
+  include_directories : inc,
 )
 
 libev_dep = declare_dependency(
   link_with : libev,
-  include_directories : include_directories('.'),
+  include_directories : inc,
 )
 pod2man = find_program('pod2man')
 if pod2man.found()
@@ -31,7 +34,7 @@ endif
 
 
 
-install_headers('ev.h', 'ev++.h', 'event.h')
+install_headers('inc/ev.h', 'inc/ev++.h', 'event.h')
 install_man('ev.3')
 
 cdata = configuration_data()

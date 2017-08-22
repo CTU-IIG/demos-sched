@@ -63,6 +63,7 @@ namespace ev {
     NONE     = EV_NONE,
     READ     = EV_READ,
     WRITE    = EV_WRITE,
+    EXCEPTION= EV_EXCEPTION,
 #if EV_COMPAT3
     TIMEOUT  = EV_TIMEOUT,
 #endif
