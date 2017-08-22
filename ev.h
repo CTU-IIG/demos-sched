@@ -223,6 +223,7 @@ enum {
   EV_NONE     =            0x00, /* no events */
   EV_READ     =            0x01, /* ev_io detected read will not block */
   EV_WRITE    =            0x02, /* ev_io detected write will not block */
+  EV_EXCEPTION=            0x04, /* ev_io detected exceptional condition */
   EV__IOFDSET =            0x80, /* internal use only */
   EV_IO       =         EV_READ, /* alias for type-detection */
   EV_TIMER    =      0x00000100, /* timer timed out */

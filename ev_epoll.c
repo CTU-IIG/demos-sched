@@ -91,7 +91,8 @@ epoll_modify (EV_P_ int fd, int oev, int nev)
   ev.data.u64 = (uint64_t)(uint32_t)fd
               | ((uint64_t)(uint32_t)++anfds [fd].egen << 32);
   ev.events   = (nev & EV_READ  ? EPOLLIN  : 0)
-              | (nev & EV_WRITE ? EPOLLOUT : 0);
+              | (nev & EV_WRITE ? EPOLLOUT : 0)
+              | (nev & EV_EXCEPTION ? EPOLLPRI : 0);
 
   if (ecb_expect_true (!epoll_ctl (backend_fd, oev && oldmask != nev ? EPOLL_CTL_MOD : EPOLL_CTL_ADD, fd, &ev)))
     return;
@@ -170,7 +171,8 @@ epoll_poll (EV_P_ ev_tstamp timeout)
       int fd = (uint32_t)ev->data.u64; /* mask out the lower 32 bits */
       int want = anfds [fd].events;
       int got  = (ev->events & (EPOLLOUT | EPOLLERR | EPOLLHUP) ? EV_WRITE : 0)
-               | (ev->events & (EPOLLIN  | EPOLLERR | EPOLLHUP) ? EV_READ  : 0);
+               | (ev->events & (EPOLLIN  | EPOLLERR | EPOLLHUP) ? EV_READ  : 0)
+               | (ev->events & (EPOLLPRI | EPOLLERR | EPOLLHUP) ? EV_EXCEPTION : 0);
 
       /*
        * check for spurious notification.
@@ -201,7 +203,8 @@ epoll_poll (EV_P_ ev_tstamp timeout)
            * to EV_READ or EV_WRITE, we might issue redundant EPOLL_CTL_MOD calls.
            */
           ev->events = (want & EV_READ  ? EPOLLIN  : 0)
-                     | (want & EV_WRITE ? EPOLLOUT : 0);
+                     | (want & EV_WRITE ? EPOLLOUT : 0)
+                     | (want & EV_EXCEPTION ? EPOLLPRI : 0);
 
           /* pre-2.6.9 kernels require a non-null pointer with EPOLL_CTL_DEL, */
           /* which is fortunately easy to do for us. */
