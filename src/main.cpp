@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/timerfd.h>
+#include <ev.h>
 
 // number of processors in system, need to know at compile time
 #define NPROC 8
@@ -119,6 +120,27 @@ struct MajorFrame
         vector<Window> windows;
 };
 
+int timer_fd = -1;
+
+static void timerfd_cb (struct ev_loop *loop, ev_io *w, int revents)
+{
+    if( timer_fd == -1)
+        handle_error("timerfd uninitalized");
+
+    cout << "timer expired" << endl;
+    
+    uint64_t buf;
+    int ret = read(timer_fd, &buf, 10);
+    if(ret == sizeof(uint64_t) ){
+        cout<< buf <<endl;
+    }else
+        handle_error("read timerfd");
+    //ev_io_stop (w);
+    //ev_break (loop, EVBREAK_ALL);
+    //ev_break (EV_A_ EVBREAK_ONE);
+}
+
+
 int main(int argc, char *argv[]) 
 {
     // configure linux scheduler
@@ -126,7 +148,7 @@ int main(int argc, char *argv[])
     sched_setscheduler( 0, SCHED_FIFO, &sp );
     
     // configure timer
-    int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+    timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     if( timer_fd < 0 )
         handle_error("timerfd_create");
     
@@ -140,11 +162,17 @@ int main(int argc, char *argv[])
     new_value.it_value.tv_sec = now.tv_sec + 1;
     new_value.it_value.tv_nsec = now.tv_nsec;
     // period
-    new_value.it_interval.tv_sec = 0;
-    new_value.it_interval.tv_nsec = 200000000;
+    new_value.it_interval.tv_sec = 1;
+    new_value.it_interval.tv_nsec = 0;
     
     if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &new_value, NULL) == -1 )
         handle_error("timerfd_settime");
+    
+    // configure libev watchers
+    struct ev_loop *loop = ev_default_loop(0);
+    ev_io timerfd_watcher;
+    ev_io_init(&timerfd_watcher, timerfd_cb, timer_fd, EV_READ);
+    ev_io_start(loop, &timerfd_watcher);
 
     // init random seed
     srand(time(NULL));
@@ -173,6 +201,8 @@ int main(int argc, char *argv[])
     //Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
     //proc_ptr->exec();
     
+    ev_run(loop, 0);
+    /*
     while(1){
         uint64_t buf;
         // read number of timer expirations
@@ -184,7 +214,7 @@ int main(int argc, char *argv[])
             sleep(1);
         }
 
-    }
+    }*/
 
     return 0;
 }
