@@ -4,9 +4,12 @@
 #include <bitset>
 #include <unistd.h>
 #include <time.h>
+#include <sys/timerfd.h>
 
 // number of processors in system, need to know at compile time
 #define NPROC 8
+
+#define handle_error(msg) do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 using namespace std;
 
@@ -122,10 +125,32 @@ int main(int argc, char *argv[])
     struct sched_param sp = {.sched_priority = 99};
     sched_setscheduler( 0, SCHED_FIFO, &sp );
     
+    // configure timer
+    int timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+    if( timer_fd < 0 )
+        handle_error("timerfd_create");
+    
+    struct timespec now;
+    if( clock_gettime(CLOCK_MONOTONIC, &now) == -1 )
+        handle_error("clock_gettime");
+
+    // test timer
+    struct itimerspec new_value;
+    // first launch
+    new_value.it_value.tv_sec = now.tv_sec + 1;
+    new_value.it_value.tv_nsec = now.tv_nsec;
+    // period
+    new_value.it_interval.tv_sec = 0;
+    new_value.it_interval.tv_nsec = 200000000;
+    
+    if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &new_value, NULL) == -1 )
+        handle_error("timerfd_settime");
+
     // init random seed
     srand(time(NULL));
 
     // parse yaml config
+    // consistency check
 
     // forks, pipes, exec, cgroups, ...
 
@@ -145,9 +170,21 @@ int main(int argc, char *argv[])
     Window w2 = {.length = 40, .slices = vector<Slice> {s, s} };
     MajorFrame frame = {.length = 60, .windows = vector<Window> {w1, w2} };
 
-    Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
-    proc_ptr->exec();
+    //Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
+    //proc_ptr->exec();
+    
+    while(1){
+        uint64_t buf;
+        // read number of timer expirations
+        int ret = read(timer_fd, &buf, 10);
+        if(ret == sizeof(uint64_t) ){
+            cout<< buf <<endl;
+        }else{
+            cout<< "cannot read" <<endl;
+            sleep(1);
+        }
 
+    }
 
     return 0;
 }
