@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/timerfd.h>
-#include <ev.h>
+#include <ev++.h>
 
 // number of processors in system, need to know at compile time
 #define NPROC 8
@@ -120,25 +120,69 @@ struct MajorFrame
         vector<Window> windows;
 };
 
-int timer_fd = -1;
-
-static void timerfd_cb (struct ev_loop *loop, ev_io *w, int revents)
+// example of ev++ usage:
+// https://gist.github.com/koblas/3364414
+class EvTimerfd
 {
-    if( timer_fd == -1)
-        handle_error("timerfd uninitalized");
+    private:
+        int timer_fd;
+        ev::io timerfd_watcher;
+        struct timespec period;
+        struct timespec start_time;
+        int timer_num;
+    public:
+        EvTimerfd( struct timespec start_time,
+                   struct timespec period,
+                   int timer_num)
+        {
+            this->timer_num = timer_num;
 
-    cout << "timer expired" << endl;
-    
-    uint64_t buf;
-    int ret = read(timer_fd, &buf, 10);
-    if(ret == sizeof(uint64_t) ){
-        cout<< buf <<endl;
-    }else
-        handle_error("read timerfd");
-    //ev_io_stop (w);
-    //ev_break (loop, EVBREAK_ALL);
-    //ev_break (EV_A_ EVBREAK_ONE);
-}
+            this->period.tv_sec = period.tv_sec;
+            this->period.tv_nsec = period.tv_nsec;
+            this->start_time.tv_sec = start_time.tv_sec;
+            this->start_time.tv_nsec = start_time.tv_nsec;
+
+            // configure timer
+            this->timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+            if( this->timer_fd < 0 )
+                handle_error("timerfd_create");
+
+            struct itimerspec timer_value;
+            // first launch
+            timer_value.it_value.tv_sec = start_time.tv_sec + period.tv_sec;
+            long nsec = start_time.tv_nsec + period.tv_nsec;
+            // timespec nsec workaround
+            if( nsec > 999999999){
+                timer_value.it_value.tv_sec++;
+                nsec -= 1000000000;
+            }
+            timer_value.it_value.tv_nsec = nsec;
+            // period
+            timer_value.it_interval.tv_sec = period.tv_sec;
+            timer_value.it_interval.tv_nsec = period.tv_nsec;
+            // set timer
+            if( timerfd_settime( this->timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
+                handle_error("timerfd_settime");
+
+            // configure ev watcher
+            timerfd_watcher.set<EvTimerfd, &EvTimerfd::timeout_cb>(this);
+            timerfd_watcher.start(this->timer_fd, ev::READ);
+        }
+
+        void timeout_cb (ev::io &w, int revents)
+        {
+            if (EV_ERROR & revents)
+                handle_error("ev cb: got invalid event");
+
+            cout << "timer "<< timer_num <<" expired" << endl;
+        
+            // read to have empty fd
+            uint64_t buf;
+            int ret = read(timer_fd, &buf, 10);
+            if(ret != sizeof(uint64_t) )
+                handle_error("read timerfd");
+        }
+};
 
 
 int main(int argc, char *argv[]) 
@@ -146,33 +190,6 @@ int main(int argc, char *argv[])
     // configure linux scheduler
     struct sched_param sp = {.sched_priority = 99};
     sched_setscheduler( 0, SCHED_FIFO, &sp );
-    
-    // configure timer
-    timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
-    if( timer_fd < 0 )
-        handle_error("timerfd_create");
-    
-    struct timespec now;
-    if( clock_gettime(CLOCK_MONOTONIC, &now) == -1 )
-        handle_error("clock_gettime");
-
-    // test timer
-    struct itimerspec new_value;
-    // first launch
-    new_value.it_value.tv_sec = now.tv_sec + 1;
-    new_value.it_value.tv_nsec = now.tv_nsec;
-    // period
-    new_value.it_interval.tv_sec = 1;
-    new_value.it_interval.tv_nsec = 0;
-    
-    if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &new_value, NULL) == -1 )
-        handle_error("timerfd_settime");
-    
-    // configure libev watchers
-    struct ev_loop *loop = ev_default_loop(0);
-    ev_io timerfd_watcher;
-    ev_io_init(&timerfd_watcher, timerfd_cb, timer_fd, EV_READ);
-    ev_io_start(loop, &timerfd_watcher);
 
     // init random seed
     srand(time(NULL));
@@ -181,10 +198,8 @@ int main(int argc, char *argv[])
     // consistency check
 
     // forks, pipes, exec, cgroups, ...
-
-    // while(1)
     
-    // TEST
+    // TEST data structures
     Process procA(vector<string> {"/bin/echo","hello","world"}, 10,2);
     Process procB(vector<string> {"/bin/echo","foo"}, 5,1);
     Process procC(vector<string> {"/bin/echo","best effort"}, 5,1);
@@ -200,21 +215,18 @@ int main(int argc, char *argv[])
 
     //Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
     //proc_ptr->exec();
-    
-    ev_run(loop, 0);
-    /*
-    while(1){
-        uint64_t buf;
-        // read number of timer expirations
-        int ret = read(timer_fd, &buf, 10);
-        if(ret == sizeof(uint64_t) ){
-            cout<< buf <<endl;
-        }else{
-            cout<< "cannot read" <<endl;
-            sleep(1);
-        }
+   
+    // TEST timers
+    struct timespec start_time;
+    if( clock_gettime(CLOCK_MONOTONIC, &start_time) == -1 )
+        handle_error("clock_gettime");
 
-    }*/
+    ev::default_loop loop;
+    EvTimerfd timer1( start_time,
+            (struct timespec) {.tv_sec = 1, .tv_nsec = 0}, 1);
+    EvTimerfd timer2( start_time,
+            (struct timespec) {.tv_sec = 0, .tv_nsec = 500000000}, 2);
+    loop.run(0);
 
     return 0;
 }
