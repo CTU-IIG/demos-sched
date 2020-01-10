@@ -108,6 +108,15 @@ class Partition
             current = &(this->processes[counter]);
         }
 
+        vector<nanoseconds> get_budgets()
+        {
+            vector<nanoseconds> ret;
+            ret.reserve(processes.size());
+            for(int i=0;i<processes.size();i++)
+                ret.push_back(processes[i].get_budget());
+            return ret;
+        }
+
     private:
         vector<Process> processes;
         Process* current;
@@ -131,6 +140,15 @@ struct MajorFrame
 {
         nanoseconds length;
         vector<Window> windows;
+
+        vector<nanoseconds> get_budgets()
+        {
+            vector<nanoseconds> ret;
+            ret.reserve(windows.size());
+            for(int i=0;i<windows.size();i++)
+                ret.push_back(windows[i].length);
+            return ret;
+        }
 };
 
 // example of ev++ usage:
@@ -140,18 +158,21 @@ class EvTimerfd
     private:
         int timer_fd;
         ev::io timerfd_watcher;
-        nanoseconds period;
-        nanoseconds start_time;
+        vector<nanoseconds> budgets;
+        int ring_buf_idx = 0;
+        nanoseconds timeout;
+        nanoseconds last_timeout;
         int timer_num;
     public:
         EvTimerfd( nanoseconds start_time,
-                   nanoseconds period,
+                   vector<nanoseconds> budgets,
                    int timer_num)
         {
             this->timer_num = timer_num;
 
-            this->period = period;
-            this->start_time = start_time;
+            this->budgets = budgets;
+            this->last_timeout = start_time;
+            this->timeout = start_time + budgets[0];
 
             // configure timer
             this->timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
@@ -160,8 +181,9 @@ class EvTimerfd
 
             struct itimerspec timer_value;
             // first launch
-            timer_value.it_value = ns2timespec(start_time + period);
-            timer_value.it_interval = ns2timespec(period);
+            timer_value.it_value = ns2timespec(this->timeout);
+            // no periodic timer
+            timer_value.it_interval = ns2timespec(nanoseconds{0});
 
             // set timer
             if( timerfd_settime( this->timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
@@ -177,13 +199,29 @@ class EvTimerfd
             if (EV_ERROR & revents)
                 handle_error("ev cb: got invalid event");
 
-            cout << "timer "<< timer_num <<" expired" << endl;
+            cout << "timer "<< timer_num <<" expired after "
+                 << budgets[ring_buf_idx].count()<< " ns" << endl;
         
             // read to have empty fd
             uint64_t buf;
             int ret = read(timer_fd, &buf, 10);
             if(ret != sizeof(uint64_t) )
                 handle_error("read timerfd");
+
+            // move pointer to cyclic buffer of budgets
+            ring_buf_idx++;
+            if( ring_buf_idx >= budgets.size() )
+                ring_buf_idx = 0;
+
+            // reset timer
+            last_timeout = timeout;
+            timeout += budgets[ring_buf_idx];
+            struct itimerspec timer_value;
+            timer_value.it_value = ns2timespec(this->timeout);
+            timer_value.it_interval = ns2timespec(nanoseconds{0});
+
+            if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
+                handle_error("timerfd_settime");
         }
 };
 
@@ -212,12 +250,14 @@ int main(int argc, char *argv[])
     Partition be = Partition( vector<Process> {procC});
 
     Slice s = {.sc = sc, .be = be, .cpus = 1};
-    Window w1 = {.length = 20ms, .slices = vector<Slice> {s} };
-    Window w2 = {.length = 40ms, .slices = vector<Slice> {s, s} };
+    Window w1 = {.length = 1s, .slices = vector<Slice> {s} };
+    Window w2 = {.length = 500ms, .slices = vector<Slice> {s, s} };
     MajorFrame frame = {.length = 60ms, .windows = vector<Window> {w1, w2} };
 
-    Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
-    proc_ptr->recompute_budget();
+    //cout<< frame.get_budgets()[0].count() <<endl;
+    //cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<endl;
+    //Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
+    //proc_ptr->recompute_budget();
     //proc_ptr->exec();
    
     // TEST timers
@@ -227,8 +267,8 @@ int main(int argc, char *argv[])
     nanoseconds start_ns = timespec2ns( start_time );
 
     ev::default_loop loop;
-    EvTimerfd timer1( start_ns, 1s, 1);
-    EvTimerfd timer2( start_ns, 500ms, 2);
+    EvTimerfd timer1( start_ns, frame.get_budgets(), 1);
+    //EvTimerfd timer2( start_ns, 500ms, 2);
     loop.run(0);
 
     return 0;
