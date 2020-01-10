@@ -5,6 +5,7 @@
 #include <bitset>
 #include <unistd.h>
 #include <time.h>
+#include <sys/types.h>
 #include <sys/timerfd.h>
 #include <ev++.h>
 
@@ -43,7 +44,6 @@ class Process
             this->budget = budget;
             this->budget_jitter = budget_jitter;
             this->actual_budget = budget;
-            this->completed = false;
         }
 
         bool is_completed()
@@ -53,15 +53,26 @@ class Process
 
         int exec()
         {
-            // cast string to char*
-            vector<char*> cstrings;
-            cstrings.reserve( argv.size()+1 );
+            //TODO pipe
+
+            pid = fork();
+            if( pid == -1 )
+                handle_error("fork");
+
+            if( pid == 0 ){ // launch new process
+                // cast string to char*
+                vector<char*> cstrings;
+                cstrings.reserve( argv.size()+1 );
             
-            for(int i = 0; i < argv.size(); ++i)
-                cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
-            cstrings.push_back( (char*)NULL );
+                for(int i = 0; i < argv.size(); ++i)
+                    cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
+                cstrings.push_back( (char*)NULL );
             
-            return execv( cstrings[0], &cstrings[0] );
+                return execv( cstrings[0], &cstrings[0] );
+            } else {
+                // TODO cgroup freeze
+                return 0;
+            }
         }
 
         void recompute_budget()
@@ -80,7 +91,8 @@ class Process
         nanoseconds budget;
         nanoseconds budget_jitter;
         nanoseconds actual_budget;
-        bool completed;
+        bool completed = false;
+        pid_t pid = -1;
 
 };
 
@@ -241,7 +253,7 @@ int main(int argc, char *argv[])
     // forks, pipes, exec, cgroups, ...
     
     // TEST data structures
-    Process procA(vector<string> {"/bin/echo","hello","world"}, 10ms,2ms);
+    Process procA(vector<string> {"./infinite_proc","1000000","hello"}, 10ms,2ms);
     Process procB(vector<string> {"/bin/echo","foo"}, 5ms,1ms);
     Process procC(vector<string> {"/bin/echo","best effort"}, 5ms,1ms);
     //cout<< procA.exec() <<endl;
@@ -256,9 +268,9 @@ int main(int argc, char *argv[])
 
     //cout<< frame.get_budgets()[0].count() <<endl;
     //cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<endl;
-    //Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
+    Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
     //proc_ptr->recompute_budget();
-    //proc_ptr->exec();
+    proc_ptr->exec();
    
     // TEST timers
     struct timespec start_time;
