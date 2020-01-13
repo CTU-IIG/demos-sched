@@ -45,7 +45,7 @@ void kill_procs_and_exit(string msg)
     cerr << msg <<endl;
     for(pid_t pid : spawned_processes){
         if( kill(pid, SIGKILL) == -1){
-            warn("need to kill processes %d manually", pid);
+            warn("need to kill process %d manually", pid);
             // TODO clean cgroups
         }
     }
@@ -85,7 +85,7 @@ class Process
                 vector<char*> cstrings;
                 cstrings.reserve( argv.size()+1 );
             
-                for(int i = 0; i < argv.size(); ++i)
+                for(size_t i = 0; i < argv.size(); ++i)
                     cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
                 cstrings.push_back( (char*)NULL );
             
@@ -144,7 +144,7 @@ class Partition
         {
             vector<nanoseconds> ret;
             ret.reserve(processes.size());
-            for(int i=0;i<processes.size();i++)
+            for(size_t i=0;i<processes.size();i++)
                 ret.push_back(processes[i].get_actual_budget());
             return ret;
         }
@@ -152,7 +152,7 @@ class Partition
     private:
         vector<Process> processes;
         Process* current;
-        int counter = 0;
+        size_t counter = 0;
 };
 
 struct Slice
@@ -177,7 +177,7 @@ struct MajorFrame
         {
             vector<nanoseconds> ret;
             ret.reserve(windows.size());
-            for(int i=0;i<windows.size();i++)
+            for(size_t i=0;i<windows.size();i++)
                 ret.push_back(windows[i].length);
             return ret;
         }
@@ -192,7 +192,7 @@ class EvTimerfd: public ev::io
         int timer_fd;
         ev::io timerfd_watcher;
         vector<nanoseconds> budgets;
-        int ring_buf_idx = 0;
+        size_t ring_buf_idx = 0;
         nanoseconds timeout;
         nanoseconds last_timeout;
         int timer_num;
