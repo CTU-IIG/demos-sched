@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <sys/timerfd.h>
 #include <ev++.h>
 #include <err.h>
@@ -35,6 +36,22 @@ struct timespec duration2timespec( nanoseconds dur )
     return timespec{secs.count(), dur.count()};
 }
 
+// pid of all processes for easy cleanup
+vector<pid_t> spawned_processes;
+
+// clean up everything and exit
+void kill_procs_and_exit(string msg)
+{
+    cerr << msg <<endl;
+    for(pid_t pid : spawned_processes){
+        if( kill(pid, SIGKILL) == -1){
+            warn("need to kill processes %d manually", pid);
+            // TODO clean cgroups
+        }
+    }
+    exit(1);
+}
+
 // cpu usage mask
 typedef bitset<MAX_NPROC> Cpu;
 
@@ -53,14 +70,15 @@ class Process
             return completed;
         }
 
-        int exec()
+        void exec()
         {
             //TODO pipe
             //TODO cgroup, freeze
 
             pid = fork();
             if( pid == -1 )
-                err(1,"fork");
+                kill_procs_and_exit("fork");
+                //err(1,"fork");
 
             if( pid == 0 ){ // launch new process
                 // cast string to char*
@@ -71,9 +89,11 @@ class Process
                     cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
                 cstrings.push_back( (char*)NULL );
             
-                return execv( cstrings[0], &cstrings[0] );
+                if( execv( cstrings[0], &cstrings[0] ) == -1)
+                    kill_procs_and_exit("execv");
+                    //err(1,"execv");
             } else {
-                return 0;
+                spawned_processes.push_back(pid);
             }
         }
 
@@ -273,7 +293,8 @@ int main(int argc, char *argv[])
     // TEST timers
     struct timespec start_time;
     if( clock_gettime(CLOCK_MONOTONIC, &start_time) == -1 )
-        err(1,"clock_gettime");
+        kill_procs_and_exit("clock_gettime");
+        //err(1,"clock_gettime");
     nanoseconds start_ns = timespec2duration( start_time );
 
     ev::default_loop loop;
@@ -282,8 +303,16 @@ int main(int argc, char *argv[])
     
     // configure linux scheduler
     //struct sched_param sp = {.sched_priority = 99};
-    //if( sched_setscheduler( 0, SCHED_FIFO, &sp ) == -1 )
-    //    err(1,"sched_setscheduler"); 
+    //if (sched_setscheduler( 0, SCHED_FIFO, &sp ) == -1)
+        //kill_procs_and_exit("sched_setscheduler");
+
+    // how to use exception here?
+    //try{
+        //int ret = sched_setscheduler( 0, SCHED_FIFO, &sp );
+        //cout<<ret<<endl;
+    //} catch (int e){
+        //kill_procs_and_exit("sched_setscheduler");
+    //}
 
     loop.run(0);
 
