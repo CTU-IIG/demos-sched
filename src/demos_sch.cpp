@@ -8,24 +8,27 @@
 #include <sys/types.h>
 #include <sys/timerfd.h>
 #include <ev++.h>
+#include <err.h>
 
-// number of processors in system, need to know at compile time
-#define NPROC 8
+// TODO remove get_budgets
+// TODO exception after fork
 
-#define handle_error(msg) do { perror(msg); exit(EXIT_FAILURE); } while (0)
+// maximum supported number of processors
+#define MAX_NPROC 8
 
 using namespace std;
 using namespace std::chrono;
 using namespace std::chrono_literals;
 
 // std::chrono::nanoseconds and struct timespec conversions
-nanoseconds timespec2ns( struct timespec ts)
+// https://embeddedartistry.com/blog/2019/01/31/converting-between-timespec-stdchrono/
+nanoseconds timespec2duration( struct timespec ts)
 {
     auto duration = seconds{ts.tv_sec} + nanoseconds{ts.tv_nsec};
     return duration_cast<nanoseconds>(duration);
 }
 
-struct timespec ns2timespec( nanoseconds dur )
+struct timespec duration2timespec( nanoseconds dur )
 {
     auto secs = duration_cast<seconds>(dur);
     dur -= secs;
@@ -33,18 +36,17 @@ struct timespec ns2timespec( nanoseconds dur )
 }
 
 // cpu usage mask
-typedef bitset<NPROC> Cpu;
+typedef bitset<MAX_NPROC> Cpu;
 
 class Process
 {
     public:
-        Process(vector<string> argv, nanoseconds budget, nanoseconds budget_jitter)
-        {
-            this->argv = argv;
-            this->budget = budget;
-            this->budget_jitter = budget_jitter;
-            this->actual_budget = budget;
-        }
+        Process(vector<string> argv, nanoseconds budget, nanoseconds budget_jitter = 0ns)
+            : argv(argv),
+              budget(budget),
+              budget_jitter(budget_jitter),
+              actual_budget(budget)
+        { }
 
         bool is_completed()
         {
@@ -54,10 +56,11 @@ class Process
         int exec()
         {
             //TODO pipe
+            //TODO cgroup, freeze
 
             pid = fork();
             if( pid == -1 )
-                handle_error("fork");
+                err(1,"fork");
 
             if( pid == 0 ){ // launch new process
                 // cast string to char*
@@ -70,18 +73,17 @@ class Process
             
                 return execv( cstrings[0], &cstrings[0] );
             } else {
-                // TODO cgroup freeze
                 return 0;
             }
         }
 
         void recompute_budget()
         {
-            double rnd_val= (double) budget_jitter.count() * rand()/RAND_MAX;
-            actual_budget = budget - budget_jitter/2 + nanoseconds{(long)rnd_val};
+            nanoseconds rnd_val= budget_jitter * rand()/RAND_MAX;
+            actual_budget = budget - budget_jitter/2 + rnd_val;
         }
 
-        nanoseconds get_budget()
+        nanoseconds get_actual_budget()
         {
             return actual_budget;
         }
@@ -100,11 +102,9 @@ class Partition
 {
     public:
         Partition( vector<Process> processes )
-        {
-            this->processes = processes;
-            this->current = &(this->processes[0]);
-            this->counter = 0;
-        }
+            : processes(processes),
+              current(&(this->processes[0]))
+        { }
 
         Process* get_current_proc()
         {
@@ -112,7 +112,7 @@ class Partition
         }
 
         // cyclic queue?
-        void next_proc()
+        void move_to_next_proc()
         {
             counter++;
             if( counter >= processes.size() )
@@ -125,20 +125,20 @@ class Partition
             vector<nanoseconds> ret;
             ret.reserve(processes.size());
             for(int i=0;i<processes.size();i++)
-                ret.push_back(processes[i].get_budget());
+                ret.push_back(processes[i].get_actual_budget());
             return ret;
         }
 
     private:
         vector<Process> processes;
         Process* current;
-        int counter;
+        int counter = 0;
 };
 
 struct Slice
 {
-        Partition sc;
-        Partition be;
+        Partition &sc;
+        Partition &be;
         Cpu cpus;
 };
 
@@ -165,7 +165,8 @@ struct MajorFrame
 
 // example of ev++ usage:
 // https://gist.github.com/koblas/3364414
-class EvTimerfd
+//class ev::timerfd: public ev::io
+class EvTimerfd: public ev::io
 {
     private:
         int timer_fd;
@@ -189,17 +190,17 @@ class EvTimerfd
             // configure timer
             this->timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
             if( this->timer_fd < 0 )
-                handle_error("timerfd_create");
+                err(1,"timerfd_create");
 
             struct itimerspec timer_value;
             // first launch
-            timer_value.it_value = ns2timespec(this->timeout);
+            timer_value.it_value = duration2timespec(this->timeout);
             // no periodic timer
-            timer_value.it_interval = ns2timespec(nanoseconds{0});
+            timer_value.it_interval = duration2timespec(nanoseconds{0});
 
             // set timer
             if( timerfd_settime( this->timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
-                handle_error("timerfd_settime");
+               err(1,"timerfd_settime");
 
             // configure ev watcher
             timerfd_watcher.set<EvTimerfd, &EvTimerfd::timeout_cb>(this);
@@ -209,7 +210,7 @@ class EvTimerfd
         void timeout_cb (ev::io &w, int revents)
         {
             if (EV_ERROR & revents)
-                handle_error("ev cb: got invalid event");
+                err(1,"ev cb: got invalid event");
 
             cout << "timer "<< timer_num <<" expired after "
                  << budgets[ring_buf_idx].count()<< " ns" << endl;
@@ -218,7 +219,7 @@ class EvTimerfd
             uint64_t buf;
             int ret = read(timer_fd, &buf, 10);
             if(ret != sizeof(uint64_t) )
-                handle_error("read timerfd");
+               err(1,"read timerfd");
 
             // move pointer to cyclic buffer of budgets
             ring_buf_idx++;
@@ -229,21 +230,17 @@ class EvTimerfd
             last_timeout = timeout;
             timeout += budgets[ring_buf_idx];
             struct itimerspec timer_value;
-            timer_value.it_value = ns2timespec(this->timeout);
-            timer_value.it_interval = ns2timespec(nanoseconds{0});
+            timer_value.it_value = duration2timespec(this->timeout);
+            timer_value.it_interval = duration2timespec(nanoseconds{0});
 
             if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
-                handle_error("timerfd_settime");
+                err(1,"timerfd_settime");
         }
 };
 
 
 int main(int argc, char *argv[]) 
 {
-    // configure linux scheduler
-    struct sched_param sp = {.sched_priority = 99};
-    sched_setscheduler( 0, SCHED_FIFO, &sp );
-
     // init random seed
     srand(time(NULL));
 
@@ -270,17 +267,24 @@ int main(int argc, char *argv[])
     //cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<endl;
     Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
     //proc_ptr->recompute_budget();
+    //cout<<proc_ptr->get_actual_budget().count()<<endl;
     proc_ptr->exec();
    
     // TEST timers
     struct timespec start_time;
     if( clock_gettime(CLOCK_MONOTONIC, &start_time) == -1 )
-        handle_error("clock_gettime");
-    nanoseconds start_ns = timespec2ns( start_time );
+        err(1,"clock_gettime");
+    nanoseconds start_ns = timespec2duration( start_time );
 
     ev::default_loop loop;
     EvTimerfd timer1( start_ns, frame.get_budgets(), 1);
     //EvTimerfd timer2( start_ns, 500ms, 2);
+    
+    // configure linux scheduler
+    //struct sched_param sp = {.sched_priority = 99};
+    //if( sched_setscheduler( 0, SCHED_FIFO, &sp ) == -1 )
+    //    err(1,"sched_setscheduler"); 
+
     loop.run(0);
 
     return 0;
