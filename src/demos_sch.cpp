@@ -17,32 +17,71 @@
 // maximum supported number of processors
 #define MAX_NPROC 8
 
-using namespace std;
-using namespace std::chrono;
 using namespace std::chrono_literals;
+
+// ev wrapper around timerfd
+namespace ev{
+    class timerfd : public io
+    {
+        private:
+            int timer_fd = -1;
+        public:
+            void start (ev_tstamp after, ev_tstamp repeat = 0.)
+            {
+                // create timer
+                timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+                if( timer_fd < 0 )
+                    err(1,"timerfd_create");
+
+                // get current time
+                struct timespec start_time;
+                if( clock_gettime(CLOCK_MONOTONIC, &start_time) == -1 )
+                    err(1,"clock_gettime");
+
+                // set timeout
+                struct itimerspec timer_value;
+                // first launch
+                timer_value.it_value.tv_sec = start_time.tv_sec + after;
+                timer_value.it_value.tv_nsec = start_time.tv_nsec;
+                // no periodic timer
+                timer_value.it_interval.tv_sec = 0;
+                timer_value.it_interval.tv_nsec = 0;
+
+                if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
+                   err(1,"timerfd_settime");
+
+                // set fd to callback
+                io::start(timer_fd, ev::READ);
+            }
+            ~timerfd()
+            {
+                close(timer_fd);
+            }
+    };
+}
 
 // std::chrono::nanoseconds and struct timespec conversions
 // https://embeddedartistry.com/blog/2019/01/31/converting-between-timespec-stdchrono/
-nanoseconds timespec2duration( struct timespec ts)
+std::chrono::nanoseconds timespec2duration( struct timespec ts)
 {
-    auto duration = seconds{ts.tv_sec} + nanoseconds{ts.tv_nsec};
-    return duration_cast<nanoseconds>(duration);
+    auto duration = std::chrono::seconds{ts.tv_sec} + std::chrono::nanoseconds{ts.tv_nsec};
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
 }
 
-struct timespec duration2timespec( nanoseconds dur )
+struct timespec duration2timespec( std::chrono::nanoseconds dur )
 {
-    auto secs = duration_cast<seconds>(dur);
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(dur);
     dur -= secs;
     return timespec{secs.count(), dur.count()};
 }
 
 // pid of all processes for easy cleanup
-vector<pid_t> spawned_processes;
+std::vector<pid_t> spawned_processes;
 
 // clean up everything and exit
-void kill_procs_and_exit(string msg)
+void kill_procs_and_exit(std::string msg)
 {
-    cerr << msg <<endl;
+    std::cerr << msg <<std::endl;
     for(pid_t pid : spawned_processes){
         if( kill(pid, SIGKILL) == -1){
             warn("need to kill process %d manually", pid);
@@ -53,17 +92,37 @@ void kill_procs_and_exit(string msg)
 }
 
 // cpu usage mask
-typedef bitset<MAX_NPROC> Cpu;
+typedef std::bitset<MAX_NPROC> Cpu;
 
 class Process
 {
+    private:
+        std::vector<std::string> argv;
+        std::chrono::nanoseconds budget;
+        std::chrono::nanoseconds budget_jitter;
+        std::chrono::nanoseconds actual_budget;
+        bool completed = false;
+        pid_t pid = -1;
+        // TODO why ev::timerfd timer doesn't work??? 
+        ev::timerfd *timer_ptr = new ev::timerfd;
     public:
-        Process(vector<string> argv, nanoseconds budget, nanoseconds budget_jitter = 0ns)
+        Process(std::vector<std::string> argv,
+                std::chrono::nanoseconds budget,
+                std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0) )
             : argv(argv),
               budget(budget),
               budget_jitter(budget_jitter),
               actual_budget(budget)
-        { }
+        {
+            timer_ptr->set<Process, &Process::timeout_cb>(this);
+            //timer.start(budget.count());
+        }
+
+        // testing
+        void start_timer(double timeout)
+        {
+            timer_ptr->start(timeout);
+        }
 
         bool is_completed()
         {
@@ -82,7 +141,7 @@ class Process
 
             if( pid == 0 ){ // launch new process
                 // cast string to char*
-                vector<char*> cstrings;
+                std::vector<char*> cstrings;
                 cstrings.reserve( argv.size()+1 );
             
                 for(size_t i = 0; i < argv.size(); ++i)
@@ -99,29 +158,34 @@ class Process
 
         void recompute_budget()
         {
-            nanoseconds rnd_val= budget_jitter * rand()/RAND_MAX;
+            std::chrono::nanoseconds rnd_val= budget_jitter * rand()/RAND_MAX;
             actual_budget = budget - budget_jitter/2 + rnd_val;
         }
 
-        nanoseconds get_actual_budget()
+        std::chrono::nanoseconds get_actual_budget()
         {
             return actual_budget;
         }
         
-    private:
-        vector<string> argv;
-        nanoseconds budget;
-        nanoseconds budget_jitter;
-        nanoseconds actual_budget;
-        bool completed = false;
-        pid_t pid = -1;
+        void timeout_cb (ev::io &w, int revents)
+        {
+            if (EV_ERROR & revents)
+                err(1,"ev cb: got invalid event");
 
+            std::cout << "timeout " << std::endl;
+            // read to have empty fd
+            uint64_t buf;
+            int ret = read(w.fd, &buf, 10);
+            if(ret != sizeof(uint64_t) )
+               err(1,"read timerfd");
+            w.stop();
+        }
 };
 
 class Partition
 {
     public:
-        Partition( vector<Process> processes )
+        Partition( std::vector<Process> processes )
             : processes(processes),
               current(&(this->processes[0]))
         { }
@@ -140,17 +204,8 @@ class Partition
             current = &(this->processes[counter]);
         }
 
-        vector<nanoseconds> get_budgets()
-        {
-            vector<nanoseconds> ret;
-            ret.reserve(processes.size());
-            for(size_t i=0;i<processes.size();i++)
-                ret.push_back(processes[i].get_actual_budget());
-            return ret;
-        }
-
     private:
-        vector<Process> processes;
+        std::vector<Process> processes;
         Process* current;
         size_t counter = 0;
 };
@@ -164,100 +219,15 @@ struct Slice
 
 struct Window
 {
-        nanoseconds length;
-        vector<Slice> slices;
+        std::chrono::nanoseconds length;
+        std::vector<Slice> slices;
 };
 
 struct MajorFrame
 {
-        nanoseconds length;
-        vector<Window> windows;
-
-        vector<nanoseconds> get_budgets()
-        {
-            vector<nanoseconds> ret;
-            ret.reserve(windows.size());
-            for(size_t i=0;i<windows.size();i++)
-                ret.push_back(windows[i].length);
-            return ret;
-        }
+        std::chrono::nanoseconds length;
+        std::vector<Window> windows;
 };
-
-// example of ev++ usage:
-// https://gist.github.com/koblas/3364414
-//class ev::timerfd: public ev::io
-class EvTimerfd: public ev::io
-{
-    private:
-        int timer_fd;
-        ev::io timerfd_watcher;
-        vector<nanoseconds> budgets;
-        size_t ring_buf_idx = 0;
-        nanoseconds timeout;
-        nanoseconds last_timeout;
-        int timer_num;
-    public:
-        EvTimerfd( nanoseconds start_time,
-                   vector<nanoseconds> budgets,
-                   int timer_num)
-        {
-            this->timer_num = timer_num;
-
-            this->budgets = budgets;
-            this->last_timeout = start_time;
-            this->timeout = start_time + budgets[0];
-
-            // configure timer
-            this->timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
-            if( this->timer_fd < 0 )
-                err(1,"timerfd_create");
-
-            struct itimerspec timer_value;
-            // first launch
-            timer_value.it_value = duration2timespec(this->timeout);
-            // no periodic timer
-            timer_value.it_interval = duration2timespec(nanoseconds{0});
-
-            // set timer
-            if( timerfd_settime( this->timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
-               err(1,"timerfd_settime");
-
-            // configure ev watcher
-            timerfd_watcher.set<EvTimerfd, &EvTimerfd::timeout_cb>(this);
-            timerfd_watcher.start(this->timer_fd, ev::READ);
-        }
-
-        void timeout_cb (ev::io &w, int revents)
-        {
-            if (EV_ERROR & revents)
-                err(1,"ev cb: got invalid event");
-
-            cout << "timer "<< timer_num <<" expired after "
-                 << budgets[ring_buf_idx].count()<< " ns" << endl;
-        
-            // read to have empty fd
-            uint64_t buf;
-            int ret = read(timer_fd, &buf, 10);
-            if(ret != sizeof(uint64_t) )
-               err(1,"read timerfd");
-
-            // move pointer to cyclic buffer of budgets
-            ring_buf_idx++;
-            if( ring_buf_idx >= budgets.size() )
-                ring_buf_idx = 0;
-
-            // reset timer
-            last_timeout = timeout;
-            timeout += budgets[ring_buf_idx];
-            struct itimerspec timer_value;
-            timer_value.it_value = duration2timespec(this->timeout);
-            timer_value.it_interval = duration2timespec(nanoseconds{0});
-
-            if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
-                err(1,"timerfd_settime");
-        }
-};
-
 
 int main(int argc, char *argv[]) 
 {
@@ -270,35 +240,37 @@ int main(int argc, char *argv[])
     // forks, pipes, exec, cgroups, ...
     
     // TEST data structures
-    Process procA(vector<string> {"./infinite_proc","1000000","hello"}, 10ms,2ms);
-    Process procB(vector<string> {"/bin/echo","foo"}, 5ms,1ms);
-    Process procC(vector<string> {"/bin/echo","best effort"}, 5ms,1ms);
-    //cout<< procA.exec() <<endl;
+    Process procA(std::vector<std::string> {"./infinite_proc","1000000","hello"}, 10ms,2ms);
+    Process procB(std::vector<std::string> {"/bin/echo","foo"}, 5ms,1ms);
+    Process procC(std::vector<std::string> {"/bin/echo","best effort"}, 5ms,1ms);
+    //std::cout<< procA.exec() <<std::endl;
 
-    Partition sc = Partition( vector<Process> {procA, procB});
-    Partition be = Partition( vector<Process> {procC});
+    Partition sc = Partition( std::vector<Process> {procA, procB});
+    Partition be = Partition( std::vector<Process> {procC});
 
     Slice s = {.sc = sc, .be = be, .cpus = 1};
-    Window w1 = {.length = 1s, .slices = vector<Slice> {s} };
-    Window w2 = {.length = 500ms, .slices = vector<Slice> {s, s} };
-    MajorFrame frame = {.length = 60ms, .windows = vector<Window> {w1, w2} };
+    Window w1 = {.length = 1s, .slices = std::vector<Slice> {s} };
+    Window w2 = {.length = 500ms, .slices = std::vector<Slice> {s, s} };
+    MajorFrame frame = {.length = 60ms, .windows = std::vector<Window> {w1, w2} };
 
-    //cout<< frame.get_budgets()[0].count() <<endl;
-    //cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<endl;
+    //std::cout<< frame.get_budgets()[0].count() <<std::endl;
+    //std::cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<std::endl;
     Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
     //proc_ptr->recompute_budget();
-    //cout<<proc_ptr->get_actual_budget().count()<<endl;
+    //std::cout<<proc_ptr->get_actual_budget().count()<<std::endl;
     proc_ptr->exec();
+    proc_ptr->start_timer(3.0);
    
     // TEST timers
     struct timespec start_time;
     if( clock_gettime(CLOCK_MONOTONIC, &start_time) == -1 )
         kill_procs_and_exit("clock_gettime");
         //err(1,"clock_gettime");
-    nanoseconds start_ns = timespec2duration( start_time );
+    std::chrono::nanoseconds start_ns = timespec2duration( start_time );
 
     ev::default_loop loop;
-    EvTimerfd timer1( start_ns, frame.get_budgets(), 1);
+    //ev::timerfd timer1();
+    //EvTimerfd timer1( start_ns, frame.get_budgets(), 1);
     //EvTimerfd timer2( start_ns, 500ms, 2);
     
     // configure linux scheduler
@@ -309,12 +281,14 @@ int main(int argc, char *argv[])
     // how to use exception here?
     //try{
         //int ret = sched_setscheduler( 0, SCHED_FIFO, &sp );
-        //cout<<ret<<endl;
+        //std::cout<<ret<<std::endl;
     //} catch (int e){
         //kill_procs_and_exit("sched_setscheduler");
     //}
 
     loop.run(0);
+
+    kill_procs_and_exit("exit");
 
     return 0;
 }
