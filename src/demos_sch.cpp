@@ -19,6 +19,18 @@
 
 using namespace std::chrono_literals;
 
+// std::chrono to timespec conversions
+// https://embeddedartistry.com/blog/2019/01/31/converting-between-timespec-stdchrono/
+constexpr timespec timepointToTimespec(
+        std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> tp)
+{
+    auto secs = std::chrono::time_point_cast<std::chrono::seconds>(tp);
+    auto ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(tp) -
+                std::chrono::time_point_cast<std::chrono::nanoseconds>(secs);
+
+    return timespec{secs.time_since_epoch().count(), ns.count()};
+}
+
 // ev wrapper around timerfd
 namespace ev{
     class timerfd : public io
@@ -26,26 +38,20 @@ namespace ev{
         private:
             int timer_fd = -1;
         public:
-            void start (ev_tstamp after, ev_tstamp repeat = 0.)
+            void start (std::chrono::steady_clock::time_point timeout)
             {
                 // create timer
+                // steady_clock == CLOCK_MONOTONIC
                 timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
                 if( timer_fd < 0 )
                     err(1,"timerfd_create");
 
-                // get current time
-                struct timespec start_time;
-                if( clock_gettime(CLOCK_MONOTONIC, &start_time) == -1 )
-                    err(1,"clock_gettime");
-
                 // set timeout
                 struct itimerspec timer_value;
                 // first launch
-                timer_value.it_value.tv_sec = start_time.tv_sec + after;
-                timer_value.it_value.tv_nsec = start_time.tv_nsec;
+                timer_value.it_value = timepointToTimespec(timeout);
                 // no periodic timer
-                timer_value.it_interval.tv_sec = 0;
-                timer_value.it_interval.tv_nsec = 0;
+                timer_value.it_interval = timespec{0,0};
 
                 if( timerfd_settime( timer_fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
                    err(1,"timerfd_settime");
@@ -58,21 +64,6 @@ namespace ev{
                 close(timer_fd);
             }
     };
-}
-
-// std::chrono::nanoseconds and struct timespec conversions
-// https://embeddedartistry.com/blog/2019/01/31/converting-between-timespec-stdchrono/
-std::chrono::nanoseconds timespec2duration( struct timespec ts)
-{
-    auto duration = std::chrono::seconds{ts.tv_sec} + std::chrono::nanoseconds{ts.tv_nsec};
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
-}
-
-struct timespec duration2timespec( std::chrono::nanoseconds dur )
-{
-    auto secs = std::chrono::duration_cast<std::chrono::seconds>(dur);
-    dur -= secs;
-    return timespec{secs.count(), dur.count()};
 }
 
 // pid of all processes for easy cleanup
@@ -98,6 +89,7 @@ class Process
 {
     private:
         std::vector<std::string> argv;
+        std::chrono::steady_clock::time_point start_time;
         std::chrono::nanoseconds budget;
         std::chrono::nanoseconds budget_jitter;
         std::chrono::nanoseconds actual_budget;
@@ -107,9 +99,11 @@ class Process
         ev::timerfd *timer_ptr = new ev::timerfd;
     public:
         Process(std::vector<std::string> argv,
+                std::chrono::steady_clock::time_point start_time,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0) )
             : argv(argv),
+              start_time(start_time),
               budget(budget),
               budget_jitter(budget_jitter),
               actual_budget(budget)
@@ -119,9 +113,9 @@ class Process
         }
 
         // testing
-        void start_timer(double timeout)
+        void start_timer(std::chrono::nanoseconds timeout)
         {
-            timer_ptr->start(timeout);
+            timer_ptr->start(start_time + timeout);
         }
 
         bool is_completed()
@@ -234,15 +228,23 @@ int main(int argc, char *argv[])
     // init random seed
     srand(time(NULL));
 
+    // get start time
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+    //std::cout<<start_time.time_since_epoch().count()<<std::endl;
+    //std::cout<<(start_time + 10ns).time_since_epoch().count()<<std::endl; 
+
     // parse yaml config
     // consistency check
 
     // forks, pipes, exec, cgroups, ...
     
     // TEST data structures
-    Process procA(std::vector<std::string> {"./infinite_proc","1000000","hello"}, 10ms,2ms);
-    Process procB(std::vector<std::string> {"/bin/echo","foo"}, 5ms,1ms);
-    Process procC(std::vector<std::string> {"/bin/echo","best effort"}, 5ms,1ms);
+    Process procA(std::vector<std::string>
+            {"./infinite_proc","1000000","hello"}, start_time, 10ms,2ms);
+    Process procB(std::vector<std::string>
+            {"/bin/echo","foo"}, start_time, 5ms,1ms);
+    Process procC(std::vector<std::string>
+            {"/bin/echo","best effort"}, start_time, 5ms,1ms);
     //std::cout<< procA.exec() <<std::endl;
 
     Partition sc = Partition( std::vector<Process> {procA, procB});
@@ -259,19 +261,7 @@ int main(int argc, char *argv[])
     //proc_ptr->recompute_budget();
     //std::cout<<proc_ptr->get_actual_budget().count()<<std::endl;
     proc_ptr->exec();
-    proc_ptr->start_timer(3.0);
-   
-    // TEST timers
-    struct timespec start_time;
-    if( clock_gettime(CLOCK_MONOTONIC, &start_time) == -1 )
-        kill_procs_and_exit("clock_gettime");
-        //err(1,"clock_gettime");
-    std::chrono::nanoseconds start_ns = timespec2duration( start_time );
-
-    ev::default_loop loop;
-    //ev::timerfd timer1();
-    //EvTimerfd timer1( start_ns, frame.get_budgets(), 1);
-    //EvTimerfd timer2( start_ns, 500ms, 2);
+    proc_ptr->start_timer(3s);
     
     // configure linux scheduler
     //struct sched_param sp = {.sched_priority = 99};
@@ -286,6 +276,7 @@ int main(int argc, char *argv[])
         //kill_procs_and_exit("sched_setscheduler");
     //}
 
+    ev::default_loop loop;
     loop.run(0);
 
     kill_procs_and_exit("exit");
