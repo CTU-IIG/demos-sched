@@ -36,16 +36,19 @@ namespace ev{
     class timerfd : public io
     {
         private:
-            int timer_fd = -1;
+            int timer_fd;
         public:
-            void start (std::chrono::steady_clock::time_point timeout)
+            timerfd() : io()
             {
                 // create timer
                 // steady_clock == CLOCK_MONOTONIC
                 timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
                 if( timer_fd < 0 )
                     err(1,"timerfd_create");
+            }
 
+            void start (std::chrono::steady_clock::time_point timeout)
+            {
                 // set timeout
                 struct itimerspec timer_value;
                 // first launch
