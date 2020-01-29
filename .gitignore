@@ -2,3 +2,5 @@
 build
 src/main.cpp
 src/a.out
+tags
+Session.vim
