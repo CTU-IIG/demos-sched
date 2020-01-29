@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <chrono>
 #include <sched.h>
 #include <vector>
@@ -6,10 +7,12 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <sys/timerfd.h>
 #include <ev++.h>
 #include <err.h>
+#include <fcntl.h>
 
 // TODO remove get_budgets
 // TODO exception after fork
@@ -96,6 +99,7 @@ typedef std::bitset<MAX_NPROC> Cpu;
 class Process
 {
     private:
+        std::string name;
         std::vector<std::string> argv;
         std::chrono::steady_clock::time_point start_time;
         std::chrono::nanoseconds budget;
@@ -105,12 +109,16 @@ class Process
         pid_t pid = -1;
         // TODO why ev::timerfd timer doesn't work??? 
         ev::timerfd *timer_ptr = new ev::timerfd;
+        int fd_freez_procs = -1;
+        int fd_freez_state = -1;
     public:
-        Process(std::vector<std::string> argv,
+        Process(std::string name,
+                std::vector<std::string> argv,
                 std::chrono::steady_clock::time_point start_time,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0) )
-            : argv(argv),
+            : name(name),
+              argv(argv),
               start_time(start_time),
               budget(budget),
               budget_jitter(budget_jitter),
@@ -136,12 +144,47 @@ class Process
             //TODO pipe
             //TODO cgroup, freeze
 
+            // create new freezer cgroup
+            // TODO cpuset
+            std::string new_freezer = freezer + name + "/";
+            int ret = mkdir( new_freezer.c_str(),
+                             S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            if( ret == -1 ){
+                if( errno == EEXIST ) {
+                    kill_procs_and_exit("mkdir, process name has to be unique");
+                }else{
+                    kill_procs_and_exit("mkdir");
+                }
+            }
+
+            // open file descriptors for manipulating cgroups
+            fd_freez_procs = open( (new_freezer + "cgroup.procs").c_str(), O_RDWR | O_NONBLOCK);
+            if(fd_freez_procs == -1)
+                kill_procs_and_exit("open");
+            fd_freez_state = open( (new_freezer + "freezer.state").c_str(), O_RDWR | O_NONBLOCK);
+            if(fd_freez_state == -1)
+                kill_procs_and_exit("open");
+
+            // create new process
             pid = fork();
             if( pid == -1 )
                 kill_procs_and_exit("fork");
-                //err(1,"fork");
 
-            if( pid == 0 ){ // launch new process
+            // launch new process
+            if( pid == 0 ){
+                // add process to cgroup (echo PID > cgroup.procs)
+                char buf1[20];
+                sprintf(buf1, "%d", getpid());
+                if( write(fd_freez_procs, buf1, 20*sizeof(pid_t)) == -1)
+                    kill_procs_and_exit("write");
+                close(fd_freez_procs);
+
+                // freeze (echo FROZEN > freezer.state)
+                char buf2[7] = "FROZEN"; // automatic null terminator?
+                if( write(fd_freez_state, buf2, 6*sizeof(char)) == -1)
+                    kill_procs_and_exit("write");
+                close(fd_freez_state);
+
                 // cast string to char*
                 std::vector<char*> cstrings;
                 cstrings.reserve( argv.size()+1 );
@@ -152,10 +195,31 @@ class Process
             
                 if( execv( cstrings[0], &cstrings[0] ) == -1)
                     kill_procs_and_exit("execv");
-                    //err(1,"execv");
             } else {
+                // TODO wait until process created and freezed
+                sleep(1);
                 spawned_processes.push_back(pid);
             }
+        }
+
+        // echo FROZEN > freezer.state
+        void frozen()
+        {
+            if( fd_freez_state == -1)
+                kill_procs_and_exit("freezer, launch process first");
+            char buf[7] = "FROZEN";
+            if( write(fd_freez_state, buf, 6*sizeof(char)) == -1)
+                kill_procs_and_exit("write");
+        }
+
+        // echo THAWED > freezer.state
+        void thawed()
+        {
+            if( fd_freez_state == -1)
+                kill_procs_and_exit("freezer, launch process first");
+            char buf[7] = "THAWED";
+            if( write(fd_freez_state, buf, 6*sizeof(char)) == -1)
+                kill_procs_and_exit("write");
         }
 
         void recompute_budget()
@@ -283,11 +347,11 @@ int main(int argc, char *argv[])
     // forks, pipes, exec, cgroups, ...
     
     // TEST data structures
-    Process procA(std::vector<std::string>
+    Process procA("procA", std::vector<std::string>
             {"./infinite_proc","1000000","hello"}, start_time, 10ms,2ms);
-    Process procB(std::vector<std::string>
+    Process procB("procB", std::vector<std::string>
             {"/bin/echo","foo"}, start_time, 5ms,1ms);
-    Process procC(std::vector<std::string>
+    Process procC("procC", std::vector<std::string>
             {"/bin/echo","best effort"}, start_time, 5ms,1ms);
     //std::cout<< procA.exec() <<std::endl;
 
@@ -306,6 +370,7 @@ int main(int argc, char *argv[])
     //std::cout<<proc_ptr->get_actual_budget().count()<<std::endl;
     proc_ptr->exec();
     proc_ptr->start_timer(3s);
+    proc_ptr->thawed();
     
     // configure linux scheduler
     //struct sched_param sp = {.sched_priority = 99};
