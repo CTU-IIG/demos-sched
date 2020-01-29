@@ -10,10 +10,7 @@
 #include "timerfd.hpp"
 #include "functions.h"
 
-// TODO remove get_budgets
-// TODO exception after fork
-
-
+// TODO exception after fork ??
 
 // paths to cgroups
 extern std::string freezer;

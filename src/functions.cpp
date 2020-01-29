@@ -3,13 +3,19 @@
 std::vector<pid_t> spawned_processes;
 
 // clean up everything and exit
+// TODO kill, thawned, clean cgroups
 void kill_procs_and_exit(std::string msg)
 {
     std::cerr << msg <<std::endl;
+    // for all subdirectories of freezer(cpuset)
+    //   for all pid in .procs file
+    //     kill pid
+    //     thawned cgroup
+    //     wait until cgroup is empty (notify_on_release) (v2 cgroup.events (0 empty))
+    //     delete cgroup directory
     for(pid_t pid : spawned_processes){
         if( kill(pid, SIGKILL) == -1){
             warn("need to kill process %d manually", pid);
-            // TODO clean cgroups
         }
     }
     exit(1);

@@ -94,6 +94,7 @@ void Process::exec()
 
     // launch new process
     if( pid == 0 ){
+        // CHILD PROCESS
         // add process to cgroup (echo PID > cgroup.procs)
         char buf1[20];
         sprintf(buf1, "%d", getpid());
@@ -117,10 +118,15 @@ void Process::exec()
 
         if( execv( cstrings[0], &cstrings[0] ) == -1)
             kill_procs_and_exit("execv");
+        // END CHILD PROCESS
     } else {
+        // PARENT PROCESS
         // TODO wait until process created and freezed
-        sleep(1);
+        //   ev callback on fd_freez_procs?, read cg.procs and check if it is there?
+        //   
         spawned_processes.push_back(pid);
+        sleep(1);
+        // END PARENT PROCESS
     }
 }
 
