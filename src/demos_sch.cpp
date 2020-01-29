@@ -17,6 +17,11 @@
 // maximum supported number of processors
 #define MAX_NPROC 8
 
+// paths to cgroups
+std::string freezer = "/sys/fs/cgroup/freezer/";
+std::string cpuset = "/sys/fs/cgroup/cpuset/";
+std::string cgrp = "my_cgroup";
+
 using namespace std::chrono_literals;
 
 // std::chrono to timespec conversions
@@ -226,8 +231,44 @@ struct MajorFrame
         std::vector<Window> windows;
 };
 
+void print_help()
+{
+    printf("help:\n"
+           "-h\n"
+           "\t print this message\n"
+           "-g <NAME>\n"
+           "\t name of cgroup with user access,\n"
+           "\t need to create /sys/fs/cgroup/freezer/<NAME> and\n"
+           "\t /sys/fs/cgroup/cpuset/<NAME> manually, then\n"
+           "\t sudo chown -R <user> .../<NAME>\n"
+           "\t if not set, \"my_cgroup\" is used\n"
+           "TODO -c <FILE>\n"
+           "\t path to configuration file\n");
+}
+
 int main(int argc, char *argv[]) 
 {
+    // parse arguments
+    int opt;
+    while((opt = getopt(argc, argv, "hg:c:")) != -1){
+        switch(opt){
+            case 'h':
+                print_help();
+                exit(0);
+            case 'g':
+                cgrp = std::string(optarg);
+                break;
+            case 'c':
+                break;
+            default:
+                print_help();
+                exit(1);
+        }
+    }
+    // create paths to cgroups
+    freezer += cgrp + "/";
+    cpuset += cgrp + "/";
+
     // init random seed
     srand(time(NULL));
 
