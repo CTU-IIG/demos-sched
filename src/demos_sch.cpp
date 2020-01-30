@@ -81,7 +81,8 @@ int main(int argc, char *argv[])
     ev::default_loop loop;
     loop.run(0);
     
-    delete proc_ptr;
+    //delete proc_ptr;
+    proc_ptr->clean();
     //kill_procs_and_exit("exit");
 
     return 0;

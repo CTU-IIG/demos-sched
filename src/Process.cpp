@@ -140,9 +140,11 @@ void Process::timeout_cb (ev::io &w, int revents)
 }
 
 // WHEN THE DESTRUCTOR IS CALLED???
-Process::~Process()
+//Process::~Process()
+void Process::clean()
 {
-    std::cout<< "destructor " << name <<std::endl;
+    //std::cout<< "destructor " << name <<std::endl;
+    std::cout<< "cleaning " << name <<std::endl;
     if( fd_freez_procs == -1 )
         return;
     this->freeze();
