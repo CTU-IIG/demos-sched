@@ -45,8 +45,8 @@ class Process
 
         bool is_completed();
         void exec();
-        void frozen(); // echo FROZEN > freezer.state
-        void thawed(); // echo THAWED > freezer.state
+        void freeze(); // echo FROZEN > freezer.state
+        void unfreeze(); // echo THAWED > freezer.state
         void recompute_budget();
         std::chrono::nanoseconds get_actual_budget();
         void timeout_cb (ev::io &w, int revents);

@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     //std::cout<<proc_ptr->get_actual_budget().count()<<std::endl;
     proc_ptr->exec();
     proc_ptr->start_timer(3s);
-    proc_ptr->thawed();
+    proc_ptr->unfreeze();
     
     // configure linux scheduler
     //struct sched_param sp = {.sched_priority = 99};

@@ -32,7 +32,7 @@ bool Process::is_completed()
 }
 
 // echo FROZEN > freezer.state
-void Process::frozen()
+void Process::freeze()
 {
     if( fd_freez_state == -1)
         kill_procs_and_exit("freezer, launch process first");
@@ -42,7 +42,7 @@ void Process::frozen()
     }
 }
 
-void Process::thawed()
+void Process::unfreeze()
 {
     if( fd_freez_state == -1)
         kill_procs_and_exit("freezer, launch process first");
@@ -89,7 +89,7 @@ void Process::exec()
         kill_procs_and_exit("open");
 
     // freeze cgroup
-    this->frozen();
+    this->freeze();
 
     // create new process
     pid = fork();
@@ -145,7 +145,7 @@ Process::~Process()
     std::cout<< "destructor " << name <<std::endl;
     if( fd_freez_procs == -1 )
         return;
-    this->frozen();
+    this->freeze();
     // read pids from fd
     std::vector<pid_t> pids;
     FILE *f = fdopen( fd_freez_procs, "r");
@@ -168,7 +168,7 @@ Process::~Process()
     }
 
     // thawed cgroup
-    this->thawed();
+    this->unfreeze();
     // TODO wait until cgroup empty
     sleep(1);
 
