@@ -87,6 +87,9 @@ void Process::exec()
     if(fd_freez_state == -1)
         kill_procs_and_exit("open");
 
+    // freeze cgroup
+    this->frozen();
+
     // create new process
     pid = fork();
     if( pid == -1 )
@@ -101,11 +104,6 @@ void Process::exec()
         if( write(fd_freez_procs, buf1, 20*sizeof(pid_t)) == -1)
             kill_procs_and_exit("write");
         close(fd_freez_procs);
-
-        // freeze (echo FROZEN > freezer.state)
-        char buf2[7] = "FROZEN"; // automatic null terminator?
-        if( write(fd_freez_state, buf2, 6*sizeof(char)) == -1)
-            kill_procs_and_exit("write");
         close(fd_freez_state);
 
         // cast string to char*
@@ -121,11 +119,7 @@ void Process::exec()
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        // TODO wait until process created and freezed
-        //   ev callback on fd_freez_procs?, read cg.procs and check if it is there?
-        //   
         spawned_processes.push_back(pid);
-        sleep(1);
         // END PARENT PROCESS
     }
 }
