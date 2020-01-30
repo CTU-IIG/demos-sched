@@ -80,8 +80,9 @@ int main(int argc, char *argv[])
 
     ev::default_loop loop;
     loop.run(0);
-
-    kill_procs_and_exit("exit");
+    
+    delete proc_ptr;
+    //kill_procs_and_exit("exit");
 
     return 0;
 }

@@ -13,6 +13,7 @@ void kill_procs_and_exit(std::string msg)
     //     thawned cgroup
     //     wait until cgroup is empty (notify_on_release) (v2 cgroup.events (0 empty))
     //     delete cgroup directory
+    // OR do it in ~Process()?
     for(pid_t pid : spawned_processes){
         if( kill(pid, SIGKILL) == -1){
             warn("need to kill process %d manually", pid);

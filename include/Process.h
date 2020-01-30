@@ -38,6 +38,7 @@ class Process
                 std::chrono::steady_clock::time_point start_time,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0) );
+        ~Process();
 
         // testing
         void start_timer(std::chrono::nanoseconds timeout);

@@ -37,8 +37,9 @@ void Process::frozen()
     if( fd_freez_state == -1)
         kill_procs_and_exit("freezer, launch process first");
     char buf[7] = "FROZEN";
-    if( write(fd_freez_state, buf, 6*sizeof(char)) == -1)
-        kill_procs_and_exit("write");
+    if( write(fd_freez_state, buf, 6*sizeof(char)) == -1){
+        kill_procs_and_exit("frozen write");
+    }
 }
 
 void Process::thawed()
@@ -47,7 +48,7 @@ void Process::thawed()
         kill_procs_and_exit("freezer, launch process first");
     char buf[7] = "THAWED";
     if( write(fd_freez_state, buf, 6*sizeof(char)) == -1)
-        kill_procs_and_exit("write");
+        kill_procs_and_exit("thawed write");
 }
 
 void Process::recompute_budget()
@@ -134,6 +135,46 @@ void Process::timeout_cb (ev::io &w, int revents)
     uint64_t buf;
     int ret = read(w.fd, &buf, 10);
     if(ret != sizeof(uint64_t) )
-        err(1,"read timerfd");
+        kill_procs_and_exit("read timerfd");
     w.stop();
+}
+
+// WHEN THE DESTRUCTOR IS CALLED???
+Process::~Process()
+{
+    std::cout<< "destructor " << name <<std::endl;
+    if( fd_freez_procs == -1 )
+        return;
+    this->frozen();
+    // read pids from fd
+    std::vector<pid_t> pids;
+    FILE *f = fdopen( fd_freez_procs, "r");
+    if( f == NULL )
+        err(1,"fdopen, something wrong, need to delete cgroups manually");
+    char *line;
+    size_t len;
+    while( getline(&line, &len, f) > 0 ){
+        pids.push_back( atoi(line) );
+    }
+    fclose(f);
+    if(line)
+        free(line);
+    // kill all processes in cgroup
+    for( pid_t pid : pids ){
+        std::cout<<pid<<std::endl;
+        if( kill(pid, SIGKILL) == -1){
+            warn("need to kill process %d manually", pid);
+        }
+    }
+
+    // thawed cgroup
+    this->thawed();
+    // TODO wait until cgroup empty
+    sleep(1);
+
+    close(fd_freez_procs);
+    close(fd_freez_state);
+    // delete cgroup, TODO cpuset
+    if( rmdir( (freezer + name).c_str()) == -1)
+        err(1,"rmdir, something wrong, need to delete cgroups manually");
 }
