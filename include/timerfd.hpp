@@ -3,7 +3,7 @@
 
 #include <ev++.h>
 #include <chrono>
-#include "functions.h"
+#include "functions.hpp"
 
 // std::chrono to timespec conversions
 // https://embeddedartistry.com/blog/2019/01/31/converting-between-timespec-stdchrono/

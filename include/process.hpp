@@ -8,7 +8,7 @@
 #include <fcntl.h>
 
 #include "timerfd.hpp"
-#include "functions.h"
+#include "functions.hpp"
 
 // TODO exception after fork ??
 

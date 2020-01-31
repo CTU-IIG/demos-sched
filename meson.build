@@ -7,7 +7,7 @@ ev_dep = meson.get_compiler('cpp').find_library('ev')
 incdir = include_directories('include')
 
 executable('demos_sch',
-           ['src/demos_sch.cpp','src/Process.cpp','src/functions.cpp','src/classes.cpp'],
+           ['src/demos_sch.cpp','src/process.cpp','src/functions.cpp','src/classes.cpp'],
            include_directories : incdir,
            dependencies : ev_dep)
 executable('infinite_proc', 'src/infinite_proc.cpp')

@@ -1,5 +1,5 @@
-#include "classes.h"
-#include "functions.h"
+#include "classes.hpp"
+#include "functions.hpp"
 
 using namespace std::chrono_literals;
 

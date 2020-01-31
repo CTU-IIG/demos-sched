@@ -1,8 +1,10 @@
-#ifndef CLASSES_HPP
-#define CLASSES_HPP
+#ifndef CLASSES_H
+#define CLASSES_H
 
-#include "Process.h"
-#include "functions.h"
+#include <bitset>
+
+#include "process.hpp"
+#include "functions.hpp"
 
 
 // maximum supported number of processors
@@ -14,24 +16,10 @@ typedef std::bitset<MAX_NPROC> Cpu;
 class Partition
 {
     public:
-        Partition( std::vector<Process> processes )
-            : processes(processes),
-            current(&(this->processes[0]))
-    { }
-
-        Process* get_current_proc()
-        {
-            return current;
-        }
-
+        Partition( std::vector<Process> processes );
+        Process* get_current_proc();
         // cyclic queue?
-        void move_to_next_proc()
-        {
-            counter++;
-            if( counter >= processes.size() )
-                counter = 0;
-            current = &(this->processes[counter]);
-        }
+        void move_to_next_proc();
 
     private:
         std::vector<Process> processes;

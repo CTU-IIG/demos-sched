@@ -1,4 +1,4 @@
-#include "Process.h"
+#include "process.hpp"
 
 // paths to cgroups
 std::string freezer = "/sys/fs/cgroup/freezer/";

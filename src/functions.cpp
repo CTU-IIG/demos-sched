@@ -1,4 +1,4 @@
-#include "functions.h"
+#include "functions.hpp"
 
 std::vector<pid_t> spawned_processes;
 

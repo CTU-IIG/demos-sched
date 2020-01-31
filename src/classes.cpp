@@ -1,4 +1,4 @@
-#include "classes.h"
+#include "classes.hpp"
 
 Partition::Partition( std::vector<Process> processes )
     : processes(processes),
