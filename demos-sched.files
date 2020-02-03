@@ -2,7 +2,6 @@ LICENSE
 README.md
 include/cgroup.hpp
 include/classes.hpp
-include/freezer.hpp
 include/functions.hpp
 include/process.hpp
 include/timerfd.hpp
@@ -11,7 +10,6 @@ src/cgroup.cpp
 src/cgrp.cpp
 src/classes.cpp
 src/demos_sch.cpp
-src/freezer.cpp
 src/functions.cpp
 src/infinite_proc.cpp
 src/process.cpp

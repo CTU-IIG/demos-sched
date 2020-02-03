@@ -9,7 +9,7 @@
 
 #include "timerfd.hpp"
 #include "functions.hpp"
-#include "freezer.hpp"
+#include "cgroup.hpp"
 
 // TODO exception after fork ??
 
@@ -21,10 +21,6 @@ class Process
                 std::chrono::steady_clock::time_point start_time,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0) );
-        //~Process();
-        
-        // kill and delete cgroup
-        void clean();
 
         // testing
         void start_timer(std::chrono::nanoseconds timeout);
@@ -54,7 +50,7 @@ class Process
         pid_t pid = -1;
         // TODO why ev::timerfd timer doesn't work???
         ev::timerfd *timer_ptr = new ev::timerfd;
-        Freezer freezer;
+        Cgroup cgroup;
 
 };
 

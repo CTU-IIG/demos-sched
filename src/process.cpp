@@ -16,7 +16,7 @@ Process::Process(std::string name,
     budget(budget),
     budget_jitter(budget_jitter),
     actual_budget(budget),
-    freezer(freezer_path + name + "/")
+    cgroup(freezer_path + name + "/")
 {
     timer_ptr->set<Process, &Process::timeout_cb>(this);
 }
@@ -48,7 +48,7 @@ void Process::exec()
     //TODO pipe
 
     // freeze cgroup
-    freezer.freeze();
+    cgroup.freeze();
 
     // create new process
     pid = fork();
@@ -59,7 +59,7 @@ void Process::exec()
     if( pid == 0 ){
         // CHILD PROCESS
         // add process to cgroup (echo PID > cgroup.procs)
-        freezer.add_process(getpid());
+        cgroup.add_process(getpid());
 
         // cast string to char*
         std::vector<char*> cstrings;
@@ -81,12 +81,12 @@ void Process::exec()
 
 void Process::freeze()
 {
-    freezer.freeze();
+    cgroup.freeze();
 }
 
 void Process::unfreeze()
 {
-    freezer.unfreeze();
+    cgroup.unfreeze();
 }
 
 void Process::timeout_cb (ev::io &w, int revents)
@@ -107,49 +107,4 @@ void Process::set_cgroup_paths(std::string freezer, std::string cpuset)
 {
     freezer_path = freezer;
     cpuset_path = cpuset;
-}
-
-// WHEN THE DESTRUCTOR IS CALLED???
-// TODO destructors
-//Process::~Process()
-void Process::clean()
-{
-    //std::cout<< "destructor " << name <<std::endl;
-    std::cout<< "cleaning " << name <<std::endl;
-    if( freezer.fd_procs == -1 )
-        return;
-
-    freezer.freeze();
-
-    // read pids from fd
-    std::vector<pid_t> pids;
-    FILE *f = fdopen( freezer.fd_procs, "r");
-    if( f == NULL )
-        err(1,"fdopen, something wrong, need to delete cgroups manually");
-    char *line;
-    size_t len;
-    while( getline(&line, &len, f) > 0 ){
-        pids.push_back( atoi(line) );
-    }
-    fclose(f);
-    if(line)
-        free(line);
-    // kill all processes in cgroup
-    for( pid_t pid : pids ){
-        std::cout<<pid<<std::endl;
-        if( kill(pid, SIGKILL) == -1){
-            warn("need to kill process %d manually", pid);
-        }
-    }
-
-    // thawed cgroup
-    freezer.unfreeze();
-    // TODO wait until cgroup empty
-    sleep(1);
-
-    close(freezer.fd_procs);
-    close(freezer.fd_state);
-    // delete cgroup, TODO cpuset
-    if( rmdir( (freezer_path + name).c_str()) == -1)
-        err(1,"rmdir, something wrong, need to delete cgroups manually");
 }

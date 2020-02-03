@@ -16,9 +16,14 @@ class Cgroup
 {
 public:
     Cgroup(std::string path);
+    ~Cgroup();
     void add_process(pid_t pid);
+    void freeze();
+    void unfreeze();
 //private:
     int fd_procs;
+    int fd_state;
+    std::string freezer_path;
 };
 
 #endif // CGROUP_HPP
