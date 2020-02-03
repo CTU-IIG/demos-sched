@@ -1,9 +1,9 @@
 #include "process.hpp"
 
 // paths to cgroups
-std::string freezer = "/sys/fs/cgroup/freezer/";
-std::string cpuset = "/sys/fs/cgroup/cpuset/";
-std::string cgrp = "my_cgroup";
+std::string Process::freezer_path = "/sys/fs/cgroup/freezer/my_cgroup/";
+std::string Process::cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup/";
+//std::string cgrp = "my_cgroup";
 
 Process::Process(std::string name,
         std::vector<std::string> argv,
@@ -69,7 +69,7 @@ void Process::exec()
 
     // create new freezer cgroup
     // TODO cpuset
-    std::string new_freezer = freezer + name + "/";
+    std::string new_freezer = freezer_path + name + "/";
     int ret = mkdir( new_freezer.c_str(),
             S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     if( ret == -1 ){
@@ -139,6 +139,12 @@ void Process::timeout_cb (ev::io &w, int revents)
     w.stop();
 }
 
+void Process::set_cgroup_paths(std::string freezer, std::string cpuset)
+{
+    freezer_path = freezer;
+    cpuset_path = cpuset;
+}
+
 // WHEN THE DESTRUCTOR IS CALLED???
 //Process::~Process()
 void Process::clean()
@@ -177,6 +183,6 @@ void Process::clean()
     close(fd_freez_procs);
     close(fd_freez_state);
     // delete cgroup, TODO cpuset
-    if( rmdir( (freezer + name).c_str()) == -1)
+    if( rmdir( (freezer_path + name).c_str()) == -1)
         err(1,"rmdir, something wrong, need to delete cgroups manually");
 }

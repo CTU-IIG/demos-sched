@@ -12,9 +12,11 @@ int main(int argc, char *argv[])
             case 'h':
                 print_help();
                 exit(0);
-            case 'g':
-                cgrp = std::string(optarg);
-                break;
+            case 'g':{
+                std::string cgrp_name = std::string(optarg);
+                // set paths to cgroups
+                Process::set_cgroup_paths("/sys/fs/cgroup/freezer/" + cgrp_name + "/", "/sys/fs/cgroup/cpuset/" + cgrp_name + "/");
+                break;}
             case 'c':
                 break;
             default:
@@ -22,9 +24,6 @@ int main(int argc, char *argv[])
                 exit(1);
         }
     }
-    // create paths to cgroups
-    freezer += cgrp + "/";
-    cpuset += cgrp + "/";
 
     // init random seed
     srand(time(NULL));
@@ -69,7 +68,7 @@ int main(int argc, char *argv[])
     //struct sched_param sp = {.sched_priority = 99};
     //if (sched_setscheduler( 0, SCHED_FIFO, &sp ) == -1)
         //kill_procs_and_exit("sched_setscheduler");
-
+//sys/fs/cgroup/freezer
     // how to use exception here?
     //try{
         //int ret = sched_setscheduler( 0, SCHED_FIFO, &sp );
