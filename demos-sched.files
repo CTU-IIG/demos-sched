@@ -12,5 +12,6 @@ src/classes.cpp
 src/demos_sch.cpp
 src/functions.cpp
 src/infinite_proc.cpp
+src/meson.build
 src/process.cpp
 src/timerfd.cpp
