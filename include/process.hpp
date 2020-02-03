@@ -9,6 +9,7 @@
 
 #include "timerfd.hpp"
 #include "functions.hpp"
+#include "freezer.hpp"
 
 // TODO exception after fork ??
 
@@ -30,8 +31,8 @@ class Process
 
         bool is_completed();
         void exec();
-        void freeze(); // echo FROZEN > freezer.state
-        void unfreeze(); // echo THAWED > freezer.state
+        void freeze();
+        void unfreeze();
         void recompute_budget();
         std::chrono::nanoseconds get_actual_budget();
         void timeout_cb (ev::io &w, int revents);
@@ -53,8 +54,8 @@ class Process
         pid_t pid = -1;
         // TODO why ev::timerfd timer doesn't work???
         ev::timerfd *timer_ptr = new ev::timerfd;
-        int fd_freez_procs = -1;
-        int fd_freez_state = -1;
+        Freezer freezer;
+
 };
 
 #endif

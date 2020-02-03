@@ -15,7 +15,8 @@ Process::Process(std::string name,
     start_time(start_time),
     budget(budget),
     budget_jitter(budget_jitter),
-    actual_budget(budget)
+    actual_budget(budget),
+    freezer(freezer_path + name + "/")
 {
     timer_ptr->set<Process, &Process::timeout_cb>(this);
 }
@@ -29,26 +30,6 @@ void Process::start_timer(std::chrono::nanoseconds timeout)
 bool Process::is_completed()
 {
     return completed;
-}
-
-// echo FROZEN > freezer.state
-void Process::freeze()
-{
-    if( fd_freez_state == -1)
-        kill_procs_and_exit("freezer, launch process first");
-    char buf[7] = "FROZEN";
-    if( write(fd_freez_state, buf, 6*sizeof(char)) == -1){
-        kill_procs_and_exit("frozen write");
-    }
-}
-
-void Process::unfreeze()
-{
-    if( fd_freez_state == -1)
-        kill_procs_and_exit("freezer, launch process first");
-    char buf[7] = "THAWED";
-    if( write(fd_freez_state, buf, 6*sizeof(char)) == -1)
-        kill_procs_and_exit("thawed write");
 }
 
 void Process::recompute_budget()
@@ -65,31 +46,9 @@ std::chrono::nanoseconds Process::get_actual_budget()
 void Process::exec()
 {
     //TODO pipe
-    //TODO cgroup, freeze
-
-    // create new freezer cgroup
-    // TODO cpuset
-    std::string new_freezer = freezer_path + name + "/";
-    int ret = mkdir( new_freezer.c_str(),
-            S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if( ret == -1 ){
-        if( errno == EEXIST ) {
-            kill_procs_and_exit("mkdir, process name has to be unique");
-        }else{
-            kill_procs_and_exit("mkdir");
-        }
-    }
-
-    // open file descriptors for manipulating cgroups
-    fd_freez_procs = open( (new_freezer + "cgroup.procs").c_str(), O_RDWR | O_NONBLOCK);
-    if(fd_freez_procs == -1)
-        kill_procs_and_exit("open");
-    fd_freez_state = open( (new_freezer + "freezer.state").c_str(), O_RDWR | O_NONBLOCK);
-    if(fd_freez_state == -1)
-        kill_procs_and_exit("open");
 
     // freeze cgroup
-    this->freeze();
+    freezer.freeze();
 
     // create new process
     pid = fork();
@@ -100,12 +59,7 @@ void Process::exec()
     if( pid == 0 ){
         // CHILD PROCESS
         // add process to cgroup (echo PID > cgroup.procs)
-        char buf1[20];
-        sprintf(buf1, "%d", getpid());
-        if( write(fd_freez_procs, buf1, 20*sizeof(pid_t)) == -1)
-            kill_procs_and_exit("write");
-        close(fd_freez_procs);
-        close(fd_freez_state);
+        freezer.add_process(getpid());
 
         // cast string to char*
         std::vector<char*> cstrings;
@@ -123,6 +77,16 @@ void Process::exec()
         spawned_processes.push_back(pid);
         // END PARENT PROCESS
     }
+}
+
+void Process::freeze()
+{
+    freezer.freeze();
+}
+
+void Process::unfreeze()
+{
+    freezer.unfreeze();
 }
 
 void Process::timeout_cb (ev::io &w, int revents)
@@ -146,17 +110,20 @@ void Process::set_cgroup_paths(std::string freezer, std::string cpuset)
 }
 
 // WHEN THE DESTRUCTOR IS CALLED???
+// TODO destructors
 //Process::~Process()
 void Process::clean()
 {
     //std::cout<< "destructor " << name <<std::endl;
     std::cout<< "cleaning " << name <<std::endl;
-    if( fd_freez_procs == -1 )
+    if( freezer.fd_procs == -1 )
         return;
-    this->freeze();
+
+    freezer.freeze();
+
     // read pids from fd
     std::vector<pid_t> pids;
-    FILE *f = fdopen( fd_freez_procs, "r");
+    FILE *f = fdopen( freezer.fd_procs, "r");
     if( f == NULL )
         err(1,"fdopen, something wrong, need to delete cgroups manually");
     char *line;
@@ -176,12 +143,12 @@ void Process::clean()
     }
 
     // thawed cgroup
-    this->unfreeze();
+    freezer.unfreeze();
     // TODO wait until cgroup empty
     sleep(1);
 
-    close(fd_freez_procs);
-    close(fd_freez_state);
+    close(freezer.fd_procs);
+    close(freezer.fd_state);
     // delete cgroup, TODO cpuset
     if( rmdir( (freezer_path + name).c_str()) == -1)
         err(1,"rmdir, something wrong, need to delete cgroups manually");
