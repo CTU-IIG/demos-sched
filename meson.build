@@ -8,7 +8,7 @@ incdir = include_directories('include')
 
 executable('demos_sch',
            ['src/demos_sch.cpp','src/process.cpp','src/functions.cpp','src/classes.cpp',
-            'src/cgroup.cpp'],
+            'src/cgroup.cpp', 'src/timerfd.cpp'],
            include_directories : incdir,
            dependencies : ev_dep)
 executable('infinite_proc', 'src/infinite_proc.cpp')
