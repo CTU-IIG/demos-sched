@@ -6,18 +6,19 @@
 #include <unistd.h>
 #include <sys/timerfd.h>
 #include <fcntl.h>
+#include <chrono>
 
 #include "timerfd.hpp"
 #include "cgroup.hpp"
+#include "demossched.hpp"
 
 // TODO exception after fork ??
 
-class Process
+class Process : protected DemosSched
 {
     public:
         Process(std::string name,
                 std::vector<std::string> argv,
-                std::chrono::steady_clock::time_point start_time,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0) );
 
@@ -32,11 +33,6 @@ class Process
         std::chrono::nanoseconds get_actual_budget();
         void timeout_cb (ev::timerfd &t);
 
-        static void set_cgroup_paths(std::string freezer, std::string cpuset);
-
-        static std::string freezer_path;
-        static std::string cpuset_path;
-
         // delete copy constructor
         Process(const Process&) = delete;
         Process& operator=(const Process&) = delete;
@@ -45,7 +41,6 @@ class Process
 
         std::string name;
         std::vector<std::string> argv;
-        std::chrono::steady_clock::time_point start_time;
         std::chrono::nanoseconds budget;
         std::chrono::nanoseconds budget_jitter;
         std::chrono::nanoseconds actual_budget;

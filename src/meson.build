@@ -5,7 +5,7 @@ incdir = include_directories('../include')
 
 executable('demos_sch',
            ['demos_sch.cpp','process.cpp','classes.cpp',
-            'cgroup.cpp', 'timerfd.cpp'],
+            'cgroup.cpp', 'timerfd.cpp','demossched.cpp'],
            include_directories : incdir,
            dependencies : ev_dep)
 executable('infinite_proc', 'infinite_proc.cpp')

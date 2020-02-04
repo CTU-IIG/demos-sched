@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
             case 'g':{
                 std::string cgrp_name = std::string(optarg);
                 // set paths to cgroups
-                Process::set_cgroup_paths("/sys/fs/cgroup/freezer/" + cgrp_name + "/", "/sys/fs/cgroup/cpuset/" + cgrp_name + "/");
+                DemosSched::set_cgroup_paths("/sys/fs/cgroup/freezer/" + cgrp_name + "/", "/sys/fs/cgroup/cpuset/" + cgrp_name + "/");
                 break;}
             case 'c':
                 break;
@@ -40,14 +40,7 @@ int main(int argc, char *argv[])
                 exit(1);
         }
     }
-
-    // init random seed
-    srand(time(NULL));
-
-    // get start time
-    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
-    //std::cout<<start_time.time_since_epoch().count()<<std::endl;
-    //std::cout<<(start_time + 10ns).time_since_epoch().count()<<std::endl; 
+    DemosSched::init();
 
     // parse yaml config
     // consistency check
@@ -59,11 +52,11 @@ int main(int argc, char *argv[])
     try {
         std::list<Process> be_procs, sc_procs;
         sc_procs.emplace_back("procA", std::vector<std::string>
-                    {"src/infinite_proc","1000000","hello"}, start_time, 10ms,2ms);
+                    {"src/infinite_proc","1000000","hello"}, 10ms,2ms);
         sc_procs.emplace_back("procB", std::vector<std::string>
-                    {"/bin/echo","foo"}, start_time, 5ms,1ms);
+                    {"/bin/echo","foo"}, 5ms,1ms);
         be_procs.emplace_back("procC", std::vector<std::string>
-                    {"/bin/echo","best effort"}, start_time, 5ms,1ms);
+                    {"/bin/echo","best effort"}, 5ms,1ms);
 
         Partition sc = Partition(std::move(sc_procs));
         Partition be = Partition(std::move(be_procs));

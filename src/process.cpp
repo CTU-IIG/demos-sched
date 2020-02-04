@@ -1,18 +1,11 @@
 #include "process.hpp"
 
-// paths to cgroups
-std::string Process::freezer_path = "/sys/fs/cgroup/freezer/my_cgroup/";
-std::string Process::cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup/";
-//std::string cgrp = "my_cgroup";
-
 Process::Process(std::string name,
         std::vector<std::string> argv,
-        std::chrono::steady_clock::time_point start_time,
         std::chrono::nanoseconds budget,
         std::chrono::nanoseconds budget_jitter )
     : name(name),
     argv(argv),
-    start_time(start_time),
     budget(budget),
     budget_jitter(budget_jitter),
     actual_budget(budget),
@@ -91,10 +84,4 @@ void Process::unfreeze()
 void Process::timeout_cb (ev::timerfd &t)
 {
     printf("timeout process\n");
-}
-
-void Process::set_cgroup_paths(std::string freezer, std::string cpuset)
-{
-    freezer_path = freezer;
-    cpuset_path = cpuset;
 }
