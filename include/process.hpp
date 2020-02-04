@@ -31,12 +31,16 @@ class Process
         void unfreeze();
         void recompute_budget();
         std::chrono::nanoseconds get_actual_budget();
-        void timeout_cb (ev::io &w, int revents);
+        void timeout_cb (ev::timerfd &t);
 
         static void set_cgroup_paths(std::string freezer, std::string cpuset);
 
         static std::string freezer_path;
         static std::string cpuset_path;
+
+        // delete copy constructor
+        Process(const Process&) = delete;
+        Process& operator=(const Process&) = delete;
 
     private:
 
@@ -48,8 +52,7 @@ class Process
         std::chrono::nanoseconds actual_budget;
         bool completed = false;
         pid_t pid = -1;
-        // TODO why ev::timerfd timer doesn't work???
-        ev::timerfd *timer_ptr = new ev::timerfd;
+        ev::timerfd timer;
         Cgroup cgroup;
 
 };

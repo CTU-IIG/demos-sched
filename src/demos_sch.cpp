@@ -1,5 +1,6 @@
 #include "classes.hpp"
 #include "functions.hpp"
+#include <list>
 
 using namespace std::chrono_literals;
 
@@ -39,16 +40,15 @@ int main(int argc, char *argv[])
     // forks, pipes, exec, cgroups, ...
     
     // TEST data structures
-    Process procA("procA", std::vector<std::string>
-            {"./infinite_proc","1000000","hello"}, start_time, 10ms,2ms);
-    Process procB("procB", std::vector<std::string>
-            {"/bin/echo","foo"}, start_time, 5ms,1ms);
-    Process procC("procC", std::vector<std::string>
-            {"/bin/echo","best effort"}, start_time, 5ms,1ms);
-    //std::cout<< procA.exec() <<std::endl;
-
-    Partition sc = Partition( std::vector<Process> {procA, procB});
-    Partition be = Partition( std::vector<Process> {procC});
+    std::list<Process> be_procs, sc_procs;
+    sc_procs.emplace_back("procA", std::vector<std::string>
+                {"./infinite_proc","1000000","hello"}, start_time, 10ms,2ms);
+    sc_procs.emplace_back("procB", std::vector<std::string>
+                {"/bin/echo","foo"}, start_time, 5ms,1ms);
+    be_procs.emplace_back("procC", std::vector<std::string>
+                {"/bin/echo","best effort"}, start_time, 5ms,1ms);
+    Partition sc = Partition(std::move(sc_procs));
+    Partition be = Partition(std::move(be_procs));
 
     Slice s = {.sc = sc, .be = be, .cpus = 1};
     Window w1 = {.length = 1s, .slices = std::vector<Slice> {s} };
@@ -57,12 +57,12 @@ int main(int argc, char *argv[])
 
     //std::cout<< frame.get_budgets()[0].count() <<std::endl;
     //std::cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<std::endl;
-    Process* proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
+    Process & proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
     //proc_ptr->recompute_budget();
     //std::cout<<proc_ptr->get_actual_budget().count()<<std::endl;
-    proc_ptr->exec();
-    proc_ptr->start_timer(3s);
-    proc_ptr->unfreeze();
+    proc_ptr.exec();
+    proc_ptr.start_timer(3s);
+    proc_ptr.unfreeze();
     
     // configure linux scheduler
     //struct sched_param sp = {.sched_priority = 99};

@@ -1,20 +1,18 @@
 #include "classes.hpp"
 
-Partition::Partition( std::vector<Process> processes )
-    : processes(processes),
-    current(&(this->processes[0]))
+Partition::Partition(Processes &&processes )
+    : processes(std::move(processes))
+    , current( this->processes.begin() )
 { }
 
-Process* Partition::get_current_proc()
+Process & Partition::get_current_proc()
 {
-    return current;
+    return *current;
 }
 
 // cyclic queue?
 void Partition::move_to_next_proc()
 {
-    counter++;
-    if( counter >= processes.size() )
-        counter = 0;
-    current = &(this->processes[counter]);
+    if( ++current == processes.end() )
+        current = processes.begin();
 }

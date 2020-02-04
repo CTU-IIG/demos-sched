@@ -28,9 +28,10 @@ Cgroup::Cgroup(std::string path)
 
 Cgroup::~Cgroup()
 {
-    std::cout<< "cleaning " <<std::endl;
-    if( fd_procs == -1 )
+    std::cerr<< "destructor " + freezer_path <<std::endl;
+    if( fd_procs == -1 ){
         return;
+    }
 
     this->freeze();
 

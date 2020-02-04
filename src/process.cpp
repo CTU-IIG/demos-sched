@@ -18,13 +18,13 @@ Process::Process(std::string name,
     actual_budget(budget),
     cgroup(freezer_path + name + "/")
 {
-    timer_ptr->set<Process, &Process::timeout_cb>(this);
+    timer.set<Process, &Process::timeout_cb>(this);
 }
 
 // testing
 void Process::start_timer(std::chrono::nanoseconds timeout)
 {
-    timer_ptr->start(start_time + timeout);
+    timer.start(start_time + timeout);
 }
 
 bool Process::is_completed()
@@ -89,18 +89,9 @@ void Process::unfreeze()
     cgroup.unfreeze();
 }
 
-void Process::timeout_cb (ev::io &w, int revents)
+void Process::timeout_cb (ev::timerfd &t)
 {
-    if (EV_ERROR & revents)
-        err(1,"ev cb: got invalid event");
-
-    std::cout << "timeout " << std::endl;
-    // read to have empty fd
-    uint64_t buf;
-    int ret = read(w.fd, &buf, 10);
-    if(ret != sizeof(uint64_t) )
-        kill_procs_and_exit("read timerfd");
-    w.stop();
+    printf("timeout process\n");
 }
 
 void Process::set_cgroup_paths(std::string freezer, std::string cpuset)

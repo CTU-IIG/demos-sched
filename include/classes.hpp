@@ -5,6 +5,7 @@
 
 #include "process.hpp"
 #include "functions.hpp"
+#include <list>
 
 
 // maximum supported number of processors
@@ -13,18 +14,19 @@
 // cpu usage mask
 typedef std::bitset<MAX_NPROC> Cpu;
 
+typedef std::list<Process> Processes;
+
 class Partition
 {
     public:
-        Partition( std::vector<Process> processes );
-        Process* get_current_proc();
+        Partition( Processes &&processes );
+        Process & get_current_proc();
         // cyclic queue?
         void move_to_next_proc();
 
     private:
-        std::vector<Process> processes;
-        Process* current;
-        size_t counter = 0;
+        Processes processes;
+        Processes::iterator current;
 };
 
 struct Slice
