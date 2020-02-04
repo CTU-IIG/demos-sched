@@ -14,4 +14,5 @@ src/demossched.cpp
 src/infinite_proc.cpp
 src/meson.build
 src/process.cpp
+src/release_agent.sh
 src/timerfd.cpp

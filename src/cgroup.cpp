@@ -54,6 +54,16 @@ Cgroup::~Cgroup()
     free(line);
     fclose(f);
 
+    // empty cgroup, can be removed
+    if( pids.size() == 0){
+        // delete cgroup, TODO cpuset
+        if( rmdir( (freezer_path).c_str()) == -1)
+            err(1,"rmdir, need to delete cgroups manually");
+        close(fd_procs);
+        close(fd_state);
+        return;
+    }
+
     // kill all processes in cgroup
     for( pid_t pid : pids ){
         std::cerr<<"killing process "<<pid<<std::endl;
@@ -61,17 +71,18 @@ Cgroup::~Cgroup()
             warn("need to kill process %d manually", pid);
         }
     }
-    this->unfreeze();
-    //TODO wait until cgroup empty
-    sleep(1);
 
+    this->unfreeze();
+    // cgroup deleted by release_agent when empty
+
+//    sleep(1);
+//    //delete cgroup, TODO cpuset
+//    if( rmdir( (freezer_path).c_str()) == -1)
+//        err(1,"rmdir, need to delete cgroups manually");
     close(fd_procs);
     close(fd_state);
-
-    // delete cgroup, TODO cpuset
-    if( rmdir( (freezer_path).c_str()) == -1)
-        err(1,"rmdir, something wrong, need to delete cgroups manually");
 }
+
 
 void Cgroup::add_process(pid_t pid)
 {
