@@ -4,8 +4,8 @@
 #include <bitset>
 
 #include "process.hpp"
-#include "functions.hpp"
 #include <list>
+
 
 
 // maximum supported number of processors
@@ -21,7 +21,7 @@ class Partition
     public:
         Partition( Processes &&processes );
         Process & get_current_proc();
-        // cyclic queue?
+        // cyclic queue
         void move_to_next_proc();
 
     private:

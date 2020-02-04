@@ -8,21 +8,21 @@ Cgroup::Cgroup(std::string path)
             S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     if( ret == -1 ){
         if( errno == EEXIST ) {
-            kill_procs_and_exit("mkdir, process name has to be unique");
+            throw "failed mkdir " + path + ", process name has to be unique";
         }else{
-            kill_procs_and_exit("mkdir");
+            throw "failed mkdir " + path;
         }
     }
 
     // open file descriptor for processes in cgroup
     fd_procs = open( (freezer_path + "cgroup.procs").c_str(), O_RDWR | O_NONBLOCK);
     if(fd_procs == -1)
-        kill_procs_and_exit("open");
+        throw "failed open " + freezer_path + "cgroup.procs";
 
     // open file descriptor for (un)freezing cgroup
     fd_state = open( (freezer_path + "freezer.state").c_str(), O_RDWR | O_NONBLOCK);
     if(fd_state == -1)
-        kill_procs_and_exit("open");
+        throw "failed open " + freezer_path + "freezer.state";
 
 }
 
@@ -30,7 +30,7 @@ Cgroup::~Cgroup()
 {
     std::cerr<< "destructor " + freezer_path <<std::endl;
     if( fd_procs == -1 ){
-        return;
+        err(1,"wrong call of destructor");
     }
 
     this->freeze();
@@ -38,19 +38,25 @@ Cgroup::~Cgroup()
     // read pids from fd
     std::vector<pid_t> pids;
     FILE *f = fdopen( fd_procs, "r");
-    if( f == NULL )
+    if( f == nullptr )
         err(1,"fdopen, something wrong, need to delete cgroups manually");
-    char *line;
-    size_t len;
-    while( getline(&line, &len, f) > 0 ){
+    char *line = nullptr;
+    size_t len = 0;
+    ssize_t nread;
+    //std::cerr<< ret <<" "<<errno<<" "<<line<<std::endl;
+    while( (nread = getline(&line, &len, f)) != -1 ){
         pids.push_back( atoi(line) );
     }
+    // check if end of file reached (getline return -1 on both error and eof)
+    if(!feof(f))
+        err(1,"getline");
+
+    free(line);
     fclose(f);
-//    if(line)
-//        free(line);
+
     // kill all processes in cgroup
     for( pid_t pid : pids ){
-        std::cout<<pid<<std::endl;
+        std::cerr<<"killing process "<<pid<<std::endl;
         if( kill(pid, SIGKILL) == -1){
             warn("need to kill process %d manually", pid);
         }
@@ -73,14 +79,14 @@ void Cgroup::add_process(pid_t pid)
     char buf1[20];
     sprintf(buf1, "%d", pid);
     if( write(fd_procs, buf1, 20*sizeof(pid_t)) == -1)
-        kill_procs_and_exit("write");
+        throw "cannot write new process to cgroup";
 }
 
 void Cgroup::freeze()
 {
     char buf[7] = "FROZEN";
     if( write(fd_state, buf, 6*sizeof(char)) == -1){
-        kill_procs_and_exit("frozen write");
+        throw "cannot freeze cgroup " + freezer_path;
     }
 }
 
@@ -88,6 +94,6 @@ void Cgroup::unfreeze()
 {
     char buf[7] = "THAWED";
     if( write(fd_state, buf, 6*sizeof(char)) == -1){
-        kill_procs_and_exit("frozen write");
+        throw "cannot unfreeze cgroup " + freezer_path;
     }
 }

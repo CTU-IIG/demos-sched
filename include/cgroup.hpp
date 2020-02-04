@@ -8,8 +8,12 @@
 #include <fcntl.h>
 // write
 #include <unistd.h>
-// kill all
-#include "functions.hpp"
+#include <iostream>
+#include <vector>
+#include <err.h>
+#include <sys/types.h>
+#include <signal.h>
+#include <errno.h>
 
 
 class Cgroup

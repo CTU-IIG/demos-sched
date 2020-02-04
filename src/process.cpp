@@ -53,7 +53,7 @@ void Process::exec()
     // create new process
     pid = fork();
     if( pid == -1 )
-        kill_procs_and_exit("fork");
+        throw "fork";
 
     // launch new process
     if( pid == 0 ){
@@ -68,13 +68,12 @@ void Process::exec()
         for(size_t i = 0; i < argv.size(); ++i)
             cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
         cstrings.push_back( (char*)NULL );
-
         if( execv( cstrings[0], &cstrings[0] ) == -1)
-            kill_procs_and_exit("execv");
+            err(1,"cannot exec child process");
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        spawned_processes.push_back(pid);
+        int foo;
         // END PARENT PROCESS
     }
 }

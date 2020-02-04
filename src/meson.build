@@ -4,7 +4,7 @@ ev_dep = meson.get_compiler('cpp').find_library('ev')
 incdir = include_directories('../include')
 
 executable('demos_sch',
-           ['demos_sch.cpp','process.cpp','functions.cpp','classes.cpp',
+           ['demos_sch.cpp','process.cpp','classes.cpp',
             'cgroup.cpp', 'timerfd.cpp'],
            include_directories : incdir,
            dependencies : ev_dep)
