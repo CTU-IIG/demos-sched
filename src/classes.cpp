@@ -3,7 +3,9 @@
 Partition::Partition(Processes &&processes )
     : processes(std::move(processes))
     , current( this->processes.begin() )
-{ }
+{
+    //std::cerr << __PRETTY_FUNCTION__ << this << std::endl;
+}
 
 Process & Partition::get_current_proc()
 {

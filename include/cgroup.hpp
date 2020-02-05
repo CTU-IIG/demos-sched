@@ -14,12 +14,14 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <errno.h>
+#include <ev++.h>
+#include "demossched.hpp"
 
 
-class Cgroup
+class Cgroup : protected DemosSched
 {
 public:
-    Cgroup(std::string path);
+    Cgroup(std::string name);
     ~Cgroup();
     void add_process(pid_t pid);
     void freeze();
@@ -29,10 +31,23 @@ public:
     Cgroup(const Cgroup&) = delete;
     Cgroup& operator=(const Cgroup&) = delete;
 
-//private:
-    int fd_procs;
-    int fd_state;
-    std::string freezer_path;
+private:
+    int fd_freezer_procs;
+    int fd_freezer_state;
+    int fd_uni_procs;
+    int fd_uni_events;
+    int fd_cpuset_procs;
+    int fd_cpuset_cpus;
+    const std::string freezer_p;
+    const std::string cpuset_p;
+    const std::string unified_p;
+
+    void clean_cb(ev::stat &w, int revents);
+    void close_all_fd();
+
+    static void write_pid(pid_t pid, int fd);
+    static void delete_cgroup(std::string path);
+    static int open_fd(std::string path, int attr);
 };
 
 #endif // CGROUP_HPP

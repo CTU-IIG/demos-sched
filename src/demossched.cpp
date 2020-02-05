@@ -3,6 +3,7 @@
 // default static members values
 std::string DemosSched::freezer_path = "/sys/fs/cgroup/freezer/my_cgroup/";
 std::string DemosSched::cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup/";
+std::string DemosSched::unified_path = "/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup/";
 
 std::chrono::steady_clock::time_point DemosSched::start_time;
 

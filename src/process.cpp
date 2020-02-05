@@ -1,4 +1,5 @@
 #include "process.hpp"
+#include <system_error>
 
 Process::Process(std::string name,
         std::vector<std::string> argv,
@@ -9,7 +10,7 @@ Process::Process(std::string name,
     budget(budget),
     budget_jitter(budget_jitter),
     actual_budget(budget),
-    cgroup(freezer_path + name + "/")
+    cgroup(name)
 {
     timer.set<Process, &Process::timeout_cb>(this);
 }
@@ -43,30 +44,30 @@ void Process::exec()
     // freeze cgroup
     cgroup.freeze();
 
+
+    // cast string to char*
+    std::vector<char*> cstrings;
+    cstrings.reserve( argv.size()+1 );
+
+    for(size_t i = 0; i < argv.size(); ++i)
+        cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
+    cstrings.push_back( (char*)NULL );
+
     // create new process
-    pid = fork();
-    if( pid == -1 )
-        throw "fork";
+    pid = CHECK(vfork());
 
     // launch new process
     if( pid == 0 ){
         // CHILD PROCESS
-        // add process to cgroup (echo PID > cgroup.procs)
-        cgroup.add_process(getpid());
-
-        // cast string to char*
-        std::vector<char*> cstrings;
-        cstrings.reserve( argv.size()+1 );
-
-        for(size_t i = 0; i < argv.size(); ++i)
-            cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
-        cstrings.push_back( (char*)NULL );
-        if( execv( cstrings[0], &cstrings[0] ) == -1)
-            err(1,"cannot exec child process");
+        CHECK(execv( cstrings[0], &cstrings[0] ));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
+        using namespace std;
+        //cerr << "PID:"+to_string(getpid())+ " fork -> PID:"+to_string(pid) << endl;
         int foo;
+        // add process to cgroup (echo PID > cgroup.procs)
+        cgroup.add_process(pid);
         // END PARENT PROCESS
     }
 }
