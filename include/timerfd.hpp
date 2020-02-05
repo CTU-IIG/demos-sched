@@ -3,6 +3,7 @@
 
 #include <ev++.h>
 #include <chrono>
+#include <functional>
 
 // std::chrono to timespec conversions
 // https://embeddedartistry.com/blog/2019/01/31/converting-between-timespec-stdchrono/
@@ -22,28 +23,13 @@ class timerfd : private io
 {
 public:
     timerfd();
-
-    template<class K, void (K::*method)(timerfd &t)>
-    void set (K *object) EV_NOEXCEPT
-    {
-        cb_this = object;
-        cb_func = &callback_thunk<K, method>;
-        io::set<timerfd, &timerfd::callback>(this);
-    }
-
-    void start (std::chrono::steady_clock::time_point timeout);
+    void set(std::function<void()> callback);
+    void start(std::chrono::steady_clock::time_point timeout);
     ~timerfd();
 private:
-    void *cb_this;
-    void (*cb_func)(timerfd &t, void *cb_this);
+    std::function<void()> callback;
+    void ev_callback(ev::io &w, int revents);
 
-    void callback(ev::io &w, int revents);
-
-    template<class K, void (K::*method)(timerfd &t)>
-    static void callback_thunk (timerfd &t, void *callee_this)
-    {
-        (static_cast<K *>(callee_this)->*method)(t);
-    }
 };
 }
 

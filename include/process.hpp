@@ -31,7 +31,7 @@ class Process : protected DemosSched
         void unfreeze();
         void recompute_budget();
         std::chrono::nanoseconds get_actual_budget();
-        void timeout_cb (ev::timerfd &t);
+        void timeout_cb();
 
         // delete copy constructor
         Process(const Process&) = delete;

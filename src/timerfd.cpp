@@ -3,15 +3,20 @@
 #include <sys/timerfd.h>
 #include <err.h>
 #include <iostream>
+#include "demossched.hpp"
 
 ev::timerfd::timerfd() : io()
 {
     // create timer
     // steady_clock == CLOCK_MONOTONIC
-    int fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
-    if( fd < 0 )
-        err(1,"timerfd_create");
+    int fd = CHECK(timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC));
     io::set(fd, ev::READ);
+    io::set<timerfd, &timerfd::ev_callback>(this);
+}
+
+void ev::timerfd::set(std::function<void ()> callback)
+{
+    this->callback = callback;
 }
 
 void ev::timerfd::start(std::chrono::steady_clock::time_point timeout)
@@ -23,10 +28,8 @@ void ev::timerfd::start(std::chrono::steady_clock::time_point timeout)
     // no periodic timer
     timer_value.it_interval = timespec{0,0};
 
-    if( timerfd_settime(fd, TFD_TIMER_ABSTIME, &timer_value, NULL) == -1 )
-        err(1,"timerfd_settime");
+    CHECK(timerfd_settime(fd, TFD_TIMER_ABSTIME, &timer_value, NULL));
 
-    // set fd to callback
     io::start();
 }
 
@@ -36,17 +39,14 @@ ev::timerfd::~timerfd()
     close(fd);
 }
 
-void ev::timerfd::callback(ev::io &w, int revents) {
+void ev::timerfd::ev_callback(ev::io &w, int revents) {
     if (EV_ERROR & revents)
         err(1,"ev cb: got invalid event");
 
     std::cout << "timeout " << std::endl;
     // read to have empty fd
     uint64_t buf;
-    int ret = ::read(w.fd, &buf, 10);
-    if(ret != sizeof(uint64_t) )
-        err(1, "read timerfd");
-    cb_func(*this, cb_this);
-    w.stop();
-
+    CHECK(::read(w.fd, &buf, sizeof(buf)));
+    w.stop(); // Is this necessary?
+    callback();
 }

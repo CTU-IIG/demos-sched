@@ -1,5 +1,6 @@
 #include "process.hpp"
 #include <system_error>
+#include <functional>
 
 Process::Process(std::string name,
         std::vector<std::string> argv,
@@ -12,7 +13,7 @@ Process::Process(std::string name,
     actual_budget(budget),
     cgroup(name)
 {
-    timer.set<Process, &Process::timeout_cb>(this);
+    timer.set(std::bind(&Process::timeout_cb, this));
 }
 
 // testing
@@ -82,7 +83,7 @@ void Process::unfreeze()
     cgroup.unfreeze();
 }
 
-void Process::timeout_cb (ev::timerfd &t)
+void Process::timeout_cb ()
 {
     printf("timeout process\n");
 }
