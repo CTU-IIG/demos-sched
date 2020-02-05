@@ -18,6 +18,9 @@ protected:
     static std::string cpuset_path;
     static std::string unified_path;
 
+    static char *mems_line;
+    static size_t mems_len;
+
     static std::chrono::steady_clock::time_point start_time;
 
     static bool initialized;
