@@ -117,8 +117,8 @@ void Cgroup::write_pid(pid_t pid, int fd)
 void Cgroup::add_process(pid_t pid)
 {
     write_pid(pid, fd_freezer_procs);
-    //write_pid(pid, fd_cpuset_procs);
-    //write_pid(pid, fd_uni_procs);
+    write_pid(pid, fd_cpuset_procs);
+    write_pid(pid, fd_uni_procs);
 }
 
 void Cgroup::freeze()
