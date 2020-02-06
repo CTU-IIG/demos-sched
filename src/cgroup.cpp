@@ -35,16 +35,6 @@ Cgroup::Cgroup(std::string name)
     // open file descriptor for montoring cleanup
     fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY | O_NONBLOCK);
 
-    // set cpuse mems
-    int fd_cpuset_mems = open_fd( cpuset_p + "cpuset.mems");
-    CHECK(write(fd_cpuset_mems, mems_line, mems_len));
-    close(fd_cpuset_mems);
-    // set default processor to be able add process
-    char c = '0';
-    CHECK(write(fd_cpuset_cpus, &c, 1));
-
-
-
 //    ev::io procs_w;
 //    procs_w.set(fd_events, ev::PRI );
 //    procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
@@ -127,7 +117,7 @@ void Cgroup::write_pid(pid_t pid, int fd)
 void Cgroup::add_process(pid_t pid)
 {
     write_pid(pid, fd_freezer_procs);
-    write_pid(pid, fd_cpuset_procs);
+    //write_pid(pid, fd_cpuset_procs);
     //write_pid(pid, fd_uni_procs);
 }
 
