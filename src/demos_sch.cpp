@@ -50,16 +50,13 @@ int main(int argc, char *argv[])
     // TEST data structures
     ev::default_loop loop;
     try {
-        Processes be_procs, sc_procs;
-        sc_procs.emplace_back("procA", std::vector<std::string>
-                    {"src/infinite_proc","1000000","hello"}, 10ms,2ms);
-        sc_procs.emplace_back("procB", std::vector<std::string>
-                    {"/bin/echo","foo"}, 5ms,1ms);
-        be_procs.emplace_back("procC", std::vector<std::string>
-                    {"/bin/echo","best effort"}, 5ms,1ms);
-
-        Partition sc( std::move(sc_procs), "SC");
-        Partition be( std::move(be_procs), "BE");
+        Partition sc("_SC"), be;
+        sc.add_process( "procA", std::vector<std::string>
+            {"src/infinite_proc","1000000","hello"}, 10ms,2ms );
+        sc.add_process( "procB", std::vector<std::string>
+            {"/bin/echo","foo"}, 5ms,1ms );
+        be.add_process( "procA", std::vector<std::string>
+            {"src/infinite_proc","1000000","hello"}, 10ms,2ms );
 
         Slices slices;
         slices.emplace_back( sc, be, Cpu(1) );
@@ -69,10 +66,10 @@ int main(int argc, char *argv[])
 
         MajorFrame mf( windows );
 
-        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
-        proc.exec();
-        proc.unfreeze();
-        sleep(3);
+//        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
+//        proc.exec();
+//        proc.unfreeze();
+//        sleep(3);
 
 
         //std::cout<< frame.get_budgets()[0].count() <<std::endl;

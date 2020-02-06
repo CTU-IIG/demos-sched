@@ -19,21 +19,21 @@ Cgroup::Cgroup(std::string name)
     // create new freezer cgroup
     create_cgroup( freezer_p);
     // create new cpuset cgroup
-    create_cgroup( cpuset_p);
+    //create_cgroup( cpuset_p);
     // create unified cgroup for .events
-    create_cgroup( unified_p);
+    //create_cgroup( unified_p);
     // open file descriptor for processes in freezer
     fd_freezer_procs = open_fd( freezer_p + "cgroup.procs");
     // open file descriptor for (un)freezing cgroup
     fd_freezer_state = open_fd( freezer_p + "freezer.state");
     // open file descriptor for processes in cpuset
-    fd_cpuset_procs = open_fd( cpuset_p + "cgroup.procs");
+    //fd_cpuset_procs = open_fd( cpuset_p + "cgroup.procs");
     // open file descriptor for cpuset
-    fd_cpuset_cpus = open_fd( cpuset_p + "cpuset.cpus");
+    //fd_cpuset_cpus = open_fd( cpuset_p + "cpuset.cpus");
     // open file descriptor for processes in unified cgroup
-    fd_uni_procs = open_fd( unified_p + "cgroup.procs");
+    //fd_uni_procs = open_fd( unified_p + "cgroup.procs");
     // open file descriptor for montoring cleanup
-    fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY | O_NONBLOCK);
+    //fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY | O_NONBLOCK);
 
 //    ev::io procs_w;
 //    procs_w.set(fd_uni_events, ev::EXCEPTION );
