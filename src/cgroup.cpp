@@ -36,7 +36,7 @@ Cgroup::Cgroup(std::string name)
     fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY | O_NONBLOCK);
 
 //    ev::io procs_w;
-//    procs_w.set(fd_events, ev::PRI );
+//    procs_w.set(fd_uni_events, ev::EXCEPTION );
 //    procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
 //    procs_w.start();
 
@@ -51,6 +51,7 @@ void Cgroup::delete_cgroup(std::string path)
 Cgroup::~Cgroup()
 {
     std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
+
     if( fd_freezer_procs == -1 ){
         err(1,"wrong call of destructor");
     }
@@ -94,14 +95,14 @@ Cgroup::~Cgroup()
     this->unfreeze();
     // cgroup deleted by release_agent when empty
 
-    //sleep(1);
+    sleep(1);
 //    //delete cgroup, TODO cpuset
 //    if( rmdir( (freezer_path).c_str()) == -1)
 //        err(1,"rmdir, need to delete cgroups manually");
     close_all_fd();
 }
 
-void Cgroup::clean_cb (ev::stat &w, int revents)
+void Cgroup::clean_cb (ev::io &w, int revents)
 {
     std::cerr<<"tu"<<std::endl;
 }

@@ -13,13 +13,12 @@ Process::Process(std::string name,
     actual_budget(budget),
     cgroup(name)
 {
-    timer.set(std::bind(&Process::timeout_cb, this));
+
 }
 
 // testing
 void Process::start_timer(std::chrono::nanoseconds timeout)
 {
-    timer.start(start_time + timeout);
 }
 
 bool Process::is_completed()
@@ -81,9 +80,4 @@ void Process::freeze()
 void Process::unfreeze()
 {
     cgroup.unfreeze();
-}
-
-void Process::timeout_cb ()
-{
-    printf("timeout process\n");
 }

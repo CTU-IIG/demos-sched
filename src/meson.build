@@ -5,7 +5,8 @@
 incdir = include_directories('../include')
 
 executable('demos_sch',
-           ['demos_sch.cpp','process.cpp','classes.cpp',
+           ['demos_sch.cpp','process.cpp','partition.cpp',
+            'slice.cpp','window.cpp','majorframe.cpp',
             'cgroup.cpp', 'timerfd.cpp','demossched.cpp'],
            include_directories : incdir,
            dependencies : libev_dep)

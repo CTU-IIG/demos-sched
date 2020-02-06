@@ -22,7 +22,10 @@
     /sys/fs/cgroup/cpuset/my_cgroup
     sudo chown -R <user> ...
     ```
-
+- create v2 cgroup
+    ```
+    mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup
+    ```
 
 - set notify_on_release
     ```

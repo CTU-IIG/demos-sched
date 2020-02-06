@@ -42,7 +42,7 @@ private:
     const std::string cpuset_p;
     const std::string unified_p;
 
-    void clean_cb(ev::stat &w, int revents);
+    void clean_cb(ev::io &w, int revents);
     void close_all_fd();
 
     static void write_pid(pid_t pid, int fd);

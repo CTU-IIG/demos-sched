@@ -1,4 +1,4 @@
-#include "classes.hpp"
+#include "majorframe.hpp"
 #include <list>
 #include <iostream>
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     // TEST data structures
     ev::default_loop loop;
     try {
-        std::list<Process> be_procs, sc_procs;
+        Processes be_procs, sc_procs;
         sc_procs.emplace_back("procA", std::vector<std::string>
                     {"src/infinite_proc","1000000","hello"}, 10ms,2ms);
         sc_procs.emplace_back("procB", std::vector<std::string>
@@ -58,22 +58,32 @@ int main(int argc, char *argv[])
         be_procs.emplace_back("procC", std::vector<std::string>
                     {"/bin/echo","best effort"}, 5ms,1ms);
 
-        Partition sc = Partition(std::move(sc_procs));
-        Partition be = Partition(std::move(be_procs));
+        Partition sc( std::move(sc_procs), "SC");
+        Partition be( std::move(be_procs), "BE");
 
-        Slice s = {.sc = sc, .be = be, .cpus = 1};
-        Window w1 = {.length = 1s, .slices = std::vector<Slice> {s} };
-        Window w2 = {.length = 500ms, .slices = std::vector<Slice> {s, s} };
-        MajorFrame frame = {.length = 60ms, .windows = std::vector<Window> {w1, w2} };
+        Slices slices;
+        slices.emplace_back( sc, be, Cpu(1) );
+
+        Windows windows;
+        windows.push_back( Window(slices, 20ms));
+
+        MajorFrame mf( windows );
+
+        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
+        proc.exec();
+        proc.unfreeze();
+        sleep(3);
+
 
         //std::cout<< frame.get_budgets()[0].count() <<std::endl;
         //std::cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<std::endl;
-        Process & proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
+        //Process & proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
         //proc_ptr->recompute_budget();
         //std::cout<<proc_ptr->get_actual_budget().count()<<std::endl;
-        proc_ptr.exec();
-        proc_ptr.start_timer(3s);
-        proc_ptr.unfreeze();
+
+        //proc_ptr.exec();
+        //proc_ptr.start_timer(3s);
+        //proc_ptr.unfreeze();
 
         // configure linux scheduler
         //struct sched_param sp = {.sched_priority = 99};
