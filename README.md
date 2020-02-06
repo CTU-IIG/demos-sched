@@ -7,6 +7,10 @@
 
 ## settings
 
+- set clone_children flag in cpuset
+    ```
+    sudo echo 1 > .../cpuset/cgroup.clone_children
+    ```
 - create freezer and cpuset cgroup and delegate it to the user
     ```
     mkdir /sys/fs/cgroup/freezer/my_cgroup
@@ -14,6 +18,8 @@
     /sys/fs/cgroup/cpuset/my_cgroup
     sudo chown -R <user> ...
     ```
+
+
 - set notify_on_release
     ```
     echo 1 > .../my_cgroup/notify_on_release
