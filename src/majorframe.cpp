@@ -5,13 +5,15 @@ MajorFrame::MajorFrame(ev::loop_ref loop, Windows &windows)
     , windows( windows )
     , current( this->windows.begin() )
     , timer(loop)
+    , sigint(loop)
 {
     timer.set(std::bind(&MajorFrame::timeout_cb, this));
+    sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
+    sigint.start(SIGINT);
 }
 
-MajorFrame::~MajorFrame()
+void MajorFrame::kill_all()
 {
-    std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
     for(Window &w : windows){
         for(Slice &s : w.slices){
             for(Process &p : s.sc.processes){
@@ -22,6 +24,12 @@ MajorFrame::~MajorFrame()
             }
         }
     }
+}
+
+MajorFrame::~MajorFrame()
+{
+    std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
+    kill_all();
     // wait for all cgroups to be removed
     loop.run();
 }
@@ -42,4 +50,10 @@ void MajorFrame::timeout_cb()
     // TODO do all window switching stuff
 
     std::cerr<< "window timeout" << std::endl;
+}
+
+void MajorFrame::sigint_cb(ev::sig &w, int revents)
+{
+    w.stop();
+    throw std::system_error(0, std::generic_category(), "demos-sched killed by signal");
 }

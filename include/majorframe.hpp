@@ -22,7 +22,10 @@ private:
     Windows &windows;
     Windows::iterator current;
     ev::timerfd timer;
+    ev::sig sigint;
     void timeout_cb();
+    void sigint_cb(ev::sig &w, int revents);
+    void kill_all();
 };
 
 #endif // MAJORFRAME_HPP
