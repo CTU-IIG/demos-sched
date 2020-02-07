@@ -10,6 +10,7 @@ include/timerfd.hpp
 include/window.hpp
 meson.build
 src/cgroup.cpp
+src/cgroup_notif_test.cpp
 src/cgrp.cpp
 src/demos_sch.cpp
 src/demossched.cpp

@@ -11,3 +11,7 @@ executable('demos_sch',
            include_directories : incdir,
            dependencies : libev_dep)
 executable('infinite_proc', 'infinite_proc.cpp')
+
+executable('cgroup_notif_test', 'cgroup_notif_test.cpp',
+           include_directories : incdir,
+           dependencies : libev_dep)
