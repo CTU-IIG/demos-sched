@@ -5,7 +5,7 @@
 #include <iostream>
 #include "demossched.hpp"
 
-ev::timerfd::timerfd() : io()
+ev::timerfd::timerfd(loop_ref loop) : io(loop)
 {
     // create timer
     // steady_clock == CLOCK_MONOTONIC

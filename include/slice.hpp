@@ -5,6 +5,7 @@
 #include "timerfd.hpp"
 #include "demossched.hpp"
 #include <bitset>
+#include <ev++.h>
 
 // maximum supported number of processors
 #define MAX_NPROC 8
@@ -15,7 +16,7 @@ typedef std::bitset<MAX_NPROC> Cpu;
 class Slice : protected DemosSched
 {
 public:
-    Slice(Partition &sc, Partition &be, Cpu cpus);
+    Slice(ev::loop_ref loop, Partition &sc, Partition &be, Cpu cpus);
 
     Partition &sc;
     Partition &be;

@@ -17,7 +17,7 @@
 class Process : protected DemosSched
 {
     public:
-        Process(std::string name,
+        Process(ev::loop_ref loop, std::string name,
                 std::vector<std::string> argv,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0) );
@@ -31,6 +31,8 @@ class Process : protected DemosSched
         void unfreeze();
         void recompute_budget();
         std::chrono::nanoseconds get_actual_budget();
+
+        void kill();
 
         // delete copy constructor
         Process(const Process&) = delete;

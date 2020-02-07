@@ -47,59 +47,52 @@ int main(int argc, char *argv[])
 
     // forks, pipes, exec, cgroups, ...
     
-    // TEST data structures
     ev::default_loop loop;
+    // TEST data structures
     try {
-        Partition sc("_SC"), be;
-        sc.add_process( "procA", std::vector<std::string>
+
+        Partition sc(loop,"_SC"), be(loop);
+        sc.add_process( loop, "procA", std::vector<std::string>
             {"src/infinite_proc","1000000","hello"}, 10ms,2ms );
-        sc.add_process( "procB", std::vector<std::string>
+        sc.add_process( loop, "procB", std::vector<std::string>
             {"/bin/echo","foo"}, 5ms,1ms );
-        be.add_process( "procA", std::vector<std::string>
+        //throw "test";
+        be.add_process( loop, "procA", std::vector<std::string>
             {"src/infinite_proc","1000000","hello"}, 10ms,2ms );
 
         Slices slices;
-        slices.emplace_back( sc, be, Cpu(1) );
+        slices.emplace_back(loop, sc, be, Cpu(1) );
 
         Windows windows;
-        windows.push_back( Window(slices, 20ms));
-
-        MajorFrame mf( windows );
+        windows.push_back( Window(loop, slices, 20ms));
+        //throw "test";
+        MajorFrame mf(loop, windows );
 
         Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
         proc.exec();
         proc.unfreeze();
-        sleep(3);
-
-
-        //std::cout<< frame.get_budgets()[0].count() <<std::endl;
-        //std::cout<< frame.windows[0].slices[0].sc.get_budgets()[0].count() <<std::endl;
-        //Process & proc_ptr = frame.windows[0].slices[0].sc.get_current_proc();
-        //proc_ptr->recompute_budget();
-        //std::cout<<proc_ptr->get_actual_budget().count()<<std::endl;
-
-        //proc_ptr.exec();
-        //proc_ptr.start_timer(3s);
-        //proc_ptr.unfreeze();
 
         // configure linux scheduler
         //struct sched_param sp = {.sched_priority = 99};
         //if (sched_setscheduler( 0, SCHED_FIFO, &sp ) == -1)
             //kill_procs_and_exit("sched_setscheduler");
-    //sys/fs/cgroup/freezer
-        // how to use exception here?
-        //try{
-            //int ret = sched_setscheduler( 0, SCHED_FIFO, &sp );
-            //std::cout<<ret<<std::endl;
-        //} catch (int e){
-            //kill_procs_and_exit("sched_setscheduler");
-        //}
 
-        loop.run(0);
-    } catch (const char* msg) {
-        std::cerr << msg << std::endl;
-        loop.break_loop(ev::ALL);
+        //throw "test";
+        loop.run();
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+
+    } catch (...) {
+        std::cerr << "Unknown exception" << std::endl;
     }
+
+    //mf.kill_all();
+    // Wait for all processes to terminate
+    //loop.run(); // terminate imediately if there is no watchers
+
+    // Wait for all processes to terminate
+//    if (num_populated > 0)
+//        loop.run();
 
     
     //delete proc_ptr;

@@ -2,7 +2,8 @@
 #include <system_error>
 #include <functional>
 
-Process::Process(std::string name,
+Process::Process(ev::loop_ref loop,
+        std::string name,
         std::vector<std::string> argv,
         std::chrono::nanoseconds budget,
         std::chrono::nanoseconds budget_jitter )
@@ -11,7 +12,7 @@ Process::Process(std::string name,
     budget(budget),
     budget_jitter(budget_jitter),
     actual_budget(budget),
-    cgroup(name)
+    cgroup(loop, name)
 {
 
 }
@@ -35,6 +36,11 @@ void Process::recompute_budget()
 std::chrono::nanoseconds Process::get_actual_budget()
 {
     return actual_budget;
+}
+
+void Process::kill()
+{
+    cgroup.kill_all();
 }
 
 void Process::exec()

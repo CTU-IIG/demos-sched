@@ -22,7 +22,7 @@ namespace ev {
 class timerfd : private io
 {
 public:
-    timerfd();
+    timerfd(ev::loop_ref loop);
     void set(std::function<void()> callback);
     void start(std::chrono::steady_clock::time_point timeout);
     ~timerfd();

@@ -10,8 +10,8 @@ int Partition::cgrp_count = 0;
 //    //std::cerr << __PRETTY_FUNCTION__ << this << std::endl;
 //}
 
-Partition::Partition(std::string partition_name)
-    : cgroup( std::to_string(cgrp_count) + partition_name )
+Partition::Partition( ev::loop_ref loop, std::string partition_name)
+    : cgroup( loop, std::to_string(cgrp_count) + partition_name )
     , cgrp_name( std::to_string(cgrp_count) + partition_name )
 {
     cgrp_count++;
@@ -24,12 +24,13 @@ Partition::~Partition()
     processes.clear();
 }
 
-void Partition::add_process(std::string name,
+void Partition::add_process(ev::loop_ref loop,
+                            std::string name,
                             std::vector<std::string> argv,
                             std::chrono::nanoseconds budget,
                             std::chrono::nanoseconds budget_jitter)
 {
-    processes.emplace_back( cgrp_name + "/" + name, argv, budget, budget_jitter);
+    processes.emplace_back( loop, cgrp_name + "/" + name, argv, budget, budget_jitter);
     current = processes.begin();
 }
 

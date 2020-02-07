@@ -10,10 +10,11 @@ int Cgroup::open_fd(std::string path, int attr = O_RDWR | O_NONBLOCK )
     return CHECK( open( path.c_str(), attr) );
 }
 
-Cgroup::Cgroup(std::string name)
+Cgroup::Cgroup(ev::loop_ref loop, std::string name)
     : freezer_p(freezer_path + name + "/")
     , cpuset_p(cpuset_path + name + "/")
     , unified_p(unified_path + name + "/")
+    , procs_w(loop)
 {
     //std::cerr<< __PRETTY_FUNCTION__ << "@" << this << " " << freezer_p <<std::endl;
     // create new freezer cgroup
@@ -33,28 +34,28 @@ Cgroup::Cgroup(std::string name)
     // open file descriptor for processes in unified cgroup
     fd_uni_procs = open_fd( unified_p + "cgroup.procs");
     // open file descriptor for montoring cleanup
-    fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY | O_NONBLOCK);
+    fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY);
 
-//    ev::io procs_w;
-//    procs_w.set(fd_uni_events, ev::EXCEPTION );
-//    procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
-//    procs_w.start();
+    procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
+    procs_w.start(fd_uni_events, ev::EXCEPTION);
 
 }
 
-void Cgroup::delete_cgroup(std::string path)
+void Cgroup::delete_cgroup()
 {
-    // delete cgroup
-    CHECK( rmdir( path.c_str()) );
+    // delete cgroups
+    CHECK( rmdir( freezer_p.c_str()) );
+    CHECK( rmdir( cpuset_p.c_str()) );
+    CHECK( rmdir( unified_p.c_str()) );
+    populated = false;
+    deleted = true;
+
 }
 
-Cgroup::~Cgroup()
+void Cgroup::kill_all()
 {
-    std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
-    if( fd_freezer_procs == -1 ){
-        err(1,"wrong call of destructor");
-    }
-
+    if(!populated)
+        return;
     this->freeze();
 
     // read pids from fd
@@ -75,16 +76,6 @@ Cgroup::~Cgroup()
     free(line);
     fclose(f);
 
-    // empty cgroup, can be removed
-    if( pids.size() == 0){
-        // delete cgroups
-        delete_cgroup( freezer_p );
-        delete_cgroup( cpuset_p );
-        delete_cgroup( unified_p );
-        close_all_fd();
-        return;
-    }
-
     // kill all processes in cgroup
     for( pid_t pid : pids ){
         std::cerr<<"killing process "<<pid<<std::endl;
@@ -92,18 +83,39 @@ Cgroup::~Cgroup()
     }
 
     this->unfreeze();
-    // cgroup deleted by release_agent when empty
+}
 
-    sleep(1);
-//    //delete cgroup, TODO cpuset
-//    if( rmdir( (freezer_path).c_str()) == -1)
-//        err(1,"rmdir, need to delete cgroups manually");
+Cgroup::~Cgroup()
+{
+    std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
+    if(!deleted)
+        delete_cgroup();
     close_all_fd();
 }
 
 void Cgroup::clean_cb (ev::io &w, int revents)
 {
-    std::cerr<<"tu"<<std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
+    char buf[100];
+    CHECK( pread(w.fd, buf, sizeof (buf) - 1, 0) );
+    std::cerr<< buf<<std::endl;
+
+    bool populated = (std::string(buf).find("populated 1") != std::string::npos);
+    if(!populated){
+        w.stop();
+        delete_cgroup();
+    }
+
+//    w.stop();
+//    bool populate_new = ...;
+//    if (!populated && populate_new)
+//       populate_cnt++;
+//    else if (populated && !populate_new) {
+//        poplated_cnt--;
+//        if (populted_cnt == 0)
+//            loop.break();
+//    }
+    // demos_sch.cgroup_clean(this);
 }
 
 void Cgroup::write_pid(pid_t pid, int fd)
@@ -119,11 +131,12 @@ void Cgroup::add_process(pid_t pid)
     write_pid(pid, fd_freezer_procs);
     write_pid(pid, fd_cpuset_procs);
     write_pid(pid, fd_uni_procs);
+    populated = true;
 }
 
 void Cgroup::freeze()
 {
-    const char buf[7] = "FROZEN";
+    const char buf[] = "FROZEN";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
 }
 
@@ -141,4 +154,5 @@ void Cgroup::close_all_fd()
     close(fd_uni_events);
     close(fd_cpuset_procs);
     close(fd_cpuset_cpus);
+
 }
