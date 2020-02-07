@@ -30,6 +30,7 @@ void Partition::add_process(std::string name,
                             std::chrono::nanoseconds budget_jitter)
 {
     processes.emplace_back( cgrp_name + "/" + name, argv, budget, budget_jitter);
+    current = processes.begin();
 }
 
 Process & Partition::get_current_proc()

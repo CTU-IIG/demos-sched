@@ -66,10 +66,10 @@ int main(int argc, char *argv[])
 
         MajorFrame mf( windows );
 
-//        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
-//        proc.exec();
-//        proc.unfreeze();
-//        sleep(3);
+        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
+        proc.exec();
+        proc.unfreeze();
+        sleep(3);
 
 
         //std::cout<< frame.get_budgets()[0].count() <<std::endl;
