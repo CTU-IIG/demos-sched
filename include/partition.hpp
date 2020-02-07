@@ -14,6 +14,7 @@ class Partition : protected DemosSched
     public:
         //Partition( Processes &&processes, std::string cgroup_name );
         Partition( std::string partition_name = "" );
+        ~Partition();
 
         Process & get_current_proc();
         // cyclic queue

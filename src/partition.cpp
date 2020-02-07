@@ -17,6 +17,13 @@ Partition::Partition(std::string partition_name)
     cgrp_count++;
 }
 
+Partition::~Partition()
+{
+    //std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << cgrp_name <<std::endl;
+    // remove process cgroups first
+    processes.clear();
+}
+
 void Partition::add_process(std::string name,
                             std::vector<std::string> argv,
                             std::chrono::nanoseconds budget,
