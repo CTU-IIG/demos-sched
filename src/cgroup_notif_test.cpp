@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
         CHECK(execlp("sleep", "sleep", "1", 0));
     }
 
-    ofstream((cgroup + "/cgroup.procs")) << to_string(pid);
+    ofstream(cgroup + "/cgroup.procs") << pid;
 
     cg_events.set<io_cb>();
     cg_events.start(CHECK(open((cgroup + "/cgroup.events").c_str(), O_RDONLY)), ev::EXCEPTION);
