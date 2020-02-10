@@ -25,6 +25,7 @@ public:
     timerfd(ev::loop_ref loop);
     void set(std::function<void()> callback);
     void start(std::chrono::steady_clock::time_point timeout);
+    using io::stop;
     ~timerfd();
 private:
     std::function<void()> callback;
