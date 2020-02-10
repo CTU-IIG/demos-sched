@@ -27,11 +27,3 @@
     mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup
     ```
 
-- set notify_on_release
-    ```
-    echo 1 > .../my_cgroup/notify_on_release
-    ```
-- set release_agent script
-    ```
-    sudo echo "<demos-sched folder>/src/release_agent.sh" > /sys/fs/cgroup/freezer/release_agent
-    ```

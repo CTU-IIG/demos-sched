@@ -17,27 +17,37 @@ Cgroup::Cgroup(ev::loop_ref loop, std::string name)
     , procs_w(loop)
 {
     //std::cerr<< __PRETTY_FUNCTION__ << "@" << this << " " << freezer_p <<std::endl;
-    // create new freezer cgroup
-    create_cgroup( freezer_p);
-    // create new cpuset cgroup
-    create_cgroup( cpuset_p);
-    // create unified cgroup for .events
-    create_cgroup( unified_p);
-    // open file descriptor for processes in freezer
-    fd_freezer_procs = open_fd( freezer_p + "cgroup.procs");
-    // open file descriptor for (un)freezing cgroup
-    fd_freezer_state = open_fd( freezer_p + "freezer.state");
-    // open file descriptor for processes in cpuset
-    fd_cpuset_procs = open_fd( cpuset_p + "cgroup.procs");
-    // open file descriptor for cpuset
-    fd_cpuset_cpus = open_fd( cpuset_p + "cpuset.cpus");
-    // open file descriptor for processes in unified cgroup
-    fd_uni_procs = open_fd( unified_p + "cgroup.procs");
-    // open file descriptor for montoring cleanup
-    fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY);
 
-    procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
-    procs_w.start(fd_uni_events, ev::EXCEPTION);
+    try{
+        // create new freezer cgroup
+        create_cgroup( freezer_p);
+        // create new cpuset cgroup
+        create_cgroup( cpuset_p);
+        // create unified cgroup for .events
+        create_cgroup( unified_p);
+        // open file descriptor for processes in freezer
+        fd_freezer_procs = open_fd( freezer_p + "cgroup.procs");
+        // open file descriptor for (un)freezing cgroup
+        fd_freezer_state = open_fd( freezer_p + "freezer.state");
+        // open file descriptor for processes in cpuset
+        fd_cpuset_procs = open_fd( cpuset_p + "cgroup.procs");
+        // open file descriptor for cpuset
+        fd_cpuset_cpus = open_fd( cpuset_p + "cpuset.cpus");
+        // open file descriptor for processes in unified cgroup
+        fd_uni_procs = open_fd( unified_p + "cgroup.procs");
+        // open file descriptor for montoring cleanup
+        fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY);
+
+        procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
+        procs_w.start(fd_uni_events, ev::EXCEPTION);
+    } catch (const std::exception& e) {
+        std::cerr << "probably bad cgroup setting?" << std::endl;
+        delete_cgroup();
+        close_all_fd();
+        throw e;
+    }
+
+    //freeze();
 
 }
 
@@ -56,7 +66,7 @@ void Cgroup::kill_all()
 {
     if(!populated)
         return;
-    this->freeze();
+    freeze();
 
     // read pids from fd
     std::vector<pid_t> pids;
@@ -82,7 +92,7 @@ void Cgroup::kill_all()
         CHECK( kill(pid, SIGKILL) );
     }
 
-    this->unfreeze();
+    unfreeze();
 }
 
 Cgroup::~Cgroup()
@@ -128,20 +138,28 @@ void Cgroup::write_pid(pid_t pid, int fd)
 
 void Cgroup::add_process(pid_t pid)
 {
-    write_pid(pid, fd_freezer_procs);
-    write_pid(pid, fd_cpuset_procs);
-    write_pid(pid, fd_uni_procs);
-    populated = true;
+    try{
+        write_pid(pid, fd_freezer_procs);
+        write_pid(pid, fd_cpuset_procs);
+        write_pid(pid, fd_uni_procs);
+        populated = true;
+    } catch (const std::exception& e) {
+        std::cerr << "probably bad cgroup setting?" << std::endl;
+        std::cerr << e.what() << std::endl;
+        throw e;
+    }
 }
 
 void Cgroup::freeze()
 {
+    //std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
     const char buf[] = "FROZEN";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
 }
 
 void Cgroup::unfreeze()
 {
+    //std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
     const char buf[] = "THAWED";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
 }

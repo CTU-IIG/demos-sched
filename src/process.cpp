@@ -45,10 +45,11 @@ void Process::kill()
 
 void Process::exec()
 {
+    std::cerr<< __PRETTY_FUNCTION__ << " " + name <<std::endl;
     //TODO pipe
 
     // freeze cgroup
-    cgroup.freeze();
+    freeze();
 
 
     // cast string to char*
@@ -69,7 +70,7 @@ void Process::exec()
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        using namespace std;
+        //using namespace std;
         //cerr << "PID:"+to_string(getpid())+ " fork -> PID:"+to_string(pid) << endl;
         int foo;
         // add process to cgroup (echo PID > cgroup.procs)
