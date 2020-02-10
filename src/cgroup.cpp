@@ -88,7 +88,9 @@ void Cgroup::kill_all()
 
     // kill all processes in cgroup
     for( pid_t pid : pids ){
+#ifdef VERBOSE
         std::cerr<<"killing process "<<pid<<std::endl;
+#endif
         CHECK( kill(pid, SIGKILL) );
     }
 
@@ -97,7 +99,9 @@ void Cgroup::kill_all()
 
 Cgroup::~Cgroup()
 {
+#ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
+#endif
     if(!deleted)
         delete_cgroup();
     close_all_fd();
@@ -105,10 +109,14 @@ Cgroup::~Cgroup()
 
 void Cgroup::clean_cb (ev::io &w, int revents)
 {
+#ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
+#endif
     char buf[100];
     CHECK( pread(w.fd, buf, sizeof (buf) - 1, 0) );
+#ifdef VERBOSE
     std::cerr<< buf<<std::endl;
+#endif
 
     bool populated = (std::string(buf).find("populated 1") != std::string::npos);
     if(!populated){
@@ -152,14 +160,18 @@ void Cgroup::add_process(pid_t pid)
 
 void Cgroup::freeze()
 {
+#ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
+#endif
     const char buf[] = "FROZEN";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
 }
 
 void Cgroup::unfreeze()
 {
+#ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
+#endif
     const char buf[] = "THAWED";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
 }

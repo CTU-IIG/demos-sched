@@ -58,8 +58,9 @@ void Slice::update_timeout(std::chrono::steady_clock::time_point actual_time)
 
 void Slice::timeout_cb()
 {
+#ifdef VERBOSE
     std::cerr << __PRETTY_FUNCTION__ << std::endl;
-    std::cerr << "current proc " << current_proc << std::endl;
+#endif
 
     current_proc->freeze();
     current_proc->mark_completed();

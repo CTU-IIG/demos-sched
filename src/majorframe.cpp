@@ -28,7 +28,9 @@ void MajorFrame::kill_all()
 
 MajorFrame::~MajorFrame()
 {
+#ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
+#endif
     kill_all();
     // wait for all cgroups to be removed
     loop.run();

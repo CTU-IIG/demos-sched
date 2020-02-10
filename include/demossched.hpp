@@ -7,6 +7,8 @@
 
 #define CHECK(expr) ({ auto ret = (expr); if (ret == -1) throw std::system_error(errno, std::generic_category(), std::string(__PRETTY_FUNCTION__) + ": " #expr); ret; })
 
+#define VERBOSE
+
 class DemosSched
 {
 public:

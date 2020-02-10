@@ -58,7 +58,9 @@ void Process::kill()
 
 void Process::exec()
 {
+#ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ << " " + name <<std::endl;
+#endif
     //TODO pipe
 
     // freeze cgroup
