@@ -14,7 +14,7 @@ Process::Process(ev::loop_ref loop,
     budget_jitter(budget_jitter),
     actual_budget(budget),
     continuous(continuous),
-    cgroup(loop, name)
+    cgroup(loop, name, true)
 {
     exec();
 }

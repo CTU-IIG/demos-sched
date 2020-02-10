@@ -10,7 +10,7 @@ int Cgroup::open_fd(std::string path, int attr = O_RDWR | O_NONBLOCK )
     return CHECK( open( path.c_str(), attr) );
 }
 
-Cgroup::Cgroup(ev::loop_ref loop, std::string name)
+Cgroup::Cgroup(ev::loop_ref loop, std::string name, bool process_cgrp)
     : freezer_p(freezer_path + name + "/")
     , cpuset_p(cpuset_path + name + "/")
     , unified_p(unified_path + name + "/")
@@ -38,16 +38,18 @@ Cgroup::Cgroup(ev::loop_ref loop, std::string name)
         // open file descriptor for montoring cleanup
         fd_uni_events = open_fd( unified_p + "cgroup.events", O_RDONLY);
 
-        procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
-        procs_w.start(fd_uni_events, ev::EXCEPTION);
+        // assign clean_cb just for processes
+        // partition cgroup delete manually for right order of deleting
+        if(process_cgrp){
+            procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
+            procs_w.start(fd_uni_events, ev::EXCEPTION);
+        }
     } catch (const std::exception& e) {
         std::cerr << "probably bad cgroup setting?" << std::endl;
         delete_cgroup();
         close_all_fd();
         throw e;
     }
-
-    //freeze();
 
 }
 
@@ -59,7 +61,6 @@ void Cgroup::delete_cgroup()
     CHECK( rmdir( unified_p.c_str()) );
     populated = false;
     deleted = true;
-
 }
 
 void Cgroup::kill_all()
@@ -109,17 +110,14 @@ Cgroup::~Cgroup()
 
 void Cgroup::clean_cb (ev::io &w, int revents)
 {
-#ifdef VERBOSE
-    std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
-#endif
     char buf[100];
     CHECK( pread(w.fd, buf, sizeof (buf) - 1, 0) );
-#ifdef VERBOSE
-    std::cerr<< buf<<std::endl;
-#endif
 
     bool populated = (std::string(buf).find("populated 1") != std::string::npos);
     if(!populated){
+#ifdef VERBOSE
+        std::cerr<< __PRETTY_FUNCTION__ << " " << freezer_p <<std::endl;
+#endif
         w.stop();
         delete_cgroup();
     }

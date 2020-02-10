@@ -49,6 +49,7 @@ void Slice::stop()
     } else if ( !be.is_empty() ) {
         current_proc->freeze();
     }
+    timer.stop();
 }
 
 void Slice::update_timeout(std::chrono::steady_clock::time_point actual_time)

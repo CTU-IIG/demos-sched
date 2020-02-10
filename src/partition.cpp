@@ -11,7 +11,7 @@ int Partition::cgrp_count = 0;
 //}
 
 Partition::Partition( ev::loop_ref loop, std::string partition_name)
-    : cgroup( loop, std::to_string(cgrp_count) + partition_name )
+    : cgroup( loop, std::to_string(cgrp_count) + partition_name, false )
     , cgrp_name( std::to_string(cgrp_count) + partition_name )
 {
     cgrp_count++;
@@ -69,6 +69,7 @@ bool Partition::move_to_next_unfinished_proc()
     done = true;
     return false;
 }
+
 
 void Partition::freeze()
 {

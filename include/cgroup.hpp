@@ -21,7 +21,7 @@
 class Cgroup : protected DemosSched
 {
 public:
-    Cgroup(ev::loop_ref loop, std::string name);
+    Cgroup(ev::loop_ref loop, std::string name, bool process_cgrp);
     ~Cgroup();
     void add_process(pid_t pid);
     void freeze();
@@ -48,9 +48,8 @@ private:
 
     void clean_cb(ev::io &w, int revents);
     void close_all_fd();
-
-    void write_pid(pid_t pid, int fd);
     void delete_cgroup();
+    void write_pid(pid_t pid, int fd);
     int open_fd(std::string path, int attr);
 };
 

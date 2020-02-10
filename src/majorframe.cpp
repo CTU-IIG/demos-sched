@@ -16,6 +16,7 @@ void MajorFrame::kill_all()
 {
     for(Window &w : windows){
         for(Slice &s : w.slices){
+            s.stop(); // unregister timer
             for(Process &p : s.sc.processes){
                 p.kill();
             }
@@ -32,8 +33,9 @@ MajorFrame::~MajorFrame()
     std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
 #endif
     kill_all();
-    // wait for all cgroups to be removed
+    // wait for all process cgroups to be removed
     loop.run();
+
 }
 
 void MajorFrame::move_to_next_window()
@@ -57,5 +59,6 @@ void MajorFrame::timeout_cb()
 void MajorFrame::sigint_cb(ev::sig &w, int revents)
 {
     w.stop();
+    //loop.break_loop();
     throw std::system_error(0, std::generic_category(), "demos-sched killed by signal");
 }
