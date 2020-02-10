@@ -152,14 +152,14 @@ void Cgroup::add_process(pid_t pid)
 
 void Cgroup::freeze()
 {
-    //std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
     const char buf[] = "FROZEN";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
 }
 
 void Cgroup::unfreeze()
 {
-    //std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << " " + freezer_p << std::endl;
     const char buf[] = "THAWED";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
 }

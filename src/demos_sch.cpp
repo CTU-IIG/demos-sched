@@ -53,24 +53,26 @@ int main(int argc, char *argv[])
 
         Partition sc(loop,"_SC"), be(loop);
         sc.add_process( loop, "procA", std::vector<std::string>
-            {"src/infinite_proc","1000000","hello"}, 10ms,2ms );
+            {"src/infinite_proc","200000","scA"}, 1s );
         sc.add_process( loop, "procB", std::vector<std::string>
-            {"/bin/echo","foo"}, 5ms,1ms );
+            {"src/infinite_proc","200000","scB"}, 2s );
         //throw "test";
-        be.add_process( loop, "procA", std::vector<std::string>
-            {"src/infinite_proc","1000000","hello"}, 10ms,2ms );
+        be.add_process( loop, "procC", std::vector<std::string>
+            {"src/infinite_proc","200000","beC"}, 1s );
 
         Slices slices;
         slices.emplace_back(loop, sc, be, Cpu(1) );
 
         Windows windows;
-        windows.push_back( Window(loop, slices, 20ms));
+        windows.push_back( Window(loop, slices, 4s));
         //throw "test";
         MajorFrame mf(loop, windows );
 
-        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
-        proc.exec();
-        proc.unfreeze();
+        slices.begin()->start();
+
+//        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
+//        proc.exec();
+//        proc.unfreeze();
 
         // configure linux scheduler
         //struct sched_param sp = {.sched_priority = 99};

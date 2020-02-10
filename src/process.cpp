@@ -3,18 +3,20 @@
 #include <functional>
 
 Process::Process(ev::loop_ref loop,
-        std::string name,
-        std::vector<std::string> argv,
-        std::chrono::nanoseconds budget,
-        std::chrono::nanoseconds budget_jitter )
+                 std::string name,
+                 std::vector<std::string> argv,
+                 std::chrono::nanoseconds budget,
+                 std::chrono::nanoseconds budget_jitter,
+                 bool continuous)
     : name(name),
     argv(argv),
     budget(budget),
     budget_jitter(budget_jitter),
     actual_budget(budget),
+    continuous(continuous),
     cgroup(loop, name)
 {
-
+    exec();
 }
 
 // testing
@@ -25,6 +27,17 @@ void Process::start_timer(std::chrono::nanoseconds timeout)
 bool Process::is_completed()
 {
     return completed;
+}
+
+void Process::mark_completed()
+{
+    if( !continuous )
+        completed = true;
+}
+
+void Process::mark_uncompleted()
+{
+    completed = false;
 }
 
 void Process::recompute_budget()

@@ -17,8 +17,8 @@ public:
     ~Partition();
 
     Process & get_current_proc();
-    // cyclic queue
-    void move_to_next_proc();
+
+    void freeze();
 
     // TODO somehow call Process() without copying
     void add_process(ev::loop_ref loop,
@@ -28,11 +28,21 @@ public:
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
     static int cgrp_count;
 
+    bool is_done();
+    bool is_empty();
     Processes processes;
+
+    // return false if there is none
+    bool move_to_next_unfinished_proc();
 private:
+    bool done = false;
+    bool empty = true;
     Processes::iterator current;
     Cgroup cgroup;
     std::string cgrp_name;
+
+    // cyclic queue
+    void move_to_next_proc();
 
     // counter for created partitions to have unique cgroup names
     //static int cgrp_count;

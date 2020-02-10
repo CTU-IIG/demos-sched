@@ -31,7 +31,20 @@ void Partition::add_process(ev::loop_ref loop,
                             std::chrono::nanoseconds budget_jitter)
 {
     processes.emplace_back( loop, cgrp_name + "/" + name, argv, budget, budget_jitter);
-    current = processes.begin();
+
+    // call of move_to_next_proc first
+    current = processes.end();
+    empty = false;
+}
+
+bool Partition::is_done()
+{
+    return done;
+}
+
+bool Partition::is_empty()
+{
+    return empty;
 }
 
 Process & Partition::get_current_proc()
@@ -45,3 +58,20 @@ void Partition::move_to_next_proc()
     if( ++current == processes.end() )
         current = processes.begin();
 }
+
+bool Partition::move_to_next_unfinished_proc()
+{
+    for(Process &p : processes) {
+        move_to_next_proc();
+        if( !current->is_completed() )
+            return true;
+    }
+    done = true;
+    return false;
+}
+
+void Partition::freeze()
+{
+    cgroup.freeze();
+}
+

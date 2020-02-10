@@ -43,7 +43,7 @@ void ev::timerfd::ev_callback(ev::io &w, int revents) {
     if (EV_ERROR & revents)
         err(1,"ev cb: got invalid event");
 
-    std::cout << "timeout " << std::endl;
+    //std::cout << "timeout " << std::endl;
     // read to have empty fd
     uint64_t buf;
     CHECK(::read(w.fd, &buf, sizeof(buf)));
