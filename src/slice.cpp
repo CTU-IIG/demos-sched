@@ -35,7 +35,7 @@ void Slice::start()
         timer.start(timeout);
     } else if ( !be.is_empty() ) {
         be.move_to_next_unfinished_proc();
-        current_proc = &sc.get_current_proc();
+        current_proc = &be.get_current_proc();
         current_proc->unfreeze();
         timeout += current_proc->get_actual_budget();
         timer.start(timeout);
@@ -44,10 +44,12 @@ void Slice::start()
 
 void Slice::stop()
 {
-    if( !sc.is_empty() ){
-        current_proc->freeze();
-    } else if ( !be.is_empty() ) {
-        current_proc->freeze();
+    if(current_proc){
+        if( !sc.is_empty() ){
+            current_proc->freeze();
+        } else if ( !be.is_empty() ) {
+            current_proc->freeze();
+        }
     }
     timer.stop();
 }

@@ -51,24 +51,30 @@ int main(int argc, char *argv[])
     // TEST data structures
     try {
 
-        Partition sc(loop,"_SC"), be(loop);
-        sc.add_process( loop, "procA", std::vector<std::string>
+        Partition sc1(loop,"_SC1"), be1(loop,"_BE1");
+        sc1.add_process( loop, "procA", std::vector<std::string>
             {"src/infinite_proc","200000","scA"}, 1s );
-        sc.add_process( loop, "procB", std::vector<std::string>
-            {"src/infinite_proc","200000","scB"}, 2s );
-        //throw "test";
-        be.add_process( loop, "procC", std::vector<std::string>
-            {"src/infinite_proc","200000","beC"}, 1s );
+//        sc1.add_process( loop, "procB", std::vector<std::string>
+//            {"src/infinite_proc","200000","scB"}, 1s );
+//        //throw "test";
+//        be1.add_process( loop, "procC", std::vector<std::string>
+//            {"src/infinite_proc","200000","beC"}, 1s );
 
-        Slices slices;
-        slices.emplace_back(loop, sc, be, Cpu(1) );
+        Partition sc2(loop, "_SC2"), be2(loop,"_BE2");
+        be2.add_process( loop, "procD", std::vector<std::string>
+            {"src/infinite_proc","200000","beD"}, 1s );
+
+        Slices slices1, slices2;
+        slices1.emplace_back(loop, sc1, be1, Cpu(1) );
+        slices2.emplace_back(loop, sc2, be2, Cpu(1) );
 
         Windows windows;
-        windows.push_back( Window(loop, slices, 4s));
+        windows.push_back( Window(loop, slices1, 3s));
+        windows.push_back( Window(loop, slices2, 1s));
         //throw "test";
         MajorFrame mf(loop, windows );
 
-        slices.begin()->start();
+        slices2.begin()->start();
 
 //        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
 //        proc.exec();

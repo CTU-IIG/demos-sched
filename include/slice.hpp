@@ -26,7 +26,7 @@ public:
     void stop();
     void update_timeout(std::chrono::steady_clock::time_point actual_time);
 private:
-    Process *current_proc;
+    Process *current_proc = nullptr;
     std::chrono::steady_clock::time_point timeout;
     ev::timerfd timer;
     void timeout_cb();
