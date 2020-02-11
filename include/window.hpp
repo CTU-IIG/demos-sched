@@ -16,6 +16,10 @@ public:
 
     std::chrono::nanoseconds length;
     Slices &slices;
+
+    void start();
+    void stop();
+    void update_timeout(std::chrono::steady_clock::time_point actual_time);
 private:
     ev::loop_ref loop;
 };

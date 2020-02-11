@@ -19,6 +19,7 @@ public:
     Process & get_current_proc();
 
     void freeze();
+    void unfreeze();
 
     // TODO somehow call Process() without copying
     void add_process(ev::loop_ref loop,
@@ -34,6 +35,7 @@ public:
 
     // return false if there is none
     bool move_to_next_unfinished_proc();
+    void clear_done_flag();
 private:
     bool done = false;
     bool empty = true;

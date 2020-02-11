@@ -26,6 +26,11 @@ void Slice::start()
         p.mark_uncompleted();
     for(Process &p : be.processes)
         p.mark_uncompleted();
+    sc.clear_done_flag();
+    be.clear_done_flag();
+
+    sc.unfreeze();
+    be.unfreeze();
 
     if( !sc.is_empty() ){
         sc.move_to_next_unfinished_proc();
@@ -52,6 +57,8 @@ void Slice::stop()
         }
     }
     timer.stop();
+    sc.freeze();
+    be.freeze();
 }
 
 void Slice::update_timeout(std::chrono::steady_clock::time_point actual_time)

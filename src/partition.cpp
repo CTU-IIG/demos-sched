@@ -35,11 +35,17 @@ void Partition::add_process(ev::loop_ref loop,
     // call of move_to_next_proc first
     current = processes.end();
     empty = false;
+    freeze();
 }
 
 bool Partition::is_done()
 {
     return done;
+}
+
+void Partition::clear_done_flag()
+{
+    done = false;
 }
 
 bool Partition::is_empty()
@@ -74,5 +80,10 @@ bool Partition::move_to_next_unfinished_proc()
 void Partition::freeze()
 {
     cgroup.freeze();
+}
+
+void Partition::unfreeze()
+{
+    cgroup.unfreeze();
 }
 

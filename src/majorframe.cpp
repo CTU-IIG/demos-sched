@@ -6,6 +6,7 @@ MajorFrame::MajorFrame(ev::loop_ref loop, Windows &windows)
     , current( this->windows.begin() )
     , timer(loop)
     , sigint(loop)
+    , timeout( start_time )
 {
     timer.set(std::bind(&MajorFrame::timeout_cb, this));
     sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
@@ -23,6 +24,8 @@ void MajorFrame::kill_all()
             for(Process &p : s.be.processes){
                 p.kill();
             }
+            s.sc.unfreeze();
+            s.be.unfreeze();
         }
     }
 }
@@ -32,6 +35,7 @@ MajorFrame::~MajorFrame()
 #ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
 #endif
+    timer.stop();
     kill_all();
     // wait for all process cgroups to be removed
     loop.run();
@@ -49,11 +53,32 @@ Window &MajorFrame::get_current_window()
     return *current;
 }
 
+void MajorFrame::start()
+{
+    current->update_timeout(timeout);
+    current->start();
+    timeout += current->length;
+    timer.start(timeout);
+}
+
+void MajorFrame::stop()
+{
+    current->stop();
+}
+
 void MajorFrame::timeout_cb()
 {
     // TODO do all window switching stuff
+#ifdef VERBOSE
+    std::cerr << __PRETTY_FUNCTION__ << std::endl;
+#endif
 
-    std::cerr<< "window timeout" << std::endl;
+    current->stop();
+    move_to_next_window();
+    current->update_timeout(timeout);
+    current->start();
+    timeout += current->length;
+    timer.start(timeout);
 }
 
 void MajorFrame::sigint_cb(ev::sig &w, int revents)

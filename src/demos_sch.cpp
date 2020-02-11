@@ -53,16 +53,16 @@ int main(int argc, char *argv[])
 
         Partition sc1(loop,"_SC1"), be1(loop,"_BE1");
         sc1.add_process( loop, "procA", std::vector<std::string>
-            {"src/infinite_proc","200000","scA"}, 1s );
-//        sc1.add_process( loop, "procB", std::vector<std::string>
-//            {"src/infinite_proc","200000","scB"}, 1s );
-//        //throw "test";
-//        be1.add_process( loop, "procC", std::vector<std::string>
-//            {"src/infinite_proc","200000","beC"}, 1s );
+            {"src/infinite_proc","200000","sc1_A"}, 1s );
+        sc1.add_process( loop, "procB", std::vector<std::string>
+            {"src/infinite_proc","200000","sc1_B"}, 1s );
+        //throw "test";
+        be1.add_process( loop, "procC", std::vector<std::string>
+            {"src/infinite_proc","200000","be1_A"}, 1s );
 
         Partition sc2(loop, "_SC2"), be2(loop,"_BE2");
         be2.add_process( loop, "procD", std::vector<std::string>
-            {"src/infinite_proc","200000","beD"}, 1s );
+            {"src/infinite_proc","200000","be2_A"}, 1s );
 
         Slices slices1, slices2;
         slices1.emplace_back(loop, sc1, be1, Cpu(1) );
@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
         //throw "test";
         MajorFrame mf(loop, windows );
 
-        slices2.begin()->start();
+        //slices2.begin()->start();
+        mf.start();
 
 //        Process &proc = mf.get_current_window().slices.front().sc.get_current_proc();
 //        proc.exec();
