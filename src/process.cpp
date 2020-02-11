@@ -3,25 +3,22 @@
 #include <functional>
 
 Process::Process(ev::loop_ref loop,
-                 std::string name,
+                 std::string partition_cgrp_name,
                  std::vector<std::string> argv,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter,
                  bool continuous)
-    : name(name),
-    argv(argv),
-    budget(budget),
-    budget_jitter(budget_jitter),
-    actual_budget(budget),
-    continuous(continuous),
-    cgroup(loop, name, true)
+    : partition_cgrp_name(partition_cgrp_name)
+    , argv(argv)
+    , budget(budget)
+    , budget_jitter(budget_jitter)
+    , actual_budget(budget)
+    , continuous(continuous)
+    //, cgroup(loop, true, argv[0], partition_cgrp_name)
+    // TODO regex to cut argv[0] at "/"
+    , cgroup(loop, true, "test", partition_cgrp_name)
 {
     exec();
-}
-
-// testing
-void Process::start_timer(std::chrono::nanoseconds timeout)
-{
 }
 
 bool Process::is_completed()
@@ -59,7 +56,7 @@ void Process::kill()
 void Process::exec()
 {
 #ifdef VERBOSE
-    std::cerr<< __PRETTY_FUNCTION__ << " " + name <<std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << " " + argv[1] <<std::endl;
 #endif
     //TODO pipe
 
@@ -85,9 +82,6 @@ void Process::exec()
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        //using namespace std;
-        //cerr << "PID:"+to_string(getpid())+ " fork -> PID:"+to_string(pid) << endl;
-        int foo;
         // add process to cgroup (echo PID > cgroup.procs)
         cgroup.add_process(pid);
         // END PARENT PROCESS

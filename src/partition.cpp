@@ -1,7 +1,5 @@
 #include "partition.hpp"
 
-int Partition::cgrp_count = 0;
-
 //Partition::Partition(Processes &&processes, std::string cgroup_name )
 //    : processes(std::move(processes))
 //    , current( this->processes.begin() )
@@ -11,10 +9,8 @@ int Partition::cgrp_count = 0;
 //}
 
 Partition::Partition( ev::loop_ref loop, std::string partition_name)
-    : cgroup( loop, std::to_string(cgrp_count) + partition_name, false )
-    , cgrp_name( std::to_string(cgrp_count) + partition_name )
+    : cgroup( loop, false, partition_name )
 {
-    cgrp_count++;
 }
 
 Partition::~Partition()
@@ -25,12 +21,11 @@ Partition::~Partition()
 }
 
 void Partition::add_process(ev::loop_ref loop,
-                            std::string name,
                             std::vector<std::string> argv,
                             std::chrono::nanoseconds budget,
                             std::chrono::nanoseconds budget_jitter)
 {
-    processes.emplace_back( loop, cgrp_name + "/" + name, argv, budget, budget_jitter);
+    processes.emplace_back( loop, cgroup.get_name(), argv, budget, budget_jitter);
 
     // call of move_to_next_proc first
     current = processes.end();

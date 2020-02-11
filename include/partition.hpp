@@ -23,11 +23,9 @@ public:
 
     // TODO somehow call Process() without copying
     void add_process(ev::loop_ref loop,
-                     std::string name,
                      std::vector<std::string> argv,
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
-    static int cgrp_count;
 
     bool is_done();
     bool is_empty();

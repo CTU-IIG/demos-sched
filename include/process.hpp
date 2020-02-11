@@ -17,7 +17,8 @@
 class Process : protected DemosSched
 {
     public:
-        Process(ev::loop_ref loop, std::string name,
+        Process(ev::loop_ref loop,
+                std::string partition_cgrp_name,
                 std::vector<std::string> argv,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
@@ -43,7 +44,7 @@ class Process : protected DemosSched
         void mark_uncompleted();
 private:
 
-        std::string name;
+        std::string partition_cgrp_name;
         std::vector<std::string> argv;
         std::chrono::nanoseconds budget;
         std::chrono::nanoseconds budget_jitter;

@@ -1,5 +1,7 @@
 #include "cgroup.hpp"
 
+int Cgroup::cgrp_count = 0;
+
 void create_cgroup(std::string path)
 {
     CHECK( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) );
@@ -10,13 +12,16 @@ int Cgroup::open_fd(std::string path, int attr = O_RDWR | O_NONBLOCK )
     return CHECK( open( path.c_str(), attr) );
 }
 
-Cgroup::Cgroup(ev::loop_ref loop, std::string name, bool process_cgrp)
-    : freezer_p(freezer_path + name + "/")
-    , cpuset_p(cpuset_path + name + "/")
-    , unified_p(unified_path + name + "/")
+Cgroup::Cgroup(ev::loop_ref loop, bool process_cgrp,
+               std::string cgrp_name, std::string partition_cgroup_name)
+    : name( partition_cgroup_name + std::to_string(cgrp_count) + "_"
+            + cgrp_name + "/")
+    , freezer_p(freezer_path + name)
+    , cpuset_p(cpuset_path + name)
+    , unified_p(unified_path + name)
     , procs_w(loop)
 {
-    //std::cerr<< __PRETTY_FUNCTION__ << "@" << this << " " << freezer_p <<std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << "@" << this << " " << freezer_p <<std::endl;
 
     try{
         // create new freezer cgroup
@@ -44,6 +49,7 @@ Cgroup::Cgroup(ev::loop_ref loop, std::string name, bool process_cgrp)
             procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
             procs_w.start(fd_uni_events, ev::EXCEPTION);
         }
+        cgrp_count++;
     } catch (const std::exception& e) {
         std::cerr << "probably bad cgroup setting?" << std::endl;
         delete_cgroup();
@@ -172,6 +178,11 @@ void Cgroup::unfreeze()
 #endif
     const char buf[] = "THAWED";
     CHECK( write(fd_freezer_state, buf, strlen(buf)) );
+}
+
+std::string Cgroup::get_name()
+{
+    return name;
 }
 
 void Cgroup::close_all_fd()
