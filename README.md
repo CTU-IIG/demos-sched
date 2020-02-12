@@ -1,9 +1,13 @@
-##compilation
-    ```
-    meson build
-    cd build
-    ninja
-    ```
+## compilation
+
+It is recommended, though not necessary, to uses Meson >= 0.52. If
+your distribution has an older version, you can install a new one by:
+
+    pip3 install --user meson
+
+Then build everything by running:
+
+    make
 
 ## settings
 - move shell for demos-sched execution to user delegated v2 cgroup (man cgroups, v2 delegation)
