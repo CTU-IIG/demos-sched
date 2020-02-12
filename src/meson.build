@@ -20,3 +20,8 @@ executable('timerfd_test',
            ['timerfd_test.cpp', 'timerfd.cpp'],
            include_directories : incdir,
            dependencies : libev_dep)
+
+executable('yaml-demo', 
+           ['yaml_demo.cpp'],
+           dependencies : dependency('yaml-cpp'))
+        
