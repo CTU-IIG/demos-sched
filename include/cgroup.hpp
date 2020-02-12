@@ -15,8 +15,13 @@
 #include <signal.h>
 #include <errno.h>
 #include <ev++.h>
+#include <bitset>
 #include "demossched.hpp"
 
+// maximum supported number of processors
+#define MAX_NPROC 8
+// cpu usage mask
+typedef std::bitset<MAX_NPROC> Cpu;
 
 class Cgroup : protected DemosSched
 {
@@ -30,6 +35,8 @@ public:
 
     std::string get_name();
     int get_fd_cpuset_procs();
+
+    void set_cpus(std::string cpus);
 
     // delete copy constructor
     Cgroup(const Cgroup&) = delete;
@@ -50,6 +57,7 @@ private:
     const std::string unified_p;
     ev::io procs_w;
     bool populated = false;
+    bool killed = false;
     bool deleted = false;
     bool is_process_cgrp;
 

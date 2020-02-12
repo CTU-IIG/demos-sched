@@ -79,7 +79,7 @@ void Cgroup::delete_cgroup()
 
 void Cgroup::kill_all()
 {
-    if(!populated)
+    if( !populated || killed )
         return;
     freeze();
 
@@ -108,6 +108,7 @@ void Cgroup::kill_all()
 #endif
         CHECK( kill(pid, SIGKILL) );
     }
+    killed = true;
 
     unfreeze();
 }
@@ -201,6 +202,14 @@ std::string Cgroup::get_name()
 int Cgroup::get_fd_cpuset_procs()
 {
     return fd_cpuset_procs;
+}
+
+void Cgroup::set_cpus(std::string cpus)
+{
+    if( is_process_cgrp )
+        throw std::system_error(1, std::generic_category(), std::string(__PRETTY_FUNCTION__) + ": cannot assign cpu to process, use partition");
+
+    CHECK( write(fd_cpuset_cpus, cpus.c_str(), cpus.size()) );
 }
 
 void Cgroup::close_all_fd()

@@ -65,12 +65,13 @@ int main(int argc, char *argv[])
             {"src/infinite_proc","200000","be2_A"}, 1s );
 
         Slices slices1, slices2;
-        slices1.emplace_back(loop, sc1, be1, Cpu(1) );
-        slices2.emplace_back(loop, sc2, be2, Cpu(1) );
+        slices1.emplace_back(loop, sc1, be1, "0" );
+        slices2.emplace_back(loop, sc2, be2, "0" );
+        slices2.emplace_back(loop, sc1, be1, "1,3-4" );
 
         Windows windows;
         windows.push_back( Window(loop, slices1, 3s));
-        windows.push_back( Window(loop, slices2, 1s));
+        windows.push_back( Window(loop, slices2, 3s));
         //throw "test";
         MajorFrame mf(loop, windows );
 

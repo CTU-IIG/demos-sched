@@ -27,6 +27,7 @@ public:
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 
+    void set_cpus(std::string cpus);
     bool is_done();
     bool is_empty();
     Processes processes;

@@ -1,6 +1,6 @@
 #include "slice.hpp"
 
-Slice::Slice(ev::loop_ref loop, Partition &sc, Partition &be, Cpu cpus)
+Slice::Slice(ev::loop_ref loop, Partition &sc, Partition &be, std::string cpus)
     : sc(sc)
     , be(be)
     , cpus(cpus)
@@ -28,6 +28,9 @@ void Slice::start()
         p.mark_uncompleted();
     sc.clear_done_flag();
     be.clear_done_flag();
+
+    sc.set_cpus(cpus);
+    be.set_cpus(cpus);
 
     sc.unfreeze();
     be.unfreeze();

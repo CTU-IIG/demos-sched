@@ -34,6 +34,11 @@ void Partition::add_process(ev::loop_ref loop,
     freeze();
 }
 
+void Partition::set_cpus(std::string cpus)
+{
+    cgroup.set_cpus(cpus);
+}
+
 bool Partition::is_done()
 {
     return done;
