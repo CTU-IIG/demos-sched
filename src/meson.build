@@ -4,8 +4,16 @@
 
 incdir = include_directories('../include')
 
-executable('demos_sch',
-           ['demos_sch.cpp','process.cpp','partition.cpp',
+executable('demos-sched',
+           ['demos-sched.cpp','process.cpp','partition.cpp',
+            'slice.cpp','window.cpp','majorframe.cpp',
+            'cgroup.cpp', 'timerfd.cpp','demossched.cpp',
+            'config_parser.cpp'],
+           include_directories : incdir,
+           dependencies : [libev_dep, dependency('yaml-cpp')] )
+
+executable('demos_structures',
+           ['demos_structures.cpp','process.cpp','partition.cpp',
             'slice.cpp','window.cpp','majorframe.cpp',
             'cgroup.cpp', 'timerfd.cpp','demossched.cpp'],
            include_directories : incdir,

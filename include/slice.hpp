@@ -7,6 +7,8 @@
 #include <ev++.h>
 #include <chrono>
 
+typedef std::list<Partition> Partitions;
+
 class Slice : protected DemosSched
 {
 public:

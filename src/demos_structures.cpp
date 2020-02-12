@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
     ev::default_loop loop;
     // TEST data structures
     try {
-
         Partition sc1(loop,"SC1"), be1(loop,"BE1");
         sc1.add_process( loop, std::vector<std::string>
             {"src/infinite_proc","200000","sc1_A"}, 1s );
