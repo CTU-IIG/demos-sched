@@ -4,6 +4,4 @@ src/main.cpp
 src/a.out
 tags
 Session.vim
-src/config.yaml
-src/yaml_demo.cpp
 demos-sched.creator.user

@@ -1,0 +1,32 @@
+# all times in ms
+# Major frame
+#period: 100 # not used, do we need this?
+windows:
+  - length: 3000
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+        be_partition: BE1
+      - cpu: 1
+        sc_partition: SC2
+  - length: 1000
+    slices:
+      - cpu: 0,3-5
+        be_partition: BE1
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: src/infinite_proc 200000 SC1_A
+        #initialization: yes # TODO
+        budget: 1000
+      - cmd: src/infinite_proc 200000 SC1_B
+        budget: 2000
+  - name: SC2
+    processes:
+      - cmd: src/infinite_proc 200000 SC2_A
+        budget: 2000
+  - name: BE1
+    processes:
+      - cmd: src/infinite_proc 200000 BE
+        budget: 2000
