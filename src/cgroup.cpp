@@ -95,8 +95,6 @@ void Cgroup::kill_all()
     while( (nread = getline(&line, &len, f)) != -1 ){
         pids.push_back( atoi(line) );
     }
-    // check if end of file reached (getline return -1 on both error and eof)
-    CHECK( !feof(f) );
 
     free(line);
     fclose(f);
