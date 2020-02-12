@@ -4,6 +4,7 @@
 
 Process::Process(ev::loop_ref loop,
                  std::string partition_cgrp_name,
+                 int fd_cpuset_procs,
                  std::vector<std::string> argv,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter,
@@ -16,9 +17,14 @@ Process::Process(ev::loop_ref loop,
     , continuous(continuous)
     //, cgroup(loop, true, argv[0], partition_cgrp_name)
     // TODO regex to cut argv[0] at "/"
-    , cgroup(loop, true, "test", partition_cgrp_name)
+    , cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
 {
-    exec();
+    try {
+        exec();
+    } catch (const std::exception& e) {
+        delete &cgroup;
+        throw e;
+    }
 }
 
 bool Process::is_completed()
@@ -56,7 +62,7 @@ void Process::kill()
 void Process::exec()
 {
 #ifdef VERBOSE
-    std::cerr<< __PRETTY_FUNCTION__ << " " + argv[1] <<std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << " " + argv[0] <<std::endl;
 #endif
     //TODO pipe
 

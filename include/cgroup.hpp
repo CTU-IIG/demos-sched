@@ -22,13 +22,14 @@ class Cgroup : protected DemosSched
 {
 public:
     Cgroup(ev::loop_ref loop, bool process_cgrp, std::string cgrp_name = "",
-           std::string partition_cgroup_name = "");
+           int fd_cpuset_procs = -1, std::string partition_cgroup_name = "");
     ~Cgroup();
     void add_process(pid_t pid);
     void freeze();
     void unfreeze();
 
     std::string get_name();
+    int get_fd_cpuset_procs();
 
     // delete copy constructor
     Cgroup(const Cgroup&) = delete;
@@ -42,14 +43,17 @@ private:
     int fd_freezer_state;
     int fd_uni_procs;
     int fd_uni_events;
-    int fd_cpuset_procs;
-    int fd_cpuset_cpus;
+    int fd_cpuset_procs = -1;
+    int fd_cpuset_cpus = -1;
     const std::string freezer_p;
     const std::string cpuset_p;
     const std::string unified_p;
     ev::io procs_w;
     bool populated = false;
     bool deleted = false;
+    bool is_process_cgrp;
+
+    ev::loop_ref loop;
 
     void clean_cb(ev::io &w, int revents);
     void close_all_fd();

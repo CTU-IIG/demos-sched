@@ -12,32 +12,32 @@ int Cgroup::open_fd(std::string path, int attr = O_RDWR | O_NONBLOCK )
     return CHECK( open( path.c_str(), attr) );
 }
 
-Cgroup::Cgroup(ev::loop_ref loop, bool process_cgrp,
-               std::string cgrp_name, std::string partition_cgroup_name)
+Cgroup::Cgroup(ev::loop_ref loop,
+               bool is_process_cgrp,
+               std::string cgrp_name,
+               int fd_cpuset_procs,
+               std::string partition_cgroup_name)
     : name( partition_cgroup_name + std::to_string(cgrp_count) + "_"
             + cgrp_name + "/")
+    , fd_cpuset_procs( fd_cpuset_procs )
     , freezer_p(freezer_path + name)
     , cpuset_p(cpuset_path + name)
     , unified_p(unified_path + name)
     , procs_w(loop)
+    , is_process_cgrp(is_process_cgrp)
+    , loop(loop)
 {
     std::cerr<< __PRETTY_FUNCTION__ << "@" << this << " " << freezer_p <<std::endl;
 
     try{
         // create new freezer cgroup
         create_cgroup( freezer_p);
-        // create new cpuset cgroup
-        create_cgroup( cpuset_p);
         // create unified cgroup for .events
         create_cgroup( unified_p);
         // open file descriptor for processes in freezer
         fd_freezer_procs = open_fd( freezer_p + "cgroup.procs");
         // open file descriptor for (un)freezing cgroup
         fd_freezer_state = open_fd( freezer_p + "freezer.state");
-        // open file descriptor for processes in cpuset
-        fd_cpuset_procs = open_fd( cpuset_p + "cgroup.procs");
-        // open file descriptor for cpuset
-        fd_cpuset_cpus = open_fd( cpuset_p + "cpuset.cpus");
         // open file descriptor for processes in unified cgroup
         fd_uni_procs = open_fd( unified_p + "cgroup.procs");
         // open file descriptor for montoring cleanup
@@ -45,9 +45,16 @@ Cgroup::Cgroup(ev::loop_ref loop, bool process_cgrp,
 
         // assign clean_cb just for processes
         // partition cgroup delete manually for right order of deleting
-        if(process_cgrp){
+        if(is_process_cgrp){
             procs_w.set<Cgroup, &Cgroup::clean_cb>(this);
             procs_w.start(fd_uni_events, ev::EXCEPTION);
+        } else {
+            // create new cpuset cgroup
+            create_cgroup( cpuset_p);
+            // open file descriptor for processes in cpuset
+            this->fd_cpuset_procs = open_fd( cpuset_p + "cgroup.procs");
+            // open file descriptor for cpuset
+            fd_cpuset_cpus = open_fd( cpuset_p + "cpuset.cpus");
         }
         cgrp_count++;
     } catch (const std::exception& e) {
@@ -63,8 +70,9 @@ void Cgroup::delete_cgroup()
 {
     // delete cgroups
     CHECK( rmdir( freezer_p.c_str()) );
-    CHECK( rmdir( cpuset_p.c_str()) );
     CHECK( rmdir( unified_p.c_str()) );
+    if( !is_process_cgrp )
+        CHECK( rmdir( cpuset_p.c_str()) );
     populated = false;
     deleted = true;
 }
@@ -109,8 +117,13 @@ Cgroup::~Cgroup()
 #ifdef VERBOSE
     std::cerr<< __PRETTY_FUNCTION__ << " PID:"+std::to_string(getpid())+" @" << this << " " << freezer_p <<std::endl;
 #endif
-    if(!deleted)
+    if(!deleted){
+        if(is_process_cgrp){
+            kill_all();
+            loop.run();
+        }
         delete_cgroup();
+    }
     close_all_fd();
 }
 
@@ -185,13 +198,21 @@ std::string Cgroup::get_name()
     return name;
 }
 
+int Cgroup::get_fd_cpuset_procs()
+{
+    return fd_cpuset_procs;
+}
+
 void Cgroup::close_all_fd()
 {
     close(fd_freezer_procs);
     close(fd_freezer_state);
     close(fd_uni_procs);
     close(fd_uni_events);
-    close(fd_cpuset_procs);
-    close(fd_cpuset_cpus);
+
+    if( !is_process_cgrp ){
+        close(fd_cpuset_procs);
+        close(fd_cpuset_cpus);
+    }
 
 }

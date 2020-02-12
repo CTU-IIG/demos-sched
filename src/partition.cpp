@@ -25,7 +25,8 @@ void Partition::add_process(ev::loop_ref loop,
                             std::chrono::nanoseconds budget,
                             std::chrono::nanoseconds budget_jitter)
 {
-    processes.emplace_back( loop, cgroup.get_name(), argv, budget, budget_jitter);
+    processes.emplace_back( loop, cgroup.get_name(), cgroup.get_fd_cpuset_procs(),
+                            argv, budget, budget_jitter);
 
     // call of move_to_next_proc first
     current = processes.end();

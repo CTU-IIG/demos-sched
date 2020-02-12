@@ -18,7 +18,7 @@ class Process : protected DemosSched
 {
     public:
         Process(ev::loop_ref loop,
-                std::string partition_cgrp_name,
+                std::string partition_cgrp_name, int fd_cpuset_procs,
                 std::vector<std::string> argv,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
