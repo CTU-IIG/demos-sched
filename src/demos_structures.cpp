@@ -51,16 +51,16 @@ int main(int argc, char *argv[])
     // TEST data structures
     try {
         Partition sc1(loop,"SC1"), be1(loop,"BE1");
-        sc1.add_process( loop, std::vector<std::string>
+        sc1.add_process( loop, std::vector<char*>
             {"src/infinite_proc","200000","sc1_A"}, 1s );
-        sc1.add_process( loop, std::vector<std::string>
+        sc1.add_process( loop, std::vector<char*>
             {"src/infinite_proc","200000","sc1_B"}, 1s );
         //throw "test";
-        be1.add_process( loop, std::vector<std::string>
+        be1.add_process( loop, std::vector<char*>
             {"src/infinite_proc","200000","be1_A"}, 1s );
 
         Partition sc2(loop, "SC2"), be2(loop,"BE2");
-        be2.add_process( loop, std::vector<std::string>
+        be2.add_process( loop, std::vector<char*>
             {"src/infinite_proc","200000","be2_A"}, 1s );
 
         Slices slices1, slices2;

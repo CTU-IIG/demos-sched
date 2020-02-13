@@ -25,12 +25,19 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     ev::default_loop loop;
-    ConfigParser parser("../src/config.yaml");
 
-    shared_ptr< list<Slices> > all_slices_ptr;
+    try {
+        ConfigParser parser("../src/config.yaml");
 
-    shared_ptr<MajorFrame> mf_ptr;
-    parser.parse(loop, mf_ptr);
+        shared_ptr<MajorFrame> mf_ptr;
+        parser.parse(loop, mf_ptr);
+
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+
+    } catch (...) {
+        std::cerr << "Unknown exception" << std::endl;
+    }
 
     return 0;
 }

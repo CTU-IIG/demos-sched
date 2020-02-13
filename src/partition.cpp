@@ -10,6 +10,7 @@
 
 Partition::Partition( ev::loop_ref loop, std::string partition_name)
     : cgroup( loop, false, partition_name )
+    , name(partition_name)
 {
 }
 
@@ -21,10 +22,11 @@ Partition::~Partition()
 }
 
 void Partition::add_process(ev::loop_ref loop,
-                            std::vector<std::string> argv,
+                            std::vector<char*> argv,
                             std::chrono::nanoseconds budget,
                             std::chrono::nanoseconds budget_jitter)
 {
+    std::cerr<<__PRETTY_FUNCTION__<<" "<<cgroup.get_name()<<std::endl;
     processes.emplace_back( loop, cgroup.get_name(), cgroup.get_fd_cpuset_procs(),
                             argv, budget, budget_jitter);
 
@@ -52,6 +54,11 @@ void Partition::clear_done_flag()
 bool Partition::is_empty()
 {
     return empty;
+}
+
+std::string Partition::get_name()
+{
+    return name;
 }
 
 Process & Partition::get_current_proc()

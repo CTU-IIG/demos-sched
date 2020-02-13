@@ -14,12 +14,14 @@
 
 // TODO exception after fork ??
 
+class Partition;
+
 class Process : protected DemosSched
 {
     public:
         Process(ev::loop_ref loop,
-                std::string partition_cgrp_name, int fd_cpuset_procs,
-                std::vector<std::string> argv,
+                Partition& partition,
+                std::vector<char *> argv,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
                 bool continuous = false);
@@ -43,9 +45,14 @@ class Process : protected DemosSched
         void mark_completed();
         void mark_uncompleted();
 private:
+        Partition &part;
+        CgroupEvents cge;
+        CgroupFreezer cgf;
+
+        void populated_cb(bool populated);
 
         std::string partition_cgrp_name;
-        std::vector<std::string> argv;
+        std::vector<char*> argv;
         std::chrono::nanoseconds budget;
         std::chrono::nanoseconds budget_jitter;
         std::chrono::nanoseconds actual_budget;

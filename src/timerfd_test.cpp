@@ -9,7 +9,7 @@ void tim_cb(timer &t, int revents)
     cout << "ev::timer" << endl;
 }
 
-void io_cb(io &t, int revents)
+void io_cb(ev::io &t, int revents)
 {
     cout << "ev::io" << endl;
 }
@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     default_loop loop;
     timerfd tfd(loop);
     timer tim(loop);
-    io i(loop);
+    ev::io i(loop);
 
     i.set<io_cb>();
     i.start(0, ev::READ);

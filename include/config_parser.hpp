@@ -5,6 +5,7 @@
 #include "majorframe.hpp"
 #include <yaml-cpp/yaml.h>
 #include <ev++.h>
+#include <string.h>
 
 class ConfigParser
 {
@@ -15,6 +16,7 @@ public:
 
 private:
     YAML::Node config;
+    //std::vector<std::string> partition_names;
     Partitions partitions;
     std::list< Slices > all_slices;
     Windows windows;

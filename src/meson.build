@@ -4,32 +4,37 @@
 
 incdir = include_directories('../include')
 
-executable('demos-sched',
-           ['demos-sched.cpp','process.cpp','partition.cpp',
-            'slice.cpp','window.cpp','majorframe.cpp',
-            'cgroup.cpp', 'timerfd.cpp','demossched.cpp',
-            'config_parser.cpp'],
+executable('cgroup-test',
+           ['cgroup_test.cpp', 'cgroup.cpp', 'demossched.cpp'],
            include_directories : incdir,
-           dependencies : [libev_dep, dependency('yaml-cpp')] )
+           dependencies : libev_dep )
 
-executable('demos_structures',
-           ['demos_structures.cpp','process.cpp','partition.cpp',
-            'slice.cpp','window.cpp','majorframe.cpp',
-            'cgroup.cpp', 'timerfd.cpp','demossched.cpp'],
-           include_directories : incdir,
-           dependencies : libev_dep)
-executable('infinite_proc', 'infinite_proc.cpp')
+#executable('demos-sched',
+#           ['demos-sched.cpp','process.cpp','partition.cpp',
+#            'slice.cpp','window.cpp','majorframe.cpp',
+#            'cgroup.cpp', 'timerfd.cpp','demossched.cpp',
+#            'config_parser.cpp'],
+#           include_directories : incdir,
+#           dependencies : [libev_dep, dependency('yaml-cpp')] )
 
-executable('cgroup_notif_test', 'cgroup_notif_test.cpp',
-           include_directories : incdir,
-           dependencies : libev_dep)
+#executable('demos_structures',
+#           ['demos_structures.cpp','process.cpp','partition.cpp',
+#            'slice.cpp','window.cpp','majorframe.cpp',
+#            'cgroup.cpp', 'timerfd.cpp','demossched.cpp'],
+#           include_directories : incdir,
+#           dependencies : libev_dep)
+#executable('infinite_proc', 'infinite_proc.cpp')
 
-executable('timerfd_test',
-           ['timerfd_test.cpp', 'timerfd.cpp'],
-           include_directories : incdir,
-           dependencies : libev_dep)
+#executable('cgroup_notif_test', 'cgroup_notif_test.cpp',
+#           include_directories : incdir,
+#           dependencies : libev_dep)
 
-executable('yaml-demo', 
-           ['yaml_demo.cpp'],
-           dependencies : dependency('yaml-cpp'))
+#executable('timerfd_test',
+#           ['timerfd_test.cpp', 'timerfd.cpp'],
+#           include_directories : incdir,
+#           dependencies : libev_dep)
+
+#executable('yaml-demo',
+#           ['yaml_demo.cpp'],
+#           dependencies : dependency('yaml-cpp'))
         

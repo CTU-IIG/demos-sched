@@ -1,11 +1,13 @@
 #include "process.hpp"
 #include <system_error>
 #include <functional>
+#include "partition.hpp"
+
+using namespace std::placeholders;
 
 Process::Process(ev::loop_ref loop,
-                 std::string partition_cgrp_name,
-                 int fd_cpuset_procs,
-                 std::vector<std::string> argv,
+                 Partition &part,
+                 std::vector<char*> argv,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter,
                  bool continuous)
@@ -17,9 +19,11 @@ Process::Process(ev::loop_ref loop,
     , continuous(continuous)
     //, cgroup(loop, true, argv[0], partition_cgrp_name)
     // TODO regex to cut argv[0] at "/"
-    , cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
+    //, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
+    , cge(loop, part.cgroup, name, std::bind(&Process::populated_cb, this, _1))
 {
     try {
+        this->argv.push_back((char*) nullptr);
         exec();
     } catch (const std::exception& e) {
         delete &cgroup;
@@ -43,6 +47,12 @@ void Process::mark_uncompleted()
     completed = false;
 }
 
+void Process::populated_cb(bool populated)
+{
+    //...
+    part.proc_exit_cb(*this);
+}
+
 void Process::recompute_budget()
 {
     std::chrono::nanoseconds rnd_val= budget_jitter * rand()/RAND_MAX;
@@ -62,21 +72,12 @@ void Process::kill()
 void Process::exec()
 {
 #ifdef VERBOSE
-    std::cerr<< __PRETTY_FUNCTION__ << " " + argv[0] <<std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << " " << argv[0] <<std::endl;
 #endif
     //TODO pipe
 
     // freeze cgroup
     freeze();
-
-
-    // cast string to char*
-    std::vector<char*> cstrings;
-    cstrings.reserve( argv.size()+1 );
-
-    for(size_t i = 0; i < argv.size(); ++i)
-        cstrings.push_back(const_cast<char*>( argv[i].c_str() ));
-    cstrings.push_back( (char*)NULL );
 
     // create new process
     pid = CHECK(vfork());
@@ -84,7 +85,7 @@ void Process::exec()
     // launch new process
     if( pid == 0 ){
         // CHILD PROCESS
-        CHECK(execv( cstrings[0], &cstrings[0] ));
+        CHECK(execv( argv[0], &argv[0] ));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS

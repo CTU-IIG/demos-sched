@@ -23,13 +23,14 @@ public:
 
     // TODO somehow call Process() without copying
     void add_process(ev::loop_ref loop,
-                     std::vector<std::string> argv,
+                     std::vector<char *> argv,
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 
     void set_cpus(std::string cpus);
     bool is_done();
     bool is_empty();
+    std::string get_name();
     Processes processes;
 
     // return false if there is none
@@ -40,7 +41,9 @@ private:
     bool empty = true;
     Processes::iterator current;
     Cgroup cgroup;
-    std::string cgrp_name;
+    std::string name;
+
+    void proc_exit_cb(Process &proc);
 
     // cyclic queue
     void move_to_next_proc();
