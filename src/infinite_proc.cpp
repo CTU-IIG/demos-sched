@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     
     while(1){
         usleep(period);
-        printf("%s\n", msg);
+        fprintf(stderr, "%s\n", msg);
     }
     return 0;
 }
