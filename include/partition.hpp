@@ -9,12 +9,16 @@
 
 typedef std::list<Process> Processes;
 
-class Partition : protected DemosSched
+class Partition
 {
 public:
     //Partition( Processes &&processes, std::string cgroup_name );
-    Partition(ev::loop_ref loop, std::string partition_name = "" );
-    ~Partition();
+    Partition(ev::loop_ref loop,
+              std::string freezer_path,
+              std::string cpuset_path,
+              std::string events_path,
+              std::string name = "" );
+    //~Partition();
 
     Process & get_current_proc();
 
@@ -27,29 +31,27 @@ public:
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 
-    void set_cpus(std::string cpus);
-    bool is_done();
-    bool is_empty();
-    std::string get_name();
-    Processes processes;
+    //void set_cpus(std::string cpus);
+    //std::string get_name();
 
     // return false if there is none
-    bool move_to_next_unfinished_proc();
-    void clear_done_flag();
+    //bool move_to_next_unfinished_proc();
+    //void clear_done_flag();
+
+//protected:
+    CgroupFreezer cgf;
+    CgroupCpuset cgc;
+    CgroupEvents cge;
+    void proc_exit_cb(Process &proc);
 private:
-    bool done = false;
-    bool empty = true;
+    Processes processes;
     Processes::iterator current;
-    Cgroup cgroup;
     std::string name;
 
-    void proc_exit_cb(Process &proc);
 
     // cyclic queue
     void move_to_next_proc();
 
-    // counter for created partitions to have unique cgroup names
-    //static int cgrp_count;
 };
 
 #endif // PARTITION_HPP

@@ -27,7 +27,7 @@ typedef std::bitset<MAX_NPROC> Cpu;
 
 class Process;
 
-class Cgroup {
+class Cgroup{
 public:
     Cgroup(std::string parent_path, std::string name);
     Cgroup(Cgroup& parent, std::string name /* Cgroup &garbage*/);
@@ -69,10 +69,12 @@ private:
 
 class CgroupEvents : public Cgroup {
 public:
+    CgroupEvents(std::string parent_path, std::string name);
     CgroupEvents(ev::loop_ref loop, std::string parent_path, std::string name,
                  std::function<void(bool)> populated_cb);
     CgroupEvents(ev::loop_ref loop, CgroupEvents &parent, std::string name,
                  std::function<void(bool)> populated_cb);
+    ~CgroupEvents();
 private:
     int fd_events;
     ev::io events_w;

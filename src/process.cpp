@@ -4,53 +4,70 @@
 #include "partition.hpp"
 
 using namespace std::placeholders;
+using namespace std;
 
 Process::Process(ev::loop_ref loop,
+                 std::string name,
                  Partition &part,
                  std::vector<char*> argv,
                  std::chrono::nanoseconds budget,
-                 std::chrono::nanoseconds budget_jitter,
-                 bool continuous)
-    : partition_cgrp_name(partition_cgrp_name)
+                 std::chrono::nanoseconds budget_jitter)
+    : part(part)
+    , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
+    , cgf(part.cgf, name)
     , argv(argv)
     , budget(budget)
     , budget_jitter(budget_jitter)
     , actual_budget(budget)
-    , continuous(continuous)
     //, cgroup(loop, true, argv[0], partition_cgrp_name)
     // TODO regex to cut argv[0] at "/"
     //, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
-    , cge(loop, part.cgroup, name, std::bind(&Process::populated_cb, this, _1))
+    //, cge(loop, part.cgroup, name, std::bind(&Process::populated_cb, this, _1))
 {
-    try {
-        this->argv.push_back((char*) nullptr);
-        exec();
-    } catch (const std::exception& e) {
-        delete &cgroup;
-        throw e;
+    std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
+    this->argv.push_back((char*) nullptr);
+    freeze();
+}
+
+void Process::exec()
+{
+    //TODO pipe
+
+    // create new process
+    pid_t pid = CHECK(vfork());
+
+    // launch new process
+    if( pid == 0 ){
+        // CHILD PROCESS
+        CHECK(execv( argv[0], &argv[0] ));
+        // END CHILD PROCESS
+    } else {
+        // PARENT PROCESS
+#ifdef VERBOSE
+    std::cerr<< __PRETTY_FUNCTION__ << " " << argv[0] << " pid: " << pid << std::endl;
+#endif
+        // add process to cgroup (echo PID > cgroup.procs)
+        cge.add_process(pid);
+        cgf.add_process(pid);
+        // END PARENT PROCESS
     }
 }
 
-bool Process::is_completed()
+void Process::kill()
 {
-    return completed;
+    cgf.freeze();
+    cgf.kill_all();
+    cgf.unfreeze();
 }
 
-void Process::mark_completed()
+void Process::freeze()
 {
-    if( !continuous )
-        completed = true;
+    cgf.freeze();
 }
 
-void Process::mark_uncompleted()
+void Process::unfreeze()
 {
-    completed = false;
-}
-
-void Process::populated_cb(bool populated)
-{
-    //...
-    part.proc_exit_cb(*this);
+    cgf.unfreeze();
 }
 
 void Process::recompute_budget()
@@ -64,43 +81,9 @@ std::chrono::nanoseconds Process::get_actual_budget()
     return actual_budget;
 }
 
-void Process::kill()
+void Process::populated_cb(bool populated)
 {
-    cgroup.kill_all();
-}
-
-void Process::exec()
-{
-#ifdef VERBOSE
-    std::cerr<< __PRETTY_FUNCTION__ << " " << argv[0] <<std::endl;
-#endif
-    //TODO pipe
-
-    // freeze cgroup
-    freeze();
-
-    // create new process
-    pid = CHECK(vfork());
-
-    // launch new process
-    if( pid == 0 ){
-        // CHILD PROCESS
-        CHECK(execv( argv[0], &argv[0] ));
-        // END CHILD PROCESS
-    } else {
-        // PARENT PROCESS
-        // add process to cgroup (echo PID > cgroup.procs)
-        cgroup.add_process(pid);
-        // END PARENT PROCESS
+    if(!populated){
+        part.proc_exit_cb(*this);
     }
-}
-
-void Process::freeze()
-{
-    cgroup.freeze();
-}
-
-void Process::unfreeze()
-{
-    cgroup.unfreeze();
 }

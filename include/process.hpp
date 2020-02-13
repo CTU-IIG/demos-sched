@@ -12,38 +12,33 @@
 #include "cgroup.hpp"
 #include "demossched.hpp"
 
-// TODO exception after fork ??
-
 class Partition;
 
-class Process : protected DemosSched
+class Process
 {
     public:
         Process(ev::loop_ref loop,
+                std::string name,
                 Partition& partition,
                 std::vector<char *> argv,
                 std::chrono::nanoseconds budget,
-                std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
-                bool continuous = false);
+                std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 
-        // testing
-        void start_timer(std::chrono::nanoseconds timeout);
-
-        bool is_completed();
+        //bool is_completed();
         void exec();
+        void kill();
+
         void freeze();
         void unfreeze();
         void recompute_budget();
         std::chrono::nanoseconds get_actual_budget();
 
-        void kill();
+        //void mark_completed();
+        //void mark_uncompleted();
 
         // delete copy constructor
-        Process(const Process&) = delete;
-        Process& operator=(const Process&) = delete;
-
-        void mark_completed();
-        void mark_uncompleted();
+//        Process(const Process&) = delete;
+//        Process& operator=(const Process&) = delete;
 private:
         Partition &part;
         CgroupEvents cge;
@@ -51,15 +46,15 @@ private:
 
         void populated_cb(bool populated);
 
-        std::string partition_cgrp_name;
+//        std::string partition_cgrp_name;
         std::vector<char*> argv;
         std::chrono::nanoseconds budget;
         std::chrono::nanoseconds budget_jitter;
         std::chrono::nanoseconds actual_budget;
-        bool completed = false;
-        bool continuous;
-        pid_t pid = -1;
-        Cgroup cgroup;
+//        bool completed = false;
+//        bool continuous;
+//        pid_t pid = -1;
+//        Cgroup cgroup;
 
 };
 

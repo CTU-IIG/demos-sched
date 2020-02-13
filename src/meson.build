@@ -9,6 +9,14 @@ executable('cgroup-test',
            include_directories : incdir,
            dependencies : libev_dep )
 
+executable('partition-test',
+           ['partition_test.cpp', 'cgroup.cpp', 'demossched.cpp',
+            'process.cpp', 'partition.cpp'],
+           include_directories : incdir,
+           dependencies : libev_dep )
+
+executable('infinite_proc', 'infinite_proc.cpp')
+
 #executable('demos-sched',
 #           ['demos-sched.cpp','process.cpp','partition.cpp',
 #            'slice.cpp','window.cpp','majorframe.cpp',
@@ -23,7 +31,6 @@ executable('cgroup-test',
 #            'cgroup.cpp', 'timerfd.cpp','demossched.cpp'],
 #           include_directories : incdir,
 #           dependencies : libev_dep)
-#executable('infinite_proc', 'infinite_proc.cpp')
 
 #executable('cgroup_notif_test', 'cgroup_notif_test.cpp',
 #           include_directories : incdir,
