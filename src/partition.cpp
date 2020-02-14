@@ -39,7 +39,7 @@ void Partition::unfreeze()
 }
 
 void Partition::add_process(ev::loop_ref loop,
-                            std::vector<char *> argv,
+                            string argv,
                             chrono::nanoseconds budget,
                             chrono::nanoseconds budget_jitter)
 {

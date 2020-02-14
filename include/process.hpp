@@ -20,7 +20,7 @@ class Process
         Process(ev::loop_ref loop,
                 std::string name,
                 Partition& partition,
-                std::vector<char *> argv,
+                std::string argv,
                 std::chrono::nanoseconds budget,
                 std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
                 bool contionuous = false);
@@ -52,7 +52,7 @@ private:
         void populated_cb(bool populated);
 
 //        std::string partition_cgrp_name;
-        std::vector<char*> argv;
+        std::string argv;
         std::chrono::nanoseconds budget;
         std::chrono::nanoseconds budget_jitter;
         std::chrono::nanoseconds actual_budget;

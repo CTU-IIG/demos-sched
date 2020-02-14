@@ -29,7 +29,7 @@ public:
 
     // TODO somehow call Process() without copying
     void add_process(ev::loop_ref loop,
-                     std::vector<char *> argv,
+                     std::string argv,
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 

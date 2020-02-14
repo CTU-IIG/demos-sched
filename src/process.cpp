@@ -9,7 +9,7 @@ using namespace std;
 Process::Process(ev::loop_ref loop,
                  std::string name,
                  Partition &part,
-                 std::vector<char*> argv,
+                 string argv,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter, bool contionuous)
     : part(part)
@@ -26,7 +26,6 @@ Process::Process(ev::loop_ref loop,
     //, cge(loop, part.cgroup, name, std::bind(&Process::populated_cb, this, _1))
 {
     std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
-    this->argv.push_back((char*) nullptr);
     freeze();
 }
 
@@ -40,12 +39,12 @@ void Process::exec()
     // launch new process
     if( pid == 0 ){
         // CHILD PROCESS
-        CHECK(execv( argv[0], &argv[0] ));
+        CHECK(execl( "/bin/bash",  "/bin/bash", "-c" , argv.c_str(), nullptr ));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
 #ifdef VERBOSE
-    std::cerr<< __PRETTY_FUNCTION__ << " " << argv[0] << " pid: " << pid << std::endl;
+    std::cerr<< __PRETTY_FUNCTION__ << " " << argv << " pid: " << pid << std::endl;
 #endif
         // add process to cgroup (echo PID > cgroup.procs)
         cge.add_process(pid);
