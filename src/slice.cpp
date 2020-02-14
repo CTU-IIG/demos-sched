@@ -26,8 +26,8 @@ void Slice::start()
     sc.clear_completed_flag();
     be.clear_completed_flag();
 
-//    sc.set_cpus(cpus);
-//    be.set_cpus(cpus);
+    sc.set_cpus(cpus);
+    be.set_cpus(cpus);
 
     if( !sc.is_empty() ){
         sc.move_to_first_proc();

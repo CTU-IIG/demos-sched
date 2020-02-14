@@ -18,21 +18,23 @@ int main()
 
         auto start_time = chrono::steady_clock::now();
 
-        Partition sc_part(loop, freezer_path, cpuset_path, unified_path, "sc_part");
-        sc_part.add_process(loop, std::vector<char*>{"src/infinite_proc","200000","procA"}, 1s);
-        sc_part.add_process(loop, std::vector<char*>{"src/infinite_proc","200000","procB"}, 1s);
+        Partition sc_partA(loop, freezer_path, cpuset_path, unified_path, "sc_part");
+        sc_partA.add_process(loop, std::vector<char*>{"src/infinite_proc","200000","procA"}, 1s);
+
+        Partition sc_partB(loop, freezer_path, cpuset_path, unified_path, "sc_part");
+        sc_partB.add_process(loop, std::vector<char*>{"src/infinite_proc","200000","procB"}, 1s);
 
         Partition be_part(loop, freezer_path, cpuset_path, unified_path, "be_part");
-        be_part.add_process(loop, std::vector<char*>{"src/infinite_proc","200000","procBE"}, 1s);
 
-        Partition empty_part(loop, freezer_path, cpuset_path, unified_path, "empty_part");
+        Slices s1;
+        s1.emplace_back(loop, start_time, sc_partA, be_part,"0,3-5");
 
-        Slices s1,s2;
-        s1.emplace_back(loop, start_time, sc_part, be_part);
-        s2.emplace_back(loop, start_time, empty_part, be_part);
+        Slices s2;
+        s2.emplace_back(loop, start_time, sc_partA, be_part,"0");
+        s2.emplace_back(loop, start_time, sc_partB, be_part,"1");
 
         Windows w;
-        w.emplace_back( s1,2500ms );
+        w.emplace_back( s1,1s );
         w.emplace_back( s2,1s );
 
         MajorFrame mf(loop, start_time, w);
