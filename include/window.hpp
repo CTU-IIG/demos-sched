@@ -9,10 +9,10 @@
 
 typedef std::list<Slice> Slices;
 
-class Window : protected DemosSched
+class Window
 {
 public:
-    Window(ev::loop_ref loop, Slices &slices, std::chrono::nanoseconds length);
+    Window(Slices &slices, std::chrono::nanoseconds length);
 
     std::chrono::nanoseconds length;
     Slices &slices;
@@ -20,8 +20,6 @@ public:
     void start();
     void stop();
     void update_timeout(std::chrono::steady_clock::time_point actual_time);
-private:
-    ev::loop_ref loop;
 };
 
 #endif // WINDOW_HPP

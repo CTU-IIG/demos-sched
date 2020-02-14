@@ -1,6 +1,8 @@
 #include "majorframe.hpp"
 
-MajorFrame::MajorFrame(ev::loop_ref loop, Windows &windows)
+using namespace std;
+
+MajorFrame::MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time, Windows &windows)
     : loop(loop)
     , windows( windows )
     , current( this->windows.begin() )
@@ -8,39 +10,39 @@ MajorFrame::MajorFrame(ev::loop_ref loop, Windows &windows)
     , sigint(loop)
     , timeout( start_time )
 {
-    timer.set(std::bind(&MajorFrame::timeout_cb, this));
-    sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
-    sigint.start(SIGINT);
+    timer.set(bind(&MajorFrame::timeout_cb, this));
+//    sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
+//    sigint.start(SIGINT);
 }
 
-void MajorFrame::kill_all()
-{
-    for(Window &w : windows){
-        for(Slice &s : w.slices){
-            s.stop(); // unregister timer
-            for(Process &p : s.sc.processes){
-                p.kill();
-            }
-            for(Process &p : s.be.processes){
-                p.kill();
-            }
-            s.sc.unfreeze();
-            s.be.unfreeze();
-        }
-    }
-}
+//void MajorFrame::kill_all()
+//{
+//    for(Window &w : windows){
+//        for(Slice &s : w.slices){
+//            s.stop(); // unregister timer
+//            for(Process &p : s.sc.processes){
+//                p.kill();
+//            }
+//            for(Process &p : s.be.processes){
+//                p.kill();
+//            }
+//            s.sc.unfreeze();
+//            s.be.unfreeze();
+//        }
+//    }
+//}
 
-MajorFrame::~MajorFrame()
-{
-#ifdef VERBOSE
-    std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
-#endif
-    timer.stop();
-    kill_all();
-    // wait for all process cgroups to be removed
-    loop.run();
+//MajorFrame::~MajorFrame()
+//{
+//#ifdef VERBOSE
+//    std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
+//#endif
+//    timer.stop();
+//    kill_all();
+//    // wait for all process cgroups to be removed
+//    loop.run();
 
-}
+//}
 
 void MajorFrame::move_to_next_window()
 {
@@ -59,6 +61,7 @@ void MajorFrame::start()
     current->start();
     timeout += current->length;
     timer.start(timeout);
+
 }
 
 void MajorFrame::stop()
@@ -70,7 +73,7 @@ void MajorFrame::timeout_cb()
 {
     // TODO do all window switching stuff
 #ifdef VERBOSE
-    std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    cerr << __PRETTY_FUNCTION__ << endl;
 #endif
 
     current->stop();

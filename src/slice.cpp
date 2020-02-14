@@ -1,5 +1,7 @@
 #include "slice.hpp"
 
+using namespace std;
+
 Slice::Slice(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time,
              Partition &sc, Partition &be, std::string cpus)
     : sc(sc)

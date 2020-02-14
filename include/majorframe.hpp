@@ -9,11 +9,11 @@
 
 typedef std::list<Window> Windows;
 
-class MajorFrame : protected DemosSched
+class MajorFrame
 {
 public:
-    MajorFrame(ev::loop_ref loop, Windows &windows );
-    ~MajorFrame();
+    MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time, Windows &windows );
+//    ~MajorFrame();
 
     void move_to_next_window();
     Window & get_current_window();
@@ -29,7 +29,7 @@ private:
     ev::sig sigint;
     void timeout_cb();
     void sigint_cb(ev::sig &w, int revents);
-    void kill_all();
+//    void kill_all();
     std::chrono::steady_clock::time_point timeout;
 
 };

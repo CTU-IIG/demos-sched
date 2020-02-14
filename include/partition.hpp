@@ -54,7 +54,7 @@ private:
     std::string name;
 
     bool completed = false;
-    bool empty = false;
+    bool empty = true;
 
     // cyclic queue
     void move_to_next_proc();
