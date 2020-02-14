@@ -22,7 +22,8 @@ class Process
                 Partition& partition,
                 std::vector<char *> argv,
                 std::chrono::nanoseconds budget,
-                std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
+                std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
+                bool contionuous = false);
 
         //bool is_completed();
         void exec();
@@ -33,8 +34,12 @@ class Process
         void recompute_budget();
         std::chrono::nanoseconds get_actual_budget();
 
-        //void mark_completed();
-        //void mark_uncompleted();
+        bool is_completed();
+        void mark_completed();
+        void mark_uncompleted();
+
+        pid_t get_pid();
+
 
         // delete copy constructor
 //        Process(const Process&) = delete;
@@ -51,9 +56,9 @@ private:
         std::chrono::nanoseconds budget;
         std::chrono::nanoseconds budget_jitter;
         std::chrono::nanoseconds actual_budget;
-//        bool completed = false;
-//        bool continuous;
-//        pid_t pid = -1;
+        bool completed = false;
+        bool continuous;
+        pid_t pid = -1;
 //        Cgroup cgroup;
 
 };

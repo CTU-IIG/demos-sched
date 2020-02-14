@@ -11,7 +11,7 @@ Process::Process(ev::loop_ref loop,
                  Partition &part,
                  std::vector<char*> argv,
                  std::chrono::nanoseconds budget,
-                 std::chrono::nanoseconds budget_jitter)
+                 std::chrono::nanoseconds budget_jitter, bool contionuous)
     : part(part)
     , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
     , cgf(part.cgf, name)
@@ -19,6 +19,7 @@ Process::Process(ev::loop_ref loop,
     , budget(budget)
     , budget_jitter(budget_jitter)
     , actual_budget(budget)
+    , continuous(contionuous)
     //, cgroup(loop, true, argv[0], partition_cgrp_name)
     // TODO regex to cut argv[0] at "/"
     //, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
@@ -34,7 +35,7 @@ void Process::exec()
     //TODO pipe
 
     // create new process
-    pid_t pid = CHECK(vfork());
+    pid = CHECK(vfork());
 
     // launch new process
     if( pid == 0 ){
@@ -79,6 +80,27 @@ void Process::recompute_budget()
 std::chrono::nanoseconds Process::get_actual_budget()
 {
     return actual_budget;
+}
+
+bool Process::is_completed()
+{
+    return completed;
+}
+
+void Process::mark_completed()
+{
+    if( !continuous )
+        completed = true;
+}
+
+void Process::mark_uncompleted()
+{
+    completed = false;
+}
+
+pid_t Process::get_pid()
+{
+    return pid;
 }
 
 void Process::populated_cb(bool populated)

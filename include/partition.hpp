@@ -34,9 +34,14 @@ public:
     //void set_cpus(std::string cpus);
     //std::string get_name();
 
+    void move_to_first_proc();
     // return false if there is none
-    //bool move_to_next_unfinished_proc();
-    //void clear_done_flag();
+    bool move_to_next_unfinished_proc();
+
+    bool is_completed();
+    void clear_completed_flag();
+
+    bool is_empty();
 
 //protected:
     CgroupFreezer cgf;
@@ -48,6 +53,8 @@ private:
     Processes::iterator current;
     std::string name;
 
+    bool completed = false;
+    bool empty = false;
 
     // cyclic queue
     void move_to_next_proc();

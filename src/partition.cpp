@@ -59,8 +59,43 @@ void Partition::add_process(ev::loop_ref loop,
 
     processes.emplace_back( loop, "todo", *this,
                             argv, budget, budget_jitter);
-    current = processes.begin();
+    current = --processes.end();
+    empty = false;
     current->exec();
+}
+
+void Partition::move_to_first_proc()
+{
+    current = processes.begin();
+}
+
+// return false if there is none
+bool Partition::move_to_next_unfinished_proc()
+{
+    for( size_t i = 0; i < processes.size(); i++) {
+        move_to_next_proc();
+        if( !current->is_completed() )
+            return true;
+    }
+    completed = true;
+    return false;
+}
+
+bool Partition::is_completed()
+{
+    return completed;
+}
+
+void Partition::clear_completed_flag()
+{
+    completed = false;
+    for( Process &p : processes )
+        p.mark_uncompleted();
+}
+
+bool Partition::is_empty()
+{
+    return empty;
 }
 
 // cyclic queue
@@ -73,7 +108,7 @@ void Partition::move_to_next_proc()
 void Partition::proc_exit_cb(Process &proc)
 {
 #ifdef VERBOSE
-    cerr<< __PRETTY_FUNCTION__ << " " << name << endl;
+    cerr<< __PRETTY_FUNCTION__ << " partition: " << name << " pid: " << proc.get_pid() << endl;
 #endif
 
     // find proc in processes and clear it

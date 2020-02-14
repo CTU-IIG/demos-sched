@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     
     int period = atoi(argv[1]);
     char *msg = argv[2];
-    printf("launched %s\n", argv[2]);
+    fprintf(stderr, "launched %s\n", argv[2]);
     
     while(1){
         usleep(period);

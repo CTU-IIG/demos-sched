@@ -9,10 +9,11 @@
 
 typedef std::list<Partition> Partitions;
 
-class Slice : protected DemosSched
+class Slice
 {
 public:
-    Slice(ev::loop_ref loop, Partition &sc, Partition &be, std::string cpus = "0");
+    Slice(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time,
+          Partition &sc, Partition &be, std::string cpus = "0");
 
     Partition &sc;
     Partition &be;

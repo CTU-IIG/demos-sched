@@ -15,6 +15,13 @@ executable('partition-test',
            include_directories : incdir,
            dependencies : libev_dep )
 
+executable('slice-test',
+           ['slice_test.cpp', 'cgroup.cpp', 'demossched.cpp',
+            'process.cpp', 'partition.cpp', 'slice.cpp',
+            'timerfd.cpp'],
+           include_directories : incdir,
+           dependencies : libev_dep )
+
 executable('infinite_proc', 'infinite_proc.cpp')
 
 #executable('demos-sched',
