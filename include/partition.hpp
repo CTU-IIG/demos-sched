@@ -47,6 +47,8 @@ public:
 
     void bind_empty_cb(std::function<void()> new_empty_cb );
 
+    std::string get_name();
+
 //protected:
     CgroupFreezer cgf;
     CgroupCpuset cgc;

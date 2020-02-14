@@ -4,6 +4,14 @@
 
 incdir = include_directories('../include')
 
+executable('demos-sched',
+           ['demos-sched.cpp','process.cpp','partition.cpp',
+            'slice.cpp','window.cpp','majorframe.cpp',
+            'cgroup.cpp', 'timerfd.cpp',
+            'config_parser.cpp'],
+           include_directories : incdir,
+           dependencies : [libev_dep, dependency('yaml-cpp')] )
+
 executable('cgroup-test',
            ['cgroup_test.cpp', 'cgroup.cpp'],
            include_directories : incdir,
@@ -30,14 +38,6 @@ executable('majorframe-test',
            dependencies : libev_dep)
 
 executable('infinite_proc', 'infinite_proc.cpp')
-
-#executable('demos-sched',
-#           ['demos-sched.cpp','process.cpp','partition.cpp',
-#            'slice.cpp','window.cpp','majorframe.cpp',
-#            'cgroup.cpp', 'timerfd.cpp','demossched.cpp',
-#            'config_parser.cpp'],
-#           include_directories : incdir,
-#           dependencies : [libev_dep, dependency('yaml-cpp')] )
 
 executable('cgroup_notif_test', 'cgroup_notif_test.cpp',
            include_directories : incdir,
