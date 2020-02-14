@@ -29,9 +29,11 @@ private:
     ev::sig sigint;
     void timeout_cb();
     void sigint_cb(ev::sig &w, int revents);
+    void empty_cb();
 //    void kill_all();
     std::chrono::steady_clock::time_point timeout;
 
+    void kill_all();
 };
 
 #endif // MAJORFRAME_HPP

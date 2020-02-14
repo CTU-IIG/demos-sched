@@ -58,6 +58,7 @@ private:
         std::chrono::nanoseconds actual_budget;
         bool completed = false;
         bool continuous;
+        bool killed = false;
         pid_t pid = -1;
 //        Cgroup cgroup;
 

@@ -5,8 +5,7 @@
 using namespace std::placeholders;
 using namespace std;
 
-Partition::Partition(ev::loop_ref loop,
-                     std::string freezer_path,
+Partition::Partition(std::string freezer_path,
                      std::string cpuset_path,
                      std::string events_path,
                      std::string name)
@@ -104,6 +103,17 @@ bool Partition::is_empty()
     return empty;
 }
 
+void Partition::kill_all()
+{
+    for(Process &p : processes)
+        p.kill();
+}
+
+void Partition::bind_empty_cb(std::function<void ()> new_empty_cb)
+{
+    empty_cbs.push_back( new_empty_cb );
+}
+
 // cyclic queue
 void Partition::move_to_next_proc()
 {
@@ -123,9 +133,15 @@ void Partition::proc_exit_cb(Process &proc)
     for(Processes::iterator it = processes.begin(); it != processes.end(); it++){
         if( &proc == &(*it) ){
             processes.erase(it);
-            return;
+            break;
         }
     }
 
-    throw std::system_error(1, std::generic_category(), std::string(__PRETTY_FUNCTION__) + ": cannot find process" );
+    if( processes.empty() ){
+        empty = true;
+        // notify all slices which owns this partition
+        for(auto &cb : empty_cbs)
+            cb();
+    }
+
 }

@@ -6,6 +6,9 @@
 #include "demossched.hpp"
 #include <list>
 #include <chrono>
+#include <functional>
+
+using namespace std::placeholders;
 
 typedef std::list<Process> Processes;
 
@@ -13,8 +16,7 @@ class Partition
 {
 public:
     //Partition( Processes &&processes, std::string cgroup_name );
-    Partition(ev::loop_ref loop,
-              std::string freezer_path,
+    Partition(std::string freezer_path,
               std::string cpuset_path,
               std::string events_path,
               std::string name = "" );
@@ -40,8 +42,10 @@ public:
 
     bool is_completed();
     void clear_completed_flag();
-
     bool is_empty();
+    void kill_all();
+
+    void bind_empty_cb(std::function<void()> new_empty_cb );
 
 //protected:
     CgroupFreezer cgf;
@@ -58,6 +62,8 @@ private:
 
     // cyclic queue
     void move_to_next_proc();
+
+    std::vector< std::function<void()> > empty_cbs;// = std::bind(&Partition::default_empty_cb, this);
 
 };
 

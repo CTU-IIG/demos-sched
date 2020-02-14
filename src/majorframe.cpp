@@ -11,26 +11,15 @@ MajorFrame::MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point 
     , timeout( start_time )
 {
     timer.set(bind(&MajorFrame::timeout_cb, this));
-//    sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
-//    sigint.start(SIGINT);
+    sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
+    sigint.start(SIGINT);
+
+    for(Window &w : windows)
+        w.bind_empty_cb( bind(&MajorFrame::empty_cb, this));
+
 }
 
-//void MajorFrame::kill_all()
-//{
-//    for(Window &w : windows){
-//        for(Slice &s : w.slices){
-//            s.stop(); // unregister timer
-//            for(Process &p : s.sc.processes){
-//                p.kill();
-//            }
-//            for(Process &p : s.be.processes){
-//                p.kill();
-//            }
-//            s.sc.unfreeze();
-//            s.be.unfreeze();
-//        }
-//    }
-//}
+
 
 //MajorFrame::~MajorFrame()
 //{
@@ -66,6 +55,7 @@ void MajorFrame::start()
 
 void MajorFrame::stop()
 {
+    timer.stop();
     current->stop();
 }
 
@@ -84,9 +74,31 @@ void MajorFrame::timeout_cb()
     timer.start(timeout);
 }
 
+void MajorFrame::kill_all()
+{
+    for(Window &w : windows){
+        for(Slice &s : w.slices){
+            s.be.kill_all();
+            s.sc.kill_all();
+        }
+    }
+}
+
 void MajorFrame::sigint_cb(ev::sig &w, int revents)
 {
-    w.stop();
+    stop();
+    kill_all();
+    //w.stop();
     //loop.break_loop();
-    throw std::system_error(0, std::generic_category(), "demos-sched killed by signal");
+    //throw std::system_error(0, std::generic_category(), "demos-sched killed by signal");
+}
+
+void MajorFrame::empty_cb()
+{
+    for( Window &w : windows)
+        if( !w.is_empty() )
+            return;
+
+    cerr<< __PRETTY_FUNCTION__ <<endl;
+    loop.break_loop(ev::ALL);
 }

@@ -56,9 +56,12 @@ void Process::exec()
 
 void Process::kill()
 {
-    cgf.freeze();
-    cgf.kill_all();
-    cgf.unfreeze();
+    if( !killed ){
+        cgf.freeze();
+        cgf.kill_all();
+        cgf.unfreeze();
+    }
+    killed = true;
 }
 
 void Process::freeze()
