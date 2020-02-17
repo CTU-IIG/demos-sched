@@ -7,8 +7,7 @@ incdir = include_directories('../include')
 executable('demos-sched',
            ['demos-sched.cpp','process.cpp','partition.cpp',
             'slice.cpp','window.cpp','majorframe.cpp',
-            'cgroup.cpp', 'timerfd.cpp',
-            'config_parser.cpp'],
+            'cgroup.cpp', 'timerfd.cpp'],
            include_directories : incdir,
            dependencies : [libev_dep, dependency('yaml-cpp')] )
 
@@ -48,7 +47,7 @@ executable('timerfd_test',
            include_directories : incdir,
            dependencies : libev_dep)
 
-#executable('yaml-demo',
-#           ['yaml_demo.cpp'],
-#           dependencies : dependency('yaml-cpp'))
+executable('yaml-demo',
+           ['yaml_demo.cpp'],
+           dependencies : dependency('yaml-cpp'))
         

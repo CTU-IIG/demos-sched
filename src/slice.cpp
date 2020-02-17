@@ -11,6 +11,7 @@ Slice::Slice(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time
     , timer(loop)
 {
     sc.bind_empty_cb( std::bind(&Slice::empty_partition_cb, this));
+    be.bind_empty_cb( std::bind(&Slice::empty_partition_cb, this));
     timer.set(std::bind(&Slice::timeout_cb, this));
     empty = false;
 }
@@ -29,8 +30,8 @@ void Slice::move_proc_and_start_timer( Partition &p )
 
 void Slice::empty_partition_cb()
 {
-    //cerr<< __PRETTY_FUNCTION__ <<endl;
     if( sc.is_empty() && be.is_empty() ){
+        cerr<< __PRETTY_FUNCTION__<<endl;
         empty = true;
         empty_cb();
     }

@@ -44,8 +44,7 @@ void Window::empty_slice_cb()
     for( Slice &s : slices )
         if( !s.is_empty() )
             return;
-
-    //cerr<< __PRETTY_FUNCTION__ <<endl;
+    cerr<< __PRETTY_FUNCTION__ <<endl;
     empty = true;
     // notify major frame that window is empty
     empty_cb();

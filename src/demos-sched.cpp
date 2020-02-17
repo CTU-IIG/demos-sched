@@ -55,10 +55,12 @@ int main(int argc, char *argv[])
         cerr<<"parsed "<<partitions.size()<<" partitions"<<endl;
 
         Windows windows;
+        list<Slices> all_slices( config["windows"].size() );
+        auto s_it = all_slices.begin();
         for(YAML::const_iterator it = config["windows"].begin();
             it != config["windows"].end(); ++it)
         {
-            Slices slices;
+            //Slices slices;
             for(YAML::const_iterator jt = (*it)["slices"].begin();
                 jt != (*it)["slices"].end(); ++jt)
             {
@@ -82,14 +84,17 @@ int main(int argc, char *argv[])
                     }
                 }
                 // create slice
-                slices.emplace_back( loop, start_time, *sc_part_ptr, *be_part_ptr, (*jt)["cpu"].as<string>());
+                s_it->emplace_back( loop, start_time, *sc_part_ptr, *be_part_ptr, (*jt)["cpu"].as<string>());
             }
-            windows.emplace_back( slices, std::chrono::milliseconds((*it)["length"].as<int>()) );
+            windows.emplace_back(*s_it , std::chrono::milliseconds((*it)["length"].as<int>()) );
+            s_it++;
         }
         cerr<<"parsed "<<windows.size()<<" windows"<<endl;
 
         MajorFrame mf(loop, start_time, windows);
         mf.start();
+
+        loop.run();
 
 
     } catch (const std::exception& e) {
