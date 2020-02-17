@@ -2,6 +2,12 @@
 #include <yaml-cpp/yaml.h>
 #include <list>
 #include <iostream>
+#include <fstream>
+#include "demossched.hpp"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace std::chrono_literals;
 
@@ -22,11 +28,77 @@ void print_help()
 
 using namespace std;
 
+void load_cgroup_paths(string &freezer_p, string &cpuset_p, string &unified_p)
+{
+    ifstream cgroup_f( "/proc/"+ to_string(getpid()) + "/cgroup");
+    int num;
+    string path;
+    while (cgroup_f >> num >> path) {
+        if( path.size() > 2 && path.find("::") != string::npos )
+            unified_p = "/sys/fs/cgroup/unified" + path.substr(2);
+        if( path.size() > 9 && path.find(":freezer:") != string::npos )
+            freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9);
+        if( path.size() > 8 && path.find(":cpuset:") != string::npos )
+            cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8); // skip :cpuset:
+    }
+
+    // check access rights
+    struct stat sb;
+    bool ok = true;
+
+    CHECK(stat(unified_p.c_str(), &sb));
+    if( sb.st_uid != getuid() ){
+        cerr<< "permission denied, need to add this shell to the user-delegated unified cgroup." << endl
+            << "Run these commands:" << endl
+            << "sudo mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup" << endl
+            << "sudo chown -R <user> /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup" << endl
+            << "sudo echo $$ > /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup/cgroup.procs" << endl;
+        ok = false;
+    }
+
+    CHECK(stat(freezer_p.c_str(), &sb));
+    if( sb.st_uid != getuid() ){
+        cerr<< "permission denied, need to add this shell to the user-delegated freezer cgroup." << endl
+            << "Run these commands:" << endl
+            << "sudo mkdir /sys/fs/cgroup/freezer/my_cgroup" << endl
+            << "sudo chown -R <user> /sys/fs/cgroup/freezer/my_cgroup" << endl
+            << "echo $$ > /sys/fs/cgroup/freezer/my_cgroup/cgroup.procs" << endl;
+        ok = false;
+    }
+
+    ifstream clone_children_f( cpuset_p + "/cgroup.clone_children");
+    int n;
+    clone_children_f >> n;
+    if( n != 1 ){
+        cerr<< "Need to set clone_children flag in cpuset before creating new cpuset cgroup." << endl
+            << "Run these commands:" << endl
+            << "sudo echo 1 > /sys/fs/cgroup/cpuset/cgroup.clone_children" << endl;
+        ok = false;
+    }
+
+    CHECK(stat(cpuset_p.c_str(), &sb));
+    if( sb.st_uid != getuid() ){
+        cerr<< "permission denied, need to add this shell to the user-delegated cpuset cgroup." << endl
+            << "Run these commands:" << endl
+            << "sudo mkdir /sys/fs/cgroup/cpuset/my_cgroup" << endl
+            << "sudo chown -R <user> /sys/fs/cpuset/my_cgroup" << endl
+            << "echo $$ > /sys/fs/cgroup/cpuset/my_cgroup/cgroup.procs" << endl;
+        ok = false;
+    }
+
+    if( !ok )
+        throw std::system_error(1, std::generic_category(), std::string(__PRETTY_FUNCTION__) + ": wrong cgroup settings");
+
+}
+
 int main(int argc, char *argv[])
 {
-    std::string freezer_path = "/sys/fs/cgroup/freezer/my_cgroup";
-    std::string cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup";
-    std::string unified_path = "/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup";
+//    std::string freezer_path = "/sys/fs/cgroup/freezer/my_cgroup";
+//    std::string cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup";
+//    std::string unified_path = "/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup";
+    string freezer_path, cpuset_path, unified_path;
+
+    load_cgroup_paths(freezer_path, cpuset_path, unified_path);
 
     auto start_time = chrono::steady_clock::now();
 

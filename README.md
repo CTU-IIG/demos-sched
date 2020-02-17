@@ -31,3 +31,8 @@ Then build everything by running:
     mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup
     ```
 
+## if everything sucks run this script
+    ```
+    src/release_agent.sh
+    ```
+

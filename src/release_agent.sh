@@ -11,7 +11,10 @@ for i in "${procs_files[@]}"
 do
     while read line
     do
-        kill $line
+        if [ $line != $$ ]
+        then
+            kill $line
+        fi
     done < "$i"
 done
 
