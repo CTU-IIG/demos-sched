@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <cerrno>
 
 using namespace std::chrono_literals;
 
@@ -33,23 +34,52 @@ void load_cgroup_paths(string &freezer_p, string &cpuset_p, string &unified_p)
     ifstream cgroup_f( "/proc/"+ to_string(getpid()) + "/cgroup");
     int num;
     string path;
+    const string demos_cg_name = "/demos";
     while (cgroup_f >> num >> path) {
-        if( path.size() > 2 && path.find("::") != string::npos )
-            unified_p = "/sys/fs/cgroup/unified" + path.substr(2);
-        if( path.size() > 9 && path.find(":freezer:") != string::npos )
-            freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9);
-        if( path.size() > 8 && path.find(":cpuset:") != string::npos )
-            cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8); // skip :cpuset:
+        if( num == 0 )
+            unified_p = "/sys/fs/cgroup/unified" + path.substr(2) + demos_cg_name;
+        if( path.find(":freezer:") == 0 )
+            freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + demos_cg_name;
+        if( path.find(":cpuset:") == 0 )
+            cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8) + demos_cg_name;
     }
 
     // check access rights
     struct stat sb;
     bool ok = true;
+    stringstream commands;
 
-    CHECK(stat(unified_p.c_str(), &sb));
+
+
+
+    //CHECK(stat(unified_p.c_str(), &sb));
+    Cgroup unified;
+    try {
+        unified = Cgroup(unified_p);
+    } catch (system_error &e) {
+        switch (e.code().value()) {
+        case EEXIST: /* ignore */; break;
+        case EACCES:
+        case EPERM: commands << "sudo mkdir " << unified_p << endl; break;
+        default: throw;
+        }
+    }
+    try {
+        unified.add_process(getpid());
+    } catch (system_error&) {
+        commands << "sudo chown -R " << getuid() << " " << unified.getPath() << endl;
+    }
+
+
+    if (!commands.str().empty()) {
+        cerr << "Cannot create necessary cgroups. Run me as root or run the following commands:" << endl
+             << commands.str();
+        exit(1);
+    }
+    exit(0);
+
     if( sb.st_uid != getuid() ){
-        cerr<< "permission denied, need to add this shell to the user-delegated unified cgroup." << endl
-            << "Run these commands:" << endl
+        commands
             << "sudo mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup" << endl
             << "sudo chown -R <user> /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup" << endl
             << "sudo echo $$ > /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup/cgroup.procs" << endl;
