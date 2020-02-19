@@ -110,18 +110,16 @@ int main(int argc, char *argv[])
         Partition empty_part(freezer_path, cpuset_path, unified_path, "empty_part");
         Partitions partitions;
 
-        for(YAML::const_iterator it = config["partitions"].begin();
-            it != config["partitions"].end(); ++it)
+        for(auto ypartition : config["partitions"])
         {
             // create partition
-            partitions.emplace_back( freezer_path, cpuset_path, unified_path, (*it)["name"].as<string>() );
+            partitions.emplace_back( freezer_path, cpuset_path, unified_path, ypartition["name"].as<string>() );
 
-            for(YAML::const_iterator jt = (*it)["processes"].begin();
-                jt != (*it)["processes"].end(); ++jt)
+            for(auto yprocess : ypartition["processes"])
             {
                 // add process to partition
-                partitions.back().add_process(loop, (*jt)["cmd"].as<string>(),
-                                    chrono::milliseconds((*jt)["budget"].as<int>()) );
+                partitions.back().add_process(loop, yprocess["cmd"].as<string>(),
+                                    chrono::milliseconds(yprocess["budget"].as<int>()) );
             }
         }
         cerr<<"parsed "<<partitions.size()<<" partitions"<<endl;
