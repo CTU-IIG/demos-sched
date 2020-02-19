@@ -29,6 +29,8 @@ class Process;
 
 class Cgroup{
 public:
+    Cgroup() {};
+    Cgroup(std::string path);
     Cgroup(std::string parent_path, std::string name);
     Cgroup(Cgroup& parent, std::string name /* Cgroup &garbage*/);
     ~Cgroup();
@@ -40,6 +42,13 @@ public:
     // delete copy constructor
     Cgroup(const Cgroup&) = delete;
     Cgroup& operator=(const Cgroup&) = delete;
+
+    // Move constructor/assignment
+    Cgroup(Cgroup&& other) = default;
+    Cgroup& operator=(Cgroup&&) = default;
+
+    std::string getPath() const;
+
 protected:
     static int cgrp_count;
     //std::vector<std::unique_ptr<Cgroup>> children;

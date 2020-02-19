@@ -7,13 +7,17 @@ using namespace std;
 
 int Cgroup::cgrp_count = 0;
 
-Cgroup::Cgroup(string parent_path, string name)
-    :path(parent_path + "/" + to_string(cgrp_count) + "_" + name)
+Cgroup::Cgroup(string path)
+    : path(path)
 {
-    //cerr<< __PRETTY_FUNCTION__ << " " << path << endl;
-    CHECK( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) );
+    cerr << __PRETTY_FUNCTION__ << path << endl;
+    CHECK_MSG( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), path );
     cgrp_count++;
 }
+
+Cgroup::Cgroup(string parent_path, string name)
+    : Cgroup(parent_path + "/" /*+ to_string(cgrp_count) + "_"*/ + name)
+{}
 
 Cgroup::Cgroup(Cgroup &parent, string name)
     : Cgroup(parent.path, name)
@@ -23,6 +27,8 @@ Cgroup::Cgroup(Cgroup &parent, string name)
 
 Cgroup::~Cgroup()
 {
+    if (path.empty())
+        return;
     try{
         //cerr<< __PRETTY_FUNCTION__ << " " << path << endl;
         CHECK( rmdir( path.c_str()) );
@@ -46,6 +52,11 @@ void Cgroup::kill_all()
 #endif
         CHECK( kill(pid, SIGKILL) );
     }
+}
+
+std::string Cgroup::getPath() const
+{
+    return path;
 }
 
 //////////////////

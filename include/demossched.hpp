@@ -5,6 +5,7 @@
 #include <err.h>
 
 #define CHECK(expr) ({ auto ret = (expr); if (ret == -1) throw std::system_error(errno, std::generic_category(), std::string(__PRETTY_FUNCTION__) + ": " #expr); ret; })
+#define CHECK_MSG(expr, string) ({ auto ret = (expr); if (ret == -1) throw std::system_error(errno, std::generic_category(), string); ret; })
 
 #define VERBOSE
 
