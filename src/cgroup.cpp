@@ -5,14 +5,18 @@
 
 using namespace std;
 
-int Cgroup::cgrp_count = 0;
-
 Cgroup::Cgroup(string path)
     : path(path)
 {
     cerr << __PRETTY_FUNCTION__ << path << endl;
-    CHECK_MSG( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), path );
-    cgrp_count++;
+    try{
+        CHECK_MSG( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), path );
+    } catch (system_error &e) {
+        switch (e.code().value()) {
+        case EEXIST: /* ignore */; break;
+        default: throw;
+    }
+}
 }
 
 Cgroup::Cgroup(string parent_path, string name)
@@ -30,16 +34,26 @@ Cgroup::~Cgroup()
     if (path.empty())
         return;
     try{
-        //cerr<< __PRETTY_FUNCTION__ << " " << path << endl;
+        cerr<< __PRETTY_FUNCTION__ << " " << path << endl;
         CHECK( rmdir( path.c_str()) );
-    } catch (const std::exception& e) {
-        throw e;
+    } catch (const system_error& e) {
+        switch (e.code().value()) {
+        case EACCES:
+        case EPERM: /* ignore */; break;
+        default: throw;
+        }
     }
 }
 
 void Cgroup::add_process(pid_t pid)
 {
-    ofstream( path + "/cgroup.procs" ) << pid;
+    cerr<<__PRETTY_FUNCTION__<< path + "/cgroup.procs" << pid <<endl;
+
+    //ofstream( path + "/cgroup.procs" ) << pid; // WHY THIS DOESNT THROW?
+    int fd = CHECK( open( (path + "/cgroup.procs").c_str(), O_NONBLOCK|O_RDWR) );
+    string s = to_string(pid);
+    CHECK( write(fd, s.c_str(), s.size()) );
+    close(fd);
 }
 
 void Cgroup::kill_all()

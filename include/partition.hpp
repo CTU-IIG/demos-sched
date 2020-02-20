@@ -58,6 +58,7 @@ private:
     Processes processes;
     Processes::iterator current;
     std::string name;
+    size_t proc_count = 0;
 
     bool completed = false;
     bool empty = true;

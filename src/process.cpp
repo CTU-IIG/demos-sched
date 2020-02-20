@@ -25,7 +25,7 @@ Process::Process(ev::loop_ref loop,
     //, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
     //, cge(loop, part.cgroup, name, std::bind(&Process::populated_cb, this, _1))
 {
-    std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
+    //std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
     freeze();
 }
 

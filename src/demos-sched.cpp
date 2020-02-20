@@ -29,36 +29,33 @@ void print_help()
 
 using namespace std;
 
+Cgroup unified, freezer, cpuset;
+
 void load_cgroup_paths(string &freezer_p, string &cpuset_p, string &unified_p)
 {
     ifstream cgroup_f( "/proc/"+ to_string(getpid()) + "/cgroup");
     int num;
     string path;
+    string cpuset_parent;
     const string demos_cg_name = "/demos";
     while (cgroup_f >> num >> path) {
         if( num == 0 )
-            unified_p = "/sys/fs/cgroup/unified" + path.substr(2) + demos_cg_name;
+            unified_p = "/sys/fs/cgroup/unified/" + path.substr(2)+ "/.." + demos_cg_name;
         if( path.find(":freezer:") == 0 )
             freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + demos_cg_name;
-        if( path.find(":cpuset:") == 0 )
+        if( path.find(":cpuset:") == 0 ){
             cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8) + demos_cg_name;
+            cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
+        }
     }
 
     // check access rights
-    struct stat sb;
-    bool ok = true;
     stringstream commands;
-
-
-
-
-    //CHECK(stat(unified_p.c_str(), &sb));
-    Cgroup unified;
+    //Cgroup unified;
     try {
         unified = Cgroup(unified_p);
     } catch (system_error &e) {
         switch (e.code().value()) {
-        case EEXIST: /* ignore */; break;
         case EACCES:
         case EPERM: commands << "sudo mkdir " << unified_p << endl; break;
         default: throw;
@@ -67,7 +64,57 @@ void load_cgroup_paths(string &freezer_p, string &cpuset_p, string &unified_p)
     try {
         unified.add_process(getpid());
     } catch (system_error&) {
-        commands << "sudo chown -R " << getuid() << " " << unified.getPath() << endl;
+        commands << "sudo chown -R " << getuid() << " " << unified_p << endl;
+        commands << "sudo echo $$ > " << unified_p + "/cgroup.procs" << endl;
+    }
+
+    //Cgroup freezer;
+    try {
+        freezer = Cgroup(freezer_p);
+    } catch (system_error &e) {
+        switch (e.code().value()) {
+        case EACCES:
+        case EPERM: commands << "sudo mkdir " << freezer_p << endl; break;
+        default: throw;
+        }
+    }
+    try {
+        freezer.add_process(getpid());
+    } catch(system_error&) {
+        commands << "sudo chown -R " << getuid() << " " << freezer_p << endl;
+    }
+
+    //Cgroup cpuset;
+    try {
+        cpuset = Cgroup(cpuset_p);
+
+        ifstream cpus_f(cpuset_parent + "/cpuset.cpus");
+        string cpus;
+        cpus_f >> cpus;
+        ofstream(cpuset_p + "/cpuset.cpus") << cpus;
+
+        ifstream mems_f(cpuset_parent + "/cpuset.mems");
+        string mems;
+        mems_f >> mems;
+        ofstream(cpuset_p + "/cpuset.mems") << mems;
+
+        ofstream(cpuset_p + "/cgroup.clone_children") << "1";
+
+    } catch (system_error &e) {
+        switch (e.code().value()) {
+        case EACCES:
+        case EPERM:
+            //commands << "sudo echo 1 > " << cpuset_parent + "/cgroup.clone_children" << endl;
+            commands << "sudo mkdir " << cpuset_p << endl;
+            break;
+        default: throw;
+        }
+    }
+    try {
+        cpuset.add_process(getpid());
+    } catch(system_error& e) {
+        commands << "sudo chown -R " << getuid() << " " << cpuset_p << endl;
+        cerr<< e.what() <<endl;
     }
 
 
@@ -76,49 +123,6 @@ void load_cgroup_paths(string &freezer_p, string &cpuset_p, string &unified_p)
              << commands.str();
         exit(1);
     }
-    exit(0);
-
-    if( sb.st_uid != getuid() ){
-        commands
-            << "sudo mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup" << endl
-            << "sudo chown -R <user> /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup" << endl
-            << "sudo echo $$ > /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup/cgroup.procs" << endl;
-        ok = false;
-    }
-
-    CHECK(stat(freezer_p.c_str(), &sb));
-    if( sb.st_uid != getuid() ){
-        cerr<< "permission denied, need to add this shell to the user-delegated freezer cgroup." << endl
-            << "Run these commands:" << endl
-            << "sudo mkdir /sys/fs/cgroup/freezer/my_cgroup" << endl
-            << "sudo chown -R <user> /sys/fs/cgroup/freezer/my_cgroup" << endl
-            << "echo $$ > /sys/fs/cgroup/freezer/my_cgroup/cgroup.procs" << endl;
-        ok = false;
-    }
-
-    ifstream clone_children_f( cpuset_p + "/cgroup.clone_children");
-    int n;
-    clone_children_f >> n;
-    if( n != 1 ){
-        cerr<< "Need to set clone_children flag in cpuset before creating new cpuset cgroup." << endl
-            << "Run these commands:" << endl
-            << "sudo echo 1 > /sys/fs/cgroup/cpuset/cgroup.clone_children" << endl;
-        ok = false;
-    }
-
-    CHECK(stat(cpuset_p.c_str(), &sb));
-    if( sb.st_uid != getuid() ){
-        cerr<< "permission denied, need to add this shell to the user-delegated cpuset cgroup." << endl
-            << "Run these commands:" << endl
-            << "sudo mkdir /sys/fs/cgroup/cpuset/my_cgroup" << endl
-            << "sudo chown -R <user> /sys/fs/cpuset/my_cgroup" << endl
-            << "echo $$ > /sys/fs/cgroup/cpuset/my_cgroup/cgroup.procs" << endl;
-        ok = false;
-    }
-
-    if( !ok )
-        throw std::system_error(1, std::generic_category(), std::string(__PRETTY_FUNCTION__) + ": wrong cgroup settings");
-
 }
 
 int main(int argc, char *argv[])

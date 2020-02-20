@@ -1,8 +1,14 @@
 #!/bin/bash
 
-FREEZER="/sys/fs/cgroup/freezer/my_cgroup"
-CPUSET="/sys/fs/cgroup/cpuset/my_cgroup"
-UNIFIED="/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup"
+#if [ -z "$1" ] then
+#    CG_NAME="demos"
+#else
+#    CG_NAME="$1"
+#fi
+
+FREEZER="/sys/fs/cgroup/freezer/demos"
+CPUSET="/sys/fs/cgroup/cpuset/demos"
+UNIFIED="/sys/fs/cgroup/unified/user.slice/user-1000.slice/demos"
 
 # kill all procs in freezer
 procs_files=($(find "$FREEZER" -name *.procs))

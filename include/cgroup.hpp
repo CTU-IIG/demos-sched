@@ -50,7 +50,6 @@ public:
     std::string getPath() const;
 
 protected:
-    static int cgrp_count;
     //std::vector<std::unique_ptr<Cgroup>> children;
     std::vector<Cgroup*> children;
     std::string path;
