@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <cerrno>
+#include <algorithm>
 
 using namespace std::chrono_literals;
 
@@ -162,36 +163,27 @@ int main(int argc, char *argv[])
         Windows windows;
         list<Slices> all_slices( config["windows"].size() );
         auto s_it = all_slices.begin();
-        for(YAML::const_iterator it = config["windows"].begin();
-            it != config["windows"].end(); ++it)
+        for(auto ywindow : config["windows"])
         {
             //Slices slices;
-            for(YAML::const_iterator jt = (*it)["slices"].begin();
-                jt != (*it)["slices"].end(); ++jt)
+            for(auto yslice : ywindow["slices"])
             {
                 Partition *sc_part_ptr = &empty_part;
                 Partition *be_part_ptr = &empty_part;
                 // find and add partitions according to their names
-                if ((*jt)["sc_partition"]){
-                    for(auto iter = partitions.begin(); iter != partitions.end(); iter++){
-                        if( iter->get_name() == (*jt)["sc_partition"].as<string>() ){
-                            sc_part_ptr = &(*iter);
-                            break;
-                        }
-                    }
+                if (yslice["sc_partition"]) {
+                    sc_part_ptr = &*find(begin(partitions), end(partitions),
+                         [&yslice](auto p){return p.get_name() == yslice["sc_partition"].as<string>(); } );
                 }
-                if ((*jt)["be_partition"]){
-                    for(auto iter = partitions.begin(); iter != partitions.end(); iter++){
-                        if( iter->get_name() == (*jt)["be_partition"].as<string>() ){
-                            be_part_ptr = &(*iter);
-                            break;
-                        }
+                if (yslice["be_partition"]){
+                    be_part_ptr = &*find(begin(partitions), end(partitions),
+                         [&yslice](auto p){return p.get_name() == yslice["be_partition"].as<string>(); } );
                     }
                 }
                 // create slice
-                s_it->emplace_back( loop, start_time, *sc_part_ptr, *be_part_ptr, (*jt)["cpu"].as<string>());
+                s_it->emplace_back( loop, start_time, *sc_part_ptr, *be_part_ptr, yslice["cpu"].as<string>());
             }
-            windows.emplace_back(*s_it , std::chrono::milliseconds((*it)["length"].as<int>()) );
+            windows.emplace_back(*s_it , std::chrono::milliseconds(ywindow["length"].as<int>()) );
             s_it++;
         }
         cerr<<"parsed "<<windows.size()<<" windows"<<endl;
