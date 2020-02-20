@@ -30,7 +30,7 @@ class Process;
 class Cgroup{
 public:
     Cgroup() {};
-    Cgroup(std::string path);
+    Cgroup(std::string path, bool may_exist = false);
     Cgroup(std::string parent_path, std::string name);
     Cgroup(Cgroup& parent, std::string name /* Cgroup &garbage*/);
     ~Cgroup();
@@ -52,6 +52,7 @@ public:
 protected:
     //std::vector<std::unique_ptr<Cgroup>> children;
     //std::vector<Cgroup*> children;
+    bool remove = true;
     std::string path;
 };
 

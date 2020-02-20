@@ -54,7 +54,7 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
 
     //Cgroup unified;
     try {
-        unified = Cgroup(unified_p);
+        unified = Cgroup(unified_p, true);
     } catch (system_error &e) {
         switch (e.code().value()) {
         case EACCES:
@@ -66,12 +66,12 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
         unified.add_process(getpid());
     } catch (system_error&) {
         commands << "sudo chown -R " << getuid() << " " << unified_p << endl;
-        commands << "sudo echo $$ > " << unified_p + "/cgroup.procs" << endl;
+        commands << "sudo echo " << getppid() << " > " << unified_p + "/cgroup.procs" << endl;
     }
 
     //Cgroup freezer;
     try {
-        freezer = Cgroup(freezer_p);
+        freezer = Cgroup(freezer_p, true);
     } catch (system_error &e) {
         switch (e.code().value()) {
         case EACCES:
@@ -87,7 +87,7 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
 
     //Cgroup cpuset;
     try {
-        cpuset = Cgroup(cpuset_p);
+        cpuset = Cgroup(cpuset_p, true);
 
         ifstream cpus_f(cpuset_parent + "/cpuset.cpus");
         string cpus;

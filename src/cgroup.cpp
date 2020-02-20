@@ -5,7 +5,7 @@
 
 using namespace std;
 
-Cgroup::Cgroup(string path)
+Cgroup::Cgroup(string path, bool may_exist)
     : path(path)
 {
     cerr << __PRETTY_FUNCTION__ << path << endl;
@@ -13,7 +13,10 @@ Cgroup::Cgroup(string path)
         CHECK_MSG( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), "mkdir "+path );
     } catch (system_error &e) {
         switch (e.code().value()) {
-        case EEXIST: /* ignore */; break;
+        case EEXIST:
+            if (may_exist)
+                remove = false;
+            break;
         default: throw;
     }
 }
@@ -31,7 +34,7 @@ Cgroup::Cgroup(Cgroup &parent, string name)
 
 Cgroup::~Cgroup()
 {
-    if (path.empty())
+    if (path.empty() || !remove)
         return;
     try{
         CHECK_MSG( rmdir( path.c_str()), "rmdir "+path   );
