@@ -141,7 +141,13 @@ int main(int argc, char *argv[])
     ev::default_loop loop;
 
     try {
-        YAML::Node config(YAML::LoadFile("../src/config.yaml"));
+        YAML::Node config;
+        string config_path = argc > 1 ? argv[1] : "../src/config.yaml";
+        try {
+            config = YAML::LoadFile(config_path);
+        } catch (YAML::BadFile &e) {
+            throw std::runtime_error("Cannot load configuration file: " + config_path);
+        }
 
         Partition empty_part(freezer_root, cpuset_root, unified_root, "empty_part");
         Partitions partitions;
