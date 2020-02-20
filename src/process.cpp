@@ -39,7 +39,7 @@ void Process::exec()
     // launch new process
     if( pid == 0 ){
         // CHILD PROCESS
-        CHECK(execl( "/bin/bash",  "/bin/bash", "-c" , argv.c_str(), nullptr ));
+        CHECK(execl( "/bin/sh",  "/bin/sh", "-c" , argv.c_str(), nullptr ));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS

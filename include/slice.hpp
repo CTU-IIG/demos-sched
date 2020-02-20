@@ -37,8 +37,7 @@ private:
     void empty_partition_cb();
     bool empty = true;
 
-    void default_empty_cb(){}
-    std::function<void()> empty_cb = std::bind(&Slice::default_empty_cb, this);
+    std::function<void()> empty_cb;
 };
 
 #endif // SLICE_HPP

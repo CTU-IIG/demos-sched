@@ -6,15 +6,15 @@ MajorFrame::MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point 
     : loop(loop)
     , windows( std::move(windows) )
     , current( this->windows.begin() )
-    , timer(loop)
-    , sigint(loop)
     , timeout( start_time )
 {
     timer.set(bind(&MajorFrame::timeout_cb, this));
     sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
     sigint.start(SIGINT);
+    sigterm.set<MajorFrame, &MajorFrame::sigint_cb>(this);
+    sigterm.start(SIGTERM);
 
-    for(auto &w : windows)
+    for(auto &w : this->windows)
         w->bind_empty_cb( bind(&MajorFrame::empty_cb, this));
 
 }

@@ -6,7 +6,7 @@ Window::Window(Slices &&slices, std::chrono::nanoseconds length)
     : length(length)
     , slices(move(slices))
 {
-    for( auto &s : slices)
+    for( auto &s : this->slices)
         s->bind_empty_cb( bind(&Window::empty_slice_cb, this));
     empty = false;
 }

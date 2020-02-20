@@ -25,8 +25,9 @@ private:
     ev::loop_ref loop;
     Windows windows;
     Windows::iterator current;
-    ev::timerfd timer;
-    ev::sig sigint;
+    ev::timerfd timer {loop};
+    ev::sig sigint {loop};
+    ev::sig sigterm {loop};
     void timeout_cb();
     void sigint_cb(ev::sig &w, int revents);
     void empty_cb();
