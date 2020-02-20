@@ -2,9 +2,9 @@
 
 using namespace std;
 
-MajorFrame::MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time, Windows &windows)
+MajorFrame::MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time, Windows &&windows)
     : loop(loop)
-    , windows( windows )
+    , windows( std::move(windows) )
     , current( this->windows.begin() )
     , timer(loop)
     , sigint(loop)
@@ -14,8 +14,8 @@ MajorFrame::MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point 
     sigint.set<MajorFrame, &MajorFrame::sigint_cb>(this);
     sigint.start(SIGINT);
 
-    for(Window &w : windows)
-        w.bind_empty_cb( bind(&MajorFrame::empty_cb, this));
+    for(auto &w : windows)
+        w->bind_empty_cb( bind(&MajorFrame::empty_cb, this));
 
 }
 
@@ -41,14 +41,14 @@ void MajorFrame::move_to_next_window()
 
 Window &MajorFrame::get_current_window()
 {
-    return *current;
+    return *(current->get());
 }
 
 void MajorFrame::start()
 {
-    current->update_timeout(timeout);
-    current->start();
-    timeout += current->length;
+    current->get()->update_timeout(timeout);
+    current->get()->start();
+    timeout += current->get()->length;
     timer.start(timeout);
 
 }
@@ -56,7 +56,7 @@ void MajorFrame::start()
 void MajorFrame::stop()
 {
     timer.stop();
-    current->stop();
+    current->get()->stop();
 }
 
 void MajorFrame::timeout_cb()
@@ -66,20 +66,20 @@ void MajorFrame::timeout_cb()
     cerr << __PRETTY_FUNCTION__ << endl;
 #endif
 
-    current->stop();
+    current->get()->stop();
     move_to_next_window();
-    current->update_timeout(timeout);
-    current->start();
-    timeout += current->length;
+    current->get()->update_timeout(timeout);
+    current->get()->start();
+    timeout += current->get()->length;
     timer.start(timeout);
 }
 
 void MajorFrame::kill_all()
 {
-    for(Window &w : windows){
-        for(Slice &s : w.slices){
-            s.be.kill_all();
-            s.sc.kill_all();
+    for(auto &w : windows){
+        for(auto &s : w->slices){
+            s->be.kill_all();
+            s->sc.kill_all();
         }
     }
 }
@@ -95,8 +95,8 @@ void MajorFrame::sigint_cb(ev::sig &w, int revents)
 
 void MajorFrame::empty_cb()
 {
-    for( Window &w : windows)
-        if( !w.is_empty() )
+    for( auto &w : windows)
+        if( !w->is_empty() )
             return;
 
     cerr<< __PRETTY_FUNCTION__ <<endl;

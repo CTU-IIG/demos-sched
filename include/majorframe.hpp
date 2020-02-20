@@ -7,12 +7,12 @@
 #include <list>
 #include <ev++.h>
 
-typedef std::list<Window> Windows;
+typedef std::vector<std::unique_ptr<Window>> Windows;
 
 class MajorFrame
 {
 public:
-    MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time, Windows &windows );
+    MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time, Windows &&windows );
 //    ~MajorFrame();
 
     void move_to_next_window();
@@ -23,7 +23,7 @@ public:
 private:
     //std::chrono::nanoseconds length; // do we need this?
     ev::loop_ref loop;
-    Windows &windows;
+    Windows windows;
     Windows::iterator current;
     ev::timerfd timer;
     ev::sig sigint;

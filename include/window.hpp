@@ -7,16 +7,16 @@
 #include <chrono>
 #include <ev++.h>
 
-typedef std::list<Slice> Slices;
+typedef std::vector<std::unique_ptr<Slice>> Slices;
 
 class Window
 {
 public:
-    Window(Slices &slices, std::chrono::nanoseconds length);
+    Window(Slices &&slices, std::chrono::nanoseconds length);
     void bind_empty_cb(std::function<void()> new_empty_cb);
 
     std::chrono::nanoseconds length;
-    Slices &slices;
+    Slices slices;
 
     void start();
     void stop();

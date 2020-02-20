@@ -161,10 +161,9 @@ int main(int argc, char *argv[])
         cerr<<"parsed "<<partitions.size()<<" partitions"<<endl;
 
         Windows windows;
-        list<Slices> all_slices( config["windows"].size() );
-        auto s_it = all_slices.begin();
         for(auto ywindow : config["windows"])
         {
+            Slices slices;
             //Slices slices;
             for(auto yslice : ywindow["slices"])
             {
@@ -172,23 +171,21 @@ int main(int argc, char *argv[])
                 Partition *be_part_ptr = &empty_part;
                 // find and add partitions according to their names
                 if (yslice["sc_partition"]) {
-                    sc_part_ptr = &*find(begin(partitions), end(partitions),
-                         [&yslice](auto p){return p.get_name() == yslice["sc_partition"].as<string>(); } );
+                    sc_part_ptr = &*find_if(begin(partitions), end(partitions),
+                         [&yslice](auto &p){return p.get_name() == yslice["sc_partition"].as<string>(); } );
                 }
                 if (yslice["be_partition"]){
-                    be_part_ptr = &*find(begin(partitions), end(partitions),
-                         [&yslice](auto p){return p.get_name() == yslice["be_partition"].as<string>(); } );
+                    be_part_ptr = &*find_if(begin(partitions), end(partitions),
+                         [&yslice](auto &p){return p.get_name() == yslice["be_partition"].as<string>(); } );
                     }
-                }
                 // create slice
-                s_it->emplace_back( loop, start_time, *sc_part_ptr, *be_part_ptr, yslice["cpu"].as<string>());
+                slices.push_back(make_unique<Slice>( loop, start_time, *sc_part_ptr, *be_part_ptr, yslice["cpu"].as<string>()));
             }
-            windows.emplace_back(*s_it , std::chrono::milliseconds(ywindow["length"].as<int>()) );
-            s_it++;
+            windows.push_back(make_unique<Window>(move(slices), chrono::milliseconds(ywindow["length"].as<int>())));
         }
         cerr<<"parsed "<<windows.size()<<" windows"<<endl;
 
-        MajorFrame mf(loop, start_time, windows);
+        MajorFrame mf(loop, start_time, move(windows));
         mf.start();
 
         loop.run();
