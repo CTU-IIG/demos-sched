@@ -29,15 +29,15 @@ void print_help()
 
 using namespace std;
 
-Cgroup unified, freezer, cpuset;
-
-void load_cgroup_paths(string &freezer_p, string &cpuset_p, string &unified_p)
+void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
 {
     ifstream cgroup_f( "/proc/"+ to_string(getpid()) + "/cgroup");
     int num;
     string path;
     string cpuset_parent;
     const string demos_cg_name = "/demos";
+    string unified_p, freezer_p, cpuset_p;
+
     while (cgroup_f >> num >> path) {
         if( num == 0 )
             unified_p = "/sys/fs/cgroup/unified/" + path.substr(2)+ "/.." + demos_cg_name;
@@ -51,6 +51,7 @@ void load_cgroup_paths(string &freezer_p, string &cpuset_p, string &unified_p)
 
     // check access rights
     stringstream commands;
+
     //Cgroup unified;
     try {
         unified = Cgroup(unified_p);
@@ -130,9 +131,9 @@ int main(int argc, char *argv[])
 //    std::string freezer_path = "/sys/fs/cgroup/freezer/my_cgroup";
 //    std::string cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup";
 //    std::string unified_path = "/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup";
-    string freezer_path, cpuset_path, unified_path;
+    Cgroup unified_root, freezer_root, cpuset_root;
 
-    load_cgroup_paths(freezer_path, cpuset_path, unified_path);
+    load_cgroup_paths(unified_root, freezer_root, cpuset_root);
 
     auto start_time = chrono::steady_clock::now();
 
@@ -141,13 +142,13 @@ int main(int argc, char *argv[])
     try {
         YAML::Node config(YAML::LoadFile("../src/config.yaml"));
 
-        Partition empty_part(freezer_path, cpuset_path, unified_path, "empty_part");
+        Partition empty_part(freezer_root, cpuset_root, unified_root, "empty_part");
         Partitions partitions;
 
         for(auto ypartition : config["partitions"])
         {
             // create partition
-            partitions.emplace_back( freezer_path, cpuset_path, unified_path, ypartition["name"].as<string>() );
+            partitions.emplace_back( freezer_root, cpuset_root, unified_root, ypartition["name"].as<string>() );
 
             for(auto yprocess : ypartition["processes"])
             {

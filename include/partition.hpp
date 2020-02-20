@@ -16,9 +16,9 @@ class Partition
 {
 public:
     //Partition( Processes &&processes, std::string cgroup_name );
-    Partition(std::string freezer_path,
-              std::string cpuset_path,
-              std::string events_path,
+    Partition(Cgroup& freezer_parent,
+              Cgroup& cpuset_parent,
+              Cgroup& events_parent,
               std::string name = "" );
     //~Partition();
 
@@ -52,7 +52,7 @@ public:
 //protected:
     CgroupFreezer cgf;
     CgroupCpuset cgc;
-    CgroupEvents cge;
+    Cgroup cge;
     void proc_exit_cb(Process &proc);
 private:
     Processes processes;

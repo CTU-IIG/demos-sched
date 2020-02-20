@@ -10,7 +10,7 @@ Cgroup::Cgroup(string path)
 {
     cerr << __PRETTY_FUNCTION__ << path << endl;
     try{
-        CHECK_MSG( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), path );
+        CHECK_MSG( mkdir( path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), "mkdir "+path );
     } catch (system_error &e) {
         switch (e.code().value()) {
         case EEXIST: /* ignore */; break;
@@ -26,7 +26,7 @@ Cgroup::Cgroup(string parent_path, string name)
 Cgroup::Cgroup(Cgroup &parent, string name)
     : Cgroup(parent.path, name)
 {
-    parent.children.push_back(this);
+    //parent.children.push_back(this);
 }
 
 Cgroup::~Cgroup()
@@ -34,8 +34,7 @@ Cgroup::~Cgroup()
     if (path.empty())
         return;
     try{
-        cerr<< __PRETTY_FUNCTION__ << " " << path << endl;
-        CHECK( rmdir( path.c_str()) );
+        CHECK_MSG( rmdir( path.c_str()), "rmdir "+path   );
     } catch (const system_error& e) {
         switch (e.code().value()) {
         case EACCES:
@@ -80,10 +79,10 @@ CgroupFreezer::CgroupFreezer(string parent_path, string name)
     fd_state = CHECK( open( (path + "/freezer.state").c_str(), O_RDWR | O_NONBLOCK ) );
 }
 
-CgroupFreezer::CgroupFreezer(CgroupFreezer &parent, string name)
-    : CgroupFreezer(parent.path, name)
+CgroupFreezer::CgroupFreezer(Cgroup &parent, string name)
+    : CgroupFreezer(parent.getPath(), name)
 {
-    parent.children.push_back(this);
+    //parent.children.push_back(this);
 }
 
 void CgroupFreezer::freeze()
@@ -111,21 +110,15 @@ CgroupCpuset::CgroupCpuset(string parent_path, string name)
     fd_cpus = CHECK( open( (path + "/cpuset.cpus").c_str(), O_RDWR | O_NONBLOCK ) );
 }
 
-CgroupCpuset::CgroupCpuset(CgroupCpuset &parent, std::string name /* Cgroup &garbage*/)
-    : CgroupCpuset(parent.path, name)
+CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/)
+    : CgroupCpuset(parent.getPath(), name)
 {
-    parent.children.push_back(this);
+    //parent.children.push_back(this);
 }
 
 void CgroupCpuset::set_cpus(string cpus)
 {
     CHECK( write(fd_cpus, cpus.c_str(), cpus.size()) );
-}
-
-////////////////
-CgroupEvents::CgroupEvents(string parent_path, string name)
-    : Cgroup(parent_path, name)
-{
 }
 
 CgroupEvents::CgroupEvents(ev::loop_ref loop, string parent_path, string name, std::function<void (bool)> populated_cb)
@@ -142,7 +135,12 @@ CgroupEvents::CgroupEvents(ev::loop_ref loop, string parent_path, string name, s
 CgroupEvents::CgroupEvents(ev::loop_ref loop, CgroupEvents &parent, string name, std::function<void (bool)> populated_cb)
     : CgroupEvents(loop, parent.path, name, populated_cb)
 {
-    parent.children.push_back(this);
+    //parent.children.push_back(this);
+}
+
+CgroupEvents::CgroupEvents(ev::loop_ref loop, Cgroup &parent, string name, std::function<void (bool)> populated_cb)
+    : CgroupEvents(loop, parent.getPath(), name, populated_cb)
+{
 }
 
 CgroupEvents::~CgroupEvents()

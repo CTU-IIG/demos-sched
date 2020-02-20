@@ -5,13 +5,13 @@
 using namespace std::placeholders;
 using namespace std;
 
-Partition::Partition(std::string freezer_path,
-                     std::string cpuset_path,
-                     std::string events_path,
+Partition::Partition(Cgroup &freezer_parent,
+                     Cgroup &cpuset_parent,
+                     Cgroup &events_parent,
                      std::string name)
-    : cgf( freezer_path, name )
-    , cgc( cpuset_path, name )
-    , cge( events_path, name)
+    : cgf( freezer_parent, name )
+    , cgc( cpuset_parent, name )
+    , cge( events_parent, name)
     , current(nullptr)
     , name(name)
 {

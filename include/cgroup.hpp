@@ -51,14 +51,14 @@ public:
 
 protected:
     //std::vector<std::unique_ptr<Cgroup>> children;
-    std::vector<Cgroup*> children;
+    //std::vector<Cgroup*> children;
     std::string path;
 };
 
 class CgroupFreezer : public Cgroup {
 public:
     CgroupFreezer(std::string parent_path, std::string name);
-    CgroupFreezer(CgroupFreezer &parent, std::string name /* Cgroup &garbage*/);
+    CgroupFreezer(Cgroup &parent, std::string name /* Cgroup &garbage*/);
 
     void freeze();
     void unfreeze();
@@ -69,7 +69,7 @@ private:
 class CgroupCpuset : public Cgroup {
 public:
     CgroupCpuset(std::string parent_path, std::string name);
-    CgroupCpuset(CgroupCpuset &parent, std::string name /* Cgroup &garbage*/);
+    CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/);
     void set_cpus(std::string cpus);
 private:
     int fd_cpus;
@@ -77,10 +77,11 @@ private:
 
 class CgroupEvents : public Cgroup {
 public:
-    CgroupEvents(std::string parent_path, std::string name);
     CgroupEvents(ev::loop_ref loop, std::string parent_path, std::string name,
                  std::function<void(bool)> populated_cb);
     CgroupEvents(ev::loop_ref loop, CgroupEvents &parent, std::string name,
+                 std::function<void(bool)> populated_cb);
+    CgroupEvents(ev::loop_ref loop, Cgroup &parent, std::string name,
                  std::function<void(bool)> populated_cb);
     ~CgroupEvents();
 private:
