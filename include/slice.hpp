@@ -20,14 +20,12 @@ public:
 
     Partition &sc;
     Partition &be;
-    //Cpu cpus;
     std::string cpus;
     void start();
     void stop();
     bool is_empty();
     void update_timeout(std::chrono::steady_clock::time_point actual_time);
 
-    //void delete_part_cb();
 private:
     Process *current_proc = nullptr;
     std::chrono::steady_clock::time_point timeout;

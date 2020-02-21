@@ -87,7 +87,6 @@ void Slice::timeout_cb()
     current_proc->freeze();
     current_proc->mark_completed();
 
-    //std::cerr<< sc.is_done() <<std::endl;
 
     if( !sc.is_empty() && !sc.is_completed() && sc.move_to_next_unfinished_proc() ){
         current_proc = &sc.get_current_proc();

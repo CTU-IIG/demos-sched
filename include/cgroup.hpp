@@ -29,10 +29,10 @@ class Process;
 
 class Cgroup{
 public:
-    Cgroup() {};
+    Cgroup() {}
     Cgroup(std::string path, bool may_exist = false);
     Cgroup(std::string parent_path, std::string name);
-    Cgroup(Cgroup& parent, std::string name /* Cgroup &garbage*/);
+    Cgroup(Cgroup& parent, std::string name);
     ~Cgroup();
 
     void add_process(pid_t pid);
@@ -50,8 +50,6 @@ public:
     std::string getPath() const;
 
 protected:
-    //std::vector<std::unique_ptr<Cgroup>> children;
-    //std::vector<Cgroup*> children;
     bool remove = true;
     std::string path;
 };
@@ -59,7 +57,7 @@ protected:
 class CgroupFreezer : public Cgroup {
 public:
     CgroupFreezer(std::string parent_path, std::string name);
-    CgroupFreezer(Cgroup &parent, std::string name /* Cgroup &garbage*/);
+    CgroupFreezer(Cgroup &parent, std::string name);
 
     void freeze();
     void unfreeze();
@@ -70,7 +68,7 @@ private:
 class CgroupCpuset : public Cgroup {
 public:
     CgroupCpuset(std::string parent_path, std::string name);
-    CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/);
+    CgroupCpuset(Cgroup &parent, std::string name );
     void set_cpus(std::string cpus);
 private:
     int fd_cpus;
@@ -91,63 +89,5 @@ private:
     std::function<void(bool)> populated_cb;
     void clean_cb(ev::io &w, int revents);
 };
-
-//void cb(int i) {
-
-//}
-
-
-//Cgroup parent("a", "b");
-//CgroupEvents cge(ev::default_loop(), parent, "xxx");
-
-//class CgroupXXX
-//{
-//public:
-//    Cgroup(ev::loop_ref loop, bool process_cgrp, std::string cgrp_name = "",
-//           int fd_cpuset_procs = -1, std::string partition_cgroup_name = "");
-//    ~Cgroup();
-//    void add_process(pid_t pid);
-//    void freeze();
-//    void unfreeze();
-
-//    std::string get_name();
-//    int get_fd_cpuset_procs();
-
-//    void set_cpus(std::string cpus);
-
-//    // delete copy constructor
-//    Cgroup(const Cgroup&) = delete;
-//    Cgroup& operator=(const Cgroup&) = delete;
-
-//    Cgroup(Cgroup&& src);
-
-//    void kill_all();
-//private:
-//    std::vector<std::unique_ptr<Cgroup>> children;
-//    static int cgrp_count;
-//    std::string name;
-//    //int fd_freezer_procs;
-//    int fd_freezer_state;
-//    int fd_uni_procs;
-//    int fd_uni_events;
-//    int fd_cpuset_procs = -1;
-//    int fd_cpuset_cpus = -1;
-//    const std::string freezer_p;
-//    const std::string cpuset_p;
-//    const std::string unified_p;
-//    ev::io procs_w;
-//    bool populated = false;
-//    bool killed = false;
-//    bool deleted = false;
-//    bool is_process_cgrp;
-
-//    ev::loop_ref loop;
-
-//    void clean_cb(ev::io &w, int revents);
-//    void close_all_fd();
-//    void delete_cgroup();
-//    void write_pid(pid_t pid, int fd);
-//    int open_fd(std::string path, int attr);
-//};
 
 #endif // CGROUP_HPP

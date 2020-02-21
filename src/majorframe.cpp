@@ -20,19 +20,6 @@ MajorFrame::MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point 
 }
 
 
-
-//MajorFrame::~MajorFrame()
-//{
-//#ifdef VERBOSE
-//    std::cerr<< __PRETTY_FUNCTION__ <<std::endl;
-//#endif
-//    timer.stop();
-//    kill_all();
-//    // wait for all process cgroups to be removed
-//    loop.run();
-
-//}
-
 void MajorFrame::move_to_next_window()
 {
     if( ++current == windows.end() )
@@ -61,7 +48,6 @@ void MajorFrame::stop()
 
 void MajorFrame::timeout_cb()
 {
-    // TODO do all window switching stuff
 #ifdef VERBOSE
     cerr << __PRETTY_FUNCTION__ << endl;
 #endif
@@ -88,9 +74,6 @@ void MajorFrame::sigint_cb(ev::sig &w, int revents)
 {
     stop();
     kill_all();
-    //w.stop();
-    //loop.break_loop();
-    //throw std::system_error(0, std::generic_category(), "demos-sched killed by signal");
 }
 
 void MajorFrame::empty_cb()

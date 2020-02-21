@@ -23,13 +23,12 @@ Cgroup::Cgroup(string path, bool may_exist)
 }
 
 Cgroup::Cgroup(string parent_path, string name)
-    : Cgroup(parent_path + "/" /*+ to_string(cgrp_count) + "_"*/ + name)
+    : Cgroup(parent_path + "/" + name)
 {}
 
 Cgroup::Cgroup(Cgroup &parent, string name)
     : Cgroup(parent.path, name)
 {
-    //parent.children.push_back(this);
 }
 
 Cgroup::~Cgroup()
@@ -85,7 +84,6 @@ CgroupFreezer::CgroupFreezer(string parent_path, string name)
 CgroupFreezer::CgroupFreezer(Cgroup &parent, string name)
     : CgroupFreezer(parent.getPath(), name)
 {
-    //parent.children.push_back(this);
 }
 
 void CgroupFreezer::freeze()
@@ -116,7 +114,6 @@ CgroupCpuset::CgroupCpuset(string parent_path, string name)
 CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/)
     : CgroupCpuset(parent.getPath(), name)
 {
-    //parent.children.push_back(this);
 }
 
 void CgroupCpuset::set_cpus(string cpus)
@@ -138,7 +135,6 @@ CgroupEvents::CgroupEvents(ev::loop_ref loop, string parent_path, string name, s
 CgroupEvents::CgroupEvents(ev::loop_ref loop, CgroupEvents &parent, string name, std::function<void (bool)> populated_cb)
     : CgroupEvents(loop, parent.path, name, populated_cb)
 {
-    //parent.children.push_back(this);
 }
 
 CgroupEvents::CgroupEvents(ev::loop_ref loop, Cgroup &parent, string name, std::function<void (bool)> populated_cb)

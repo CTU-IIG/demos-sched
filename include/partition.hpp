@@ -20,21 +20,18 @@ public:
               Cgroup& cpuset_parent,
               Cgroup& events_parent,
               std::string name = "" );
-    //~Partition();
 
     Process & get_current_proc();
 
     void freeze();
     void unfreeze();
 
-    // TODO somehow call Process() without copying
     void add_process(ev::loop_ref loop,
                      std::string argv,
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 
     void set_cpus(std::string cpus);
-    //std::string get_name();
 
     void move_to_first_proc();
     // return false if there is none

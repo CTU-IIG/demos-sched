@@ -13,7 +13,6 @@ class MajorFrame
 {
 public:
     MajorFrame(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time, Windows &&windows );
-//    ~MajorFrame();
 
     void move_to_next_window();
     Window & get_current_window();
@@ -31,7 +30,6 @@ private:
     void timeout_cb();
     void sigint_cb(ev::sig &w, int revents);
     void empty_cb();
-//    void kill_all();
     std::chrono::steady_clock::time_point timeout;
 
     void kill_all();

@@ -134,8 +134,6 @@ void Partition::proc_exit_cb(Process &proc)
 #endif
 
     // find proc in processes and clear it
-    //auto it = find(processes.begin(), processes.end(), proc);
-
     for(Processes::iterator it = processes.begin(); it != processes.end(); it++){
         if( &proc == &(*it) ){
             processes.erase(it);
