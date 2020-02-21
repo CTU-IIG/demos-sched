@@ -10,33 +10,27 @@
 #include <unistd.h>
 #include <cerrno>
 #include <algorithm>
+#include <unistd.h>
 
 using namespace std::chrono_literals;
 
 void print_help()
 {
-    printf("help:\n"
-            "-h\n"
-            "\t print this message\n"
-            "-g <NAME>\n"
-            "\t name of cgroup with user access,\n"
-            "\t need to create /sys/fs/cgroup/freezer/<NAME> and\n"
-            "\t /sys/fs/cgroup/cpuset/<NAME> manually, then\n"
-            "\t sudo chown -R <user> .../<NAME>\n"
-            "\t if not set, \"my_cgroup\" is used\n"
-            "TODO -c <FILE>\n"
-            "\t path to configuration file\n");
+    printf("Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
+           "  -c <CONFIG_FILE>   path to configuration file, default \"demos\"\n"
+           "  -g <CGROUP_NAME>   name of root cgroups, default \"demos\"\n"
+           "  -h                 print this message\n"
+           );
 }
 
 using namespace std;
 
-void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
+void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset, const std::string demos_cg_name)
 {
     ifstream cgroup_f( "/proc/"+ to_string(getpid()) + "/cgroup");
     int num;
     string path;
     string cpuset_parent;
-    const string demos_cg_name = "/demos";
     string unified_p, freezer_p, cpuset_p;
 
     while (cgroup_f >> num >> path) {
@@ -53,7 +47,6 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
     // check access rights
     stringstream commands;
 
-    //Cgroup unified;
     try {
         unified = Cgroup(unified_p, true);
     } catch (system_error &e) {
@@ -70,7 +63,6 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
         commands << "sudo echo " << getppid() << " > " << unified_p + "/cgroup.procs" << endl;
     }
 
-    //Cgroup freezer;
     try {
         freezer = Cgroup(freezer_p, true);
     } catch (system_error &e) {
@@ -86,7 +78,6 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
         commands << "sudo chown -R " << getuid() << " " << freezer_p << endl;
     }
 
-    //Cgroup cpuset;
     try {
         cpuset = Cgroup(cpuset_p, true);
 
@@ -106,7 +97,6 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
         switch (e.code().value()) {
         case EACCES:
         case EPERM:
-            //commands << "sudo echo 1 > " << cpuset_parent + "/cgroup.clone_children" << endl;
             commands << "sudo mkdir " << cpuset_p << endl;
             break;
         default: throw;
@@ -129,12 +119,35 @@ void load_cgroup_paths(Cgroup& unified, Cgroup& freezer, Cgroup& cpuset)
 
 int main(int argc, char *argv[])
 {
-//    std::string freezer_path = "/sys/fs/cgroup/freezer/my_cgroup";
-//    std::string cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup";
-//    std::string unified_path = "/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup";
+    int opt;
+    string demos_cg_name = "/demos";
+    string config_file;
+    while ((opt = getopt(argc, argv, "hg:c:")) != -1) {
+        switch (opt) {
+        case 'g':
+            demos_cg_name = optarg;
+            break;
+        case 'c':
+             config_file = optarg;
+            break;
+        case 'h':
+            print_help();
+            exit(0);
+        default:
+            print_help();
+            exit(1);
+        }
+    }
+    if( config_file.empty() ){
+        print_help();
+        exit(1);
+    }
+
+
+
     Cgroup unified_root, freezer_root, cpuset_root;
 
-    load_cgroup_paths(unified_root, freezer_root, cpuset_root);
+    load_cgroup_paths(unified_root, freezer_root, cpuset_root, demos_cg_name);
 
     auto start_time = chrono::steady_clock::now();
 
@@ -142,11 +155,10 @@ int main(int argc, char *argv[])
 
     try {
         YAML::Node config;
-        string config_path = argc > 1 ? argv[1] : "../src/config.yaml";
         try {
-            config = YAML::LoadFile(config_path);
+            config = YAML::LoadFile(config_file);
         } catch (YAML::BadFile &e) {
-            throw std::runtime_error("Cannot load configuration file: " + config_path);
+            throw std::runtime_error("Cannot load configuration file: " + config_file);
         }
 
         Partition empty_part(freezer_root, cpuset_root, unified_root, "empty_part");
