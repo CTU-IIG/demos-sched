@@ -36,11 +36,11 @@ void load_cgroup_paths(Cgroup &unified,
 
     while (cgroup_f >> num >> path) {
         if (num == 0)
-            unified_p = "/sys/fs/cgroup/unified/" + path.substr(2) + "/.." + demos_cg_name;
+            unified_p = "/sys/fs/cgroup/unified/" + path.substr(2) + "/../" + demos_cg_name;
         if (path.find(":freezer:") == 0)
-            freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + demos_cg_name;
+            freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
         if (path.find(":cpuset:") == 0) {
-            cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8) + demos_cg_name;
+            cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
             cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
         }
     }
@@ -129,7 +129,7 @@ void load_cgroup_paths(Cgroup &unified,
 int main(int argc, char *argv[])
 {
     int opt;
-    string demos_cg_name = "/demos";
+    string demos_cg_name = "demos";
     string config_file;
     while ((opt = getopt(argc, argv, "hg:c:")) != -1) {
         switch (opt) {
