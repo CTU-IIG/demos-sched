@@ -1,11 +1,11 @@
-#include <unistd.h>
+#include "demossched.hpp"
+#include <ev++.h>
+#include <fcntl.h>
 #include <fstream>
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "demossched.hpp"
-#include <ev++.h>
-#include <fcntl.h>
+#include <unistd.h>
 
 using namespace std;
 using namespace ev;
@@ -24,7 +24,7 @@ void io_cb(ev::io &w, int revents)
 
 int main(int argc, char *argv[])
 {
-    ifstream my_cgroups("/proc/"+to_string(getpid())+"/cgroup");
+    ifstream my_cgroups("/proc/" + to_string(getpid()) + "/cgroup");
     string line;
     string cgroup;
 

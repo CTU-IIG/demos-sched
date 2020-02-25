@@ -5,5 +5,8 @@ AlwaysBreakAfterReturnType: None
 IndentWidth: '4'
 TabWidth: '4'
 UseTab: Never
-
+AccessModifierOffset: -4
+PointerAlignment: Right
+ConstructorInitializerIndentWidth: 4
+ColumnLimit: 100
 ...

@@ -1,8 +1,8 @@
-#include <iostream>
 #include "demossched.hpp"
-#include "slice.hpp"
 #include "ev++.h"
+#include "slice.hpp"
 #include <chrono>
+#include <iostream>
 
 using namespace std;
 using namespace std::chrono_literals;
@@ -11,10 +11,12 @@ int main()
 {
     ev::default_loop loop;
 
-    try{
+    try {
         std::string freezer_path = "/sys/fs/cgroup/freezer/my_cgroup";
         std::string cpuset_path = "/sys/fs/cgroup/cpuset/my_cgroup";
-        std::string unified_path = "/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup";
+        std::string unified_path =
+          "/sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/"
+          "my_cgroup";
 
         auto start_time = chrono::steady_clock::now();
 
@@ -28,10 +30,9 @@ int main()
         Slice s(loop, start_time, sc_part, be_part, "0,3-4");
         s.start();
 
-
         loop.run();
 
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
 
     } catch (...) {

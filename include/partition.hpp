@@ -1,12 +1,12 @@
 #ifndef PARTITION_HPP
 #define PARTITION_HPP
 
-#include "process.hpp"
 #include "cgroup.hpp"
 #include "demossched.hpp"
-#include <list>
+#include "process.hpp"
 #include <chrono>
 #include <functional>
+#include <list>
 
 using namespace std::placeholders;
 
@@ -15,13 +15,13 @@ typedef std::list<Process> Processes;
 class Partition
 {
 public:
-    //Partition( Processes &&processes, std::string cgroup_name );
-    Partition(Cgroup& freezer_parent,
-              Cgroup& cpuset_parent,
-              Cgroup& events_parent,
-              std::string name = "" );
+    // Partition( Processes &&processes, std::string cgroup_name );
+    Partition(Cgroup &freezer_parent,
+              Cgroup &cpuset_parent,
+              Cgroup &events_parent,
+              std::string name = "");
 
-    Process & get_current_proc();
+    Process &get_current_proc();
 
     void freeze();
     void unfreeze();
@@ -42,15 +42,16 @@ public:
     bool is_empty();
     void kill_all();
 
-    void bind_empty_cb(std::function<void()> new_empty_cb );
+    void bind_empty_cb(std::function<void()> new_empty_cb);
 
     std::string get_name();
 
-//protected:
+    // protected:
     CgroupFreezer cgf;
     CgroupCpuset cgc;
     Cgroup cge;
     void proc_exit_cb(Process &proc);
+
 private:
     Processes processes;
     Processes::iterator current;
@@ -63,8 +64,8 @@ private:
     // cyclic queue
     void move_to_next_proc();
 
-    std::vector< std::function<void()> > empty_cbs;// = std::bind(&Partition::default_empty_cb, this);
-
+    std::vector<std::function<void()>>
+      empty_cbs; // = std::bind(&Partition::default_empty_cb, this);
 };
 
 #endif // PARTITION_HPP

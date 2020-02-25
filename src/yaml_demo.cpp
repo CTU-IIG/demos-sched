@@ -12,36 +12,29 @@ int main()
 {
     YAML::Node config = YAML::LoadFile("../src/config.yaml");
 
-    for(YAML::const_iterator it = config["partitions"].begin();
-        it != config["partitions"].end(); ++it)
-    {
-        cout<< (*it)["name"].as<string>() <<endl;
+    for (YAML::const_iterator it = config["partitions"].begin(); it != config["partitions"].end();
+         ++it) {
+        cout << (*it)["name"].as<string>() << endl;
         // create partition
-        for(YAML::const_iterator jt = (*it)["processes"].begin();
-            jt != (*it)["processes"].end(); ++jt)
-        {
-            cout<< (*jt)["cmd"].as<string>() <<endl;
+        for (YAML::const_iterator jt = (*it)["processes"].begin(); jt != (*it)["processes"].end();
+             ++jt) {
+            cout << (*jt)["cmd"].as<string>() << endl;
             // add process to partition
         }
     }
-    cout<<endl;
+    cout << endl;
 
-    for(YAML::const_iterator it = config["windows"].begin();
-        it != config["windows"].end(); ++it)
-    {
-        cout<< (*it)["length"].as<int>() <<endl;
+    for (YAML::const_iterator it = config["windows"].begin(); it != config["windows"].end(); ++it) {
+        cout << (*it)["length"].as<int>() << endl;
         // create window
-        for(YAML::const_iterator jt = (*it)["slices"].begin();
-            jt != (*it)["slices"].end(); ++jt)
-        {
+        for (YAML::const_iterator jt = (*it)["slices"].begin(); jt != (*it)["slices"].end(); ++jt) {
             if ((*jt)["sc_partition"])
-                cout<< (*jt)["sc_partition"].as<string>() <<endl;
+                cout << (*jt)["sc_partition"].as<string>() << endl;
             if ((*jt)["be_partition"])
-                cout<< (*jt)["be_partition"].as<string>() <<endl;
+                cout << (*jt)["be_partition"].as<string>() << endl;
             // create slice
         }
     }
-
 
     return 0;
 }

@@ -1,11 +1,11 @@
 #ifndef SLICE_HPP
 #define SLICE_HPP
 
+#include "demossched.hpp"
 #include "partition.hpp"
 #include "timerfd.hpp"
-#include "demossched.hpp"
-#include <ev++.h>
 #include <chrono>
+#include <ev++.h>
 #include <functional>
 
 typedef std::list<Partition> Partitions;
@@ -13,10 +13,13 @@ typedef std::list<Partition> Partitions;
 class Slice
 {
 public:
-    Slice(ev::loop_ref loop, std::chrono::steady_clock::time_point start_time,
-          Partition &sc, Partition &be, std::string cpus = "0");
+    Slice(ev::loop_ref loop,
+          std::chrono::steady_clock::time_point start_time,
+          Partition &sc,
+          Partition &be,
+          std::string cpus = "0");
 
-    void bind_empty_cb( std::function<void()> );
+    void bind_empty_cb(std::function<void()>);
 
     Partition &sc;
     Partition &be;
