@@ -4,5 +4,9 @@ all: build/build.ninja
 clean test: build/build.ninja
 	ninja -C $(<D) $@
 
-build/build.ninja:
-	meson $(@D)
+%/build.ninja:
+	meson $(@D) $(MESON_OPTS)
+
+aarch64: MESON_OPTS=--cross-file aarch64.txt
+aarch64: build-aarch64/build.ninja
+	ninja -C $(<D)
