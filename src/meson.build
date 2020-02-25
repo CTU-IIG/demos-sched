@@ -42,11 +42,12 @@ executable('infinite_proc', 'infinite_proc.cpp')
 #            include_directories : incdir,
 #            dependencies : libev_dep)
 
-# executable('timerfd_test',
-#            ['timerfd_test.cpp', 'timerfd.cpp'],
-#            include_directories : incdir,
-#            dependencies : libev_dep)
-
+test('timer_fd',
+     executable('timerfd_test',
+		['timerfd_test.cpp', 'timerfd.cpp'],
+		include_directories : incdir,
+		dependencies : libev_dep),
+    )
 executable('yaml-demo',
            ['yaml_demo.cpp'],
            dependencies : dependency('yaml-cpp'))
