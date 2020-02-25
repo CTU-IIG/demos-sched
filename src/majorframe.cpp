@@ -80,7 +80,8 @@ void MajorFrame::empty_cb()
     for (auto &w : windows)
         if (!w->is_empty())
             return;
-
+#ifdef VERBOSE
     cerr << __PRETTY_FUNCTION__ << endl;
+#endif
     loop.break_loop(ev::ALL);
 }

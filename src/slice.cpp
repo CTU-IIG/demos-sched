@@ -34,7 +34,9 @@ void Slice::move_proc_and_start_timer(Partition &p)
 void Slice::empty_partition_cb()
 {
     if (sc.is_empty() && be.is_empty()) {
+#ifdef VERBOSE
         cerr << __PRETTY_FUNCTION__ << endl;
+#endif
         empty = true;
         if (empty_cb)
             empty_cb();
