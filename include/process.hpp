@@ -33,11 +33,11 @@ public:
     void unfreeze();
     std::chrono::nanoseconds get_actual_budget();
 
-    bool is_completed();
+    bool is_completed() const;
     void mark_completed();
     void mark_uncompleted();
 
-    pid_t get_pid();
+    pid_t get_pid() const;
 
     // delete copy constructor
     //        Process(const Process&) = delete;

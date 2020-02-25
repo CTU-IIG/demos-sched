@@ -79,7 +79,7 @@ std::chrono::nanoseconds Process::get_actual_budget()
     return actual_budget;
 }
 
-bool Process::is_completed()
+bool Process::is_completed() const
 {
     return completed;
 }
@@ -95,7 +95,7 @@ void Process::mark_uncompleted()
     completed = false;
 }
 
-pid_t Process::get_pid()
+pid_t Process::get_pid() const
 {
     return pid;
 }

@@ -4,11 +4,14 @@
 
 incdir = include_directories('../include')
 
+cxx = meson.get_compiler('cpp')
+
 executable('demos-sched',
            ['demos-sched.cpp','process.cpp','partition.cpp',
             'slice.cpp','window.cpp','majorframe.cpp',
             'cgroup.cpp', 'timerfd.cpp'],
            include_directories : incdir,
+	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']),
            dependencies : [libev_dep, dependency('yaml-cpp')] )
 
 # executable('cgroup-test',
