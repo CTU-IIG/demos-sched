@@ -47,7 +47,7 @@ public:
     Cgroup(Cgroup&& other) = default;
     Cgroup& operator=(Cgroup&&) = default;
 
-    std::string getPath() const;
+    std::string get_path() const;
 
 protected:
     bool remove = true;

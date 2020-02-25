@@ -69,7 +69,7 @@ void Cgroup::kill_all()
     }
 }
 
-std::string Cgroup::getPath() const
+std::string Cgroup::get_path() const
 {
     return path;
 }
@@ -82,7 +82,7 @@ CgroupFreezer::CgroupFreezer(string parent_path, string name)
 }
 
 CgroupFreezer::CgroupFreezer(Cgroup &parent, string name)
-    : CgroupFreezer(parent.getPath(), name)
+    : CgroupFreezer(parent.get_path(), name)
 {
 }
 
@@ -112,7 +112,7 @@ CgroupCpuset::CgroupCpuset(string parent_path, string name)
 }
 
 CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/)
-    : CgroupCpuset(parent.getPath(), name)
+    : CgroupCpuset(parent.get_path(), name)
 {
 }
 
@@ -138,7 +138,7 @@ CgroupEvents::CgroupEvents(ev::loop_ref loop, CgroupEvents &parent, string name,
 }
 
 CgroupEvents::CgroupEvents(ev::loop_ref loop, Cgroup &parent, string name, std::function<void (bool)> populated_cb)
-    : CgroupEvents(loop, parent.getPath(), name, populated_cb)
+    : CgroupEvents(loop, parent.get_path(), name, populated_cb)
 {
 }
 
