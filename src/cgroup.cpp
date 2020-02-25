@@ -9,7 +9,9 @@ using namespace std;
 Cgroup::Cgroup(string path, bool may_exist)
     : path(path)
 {
+#ifdef VERBOSE
     cerr << __PRETTY_FUNCTION__ << path << endl;
+#endif
     try {
         CHECK_MSG(mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), "mkdir " + path);
     } catch (system_error &e) {
@@ -43,7 +45,9 @@ Cgroup::~Cgroup()
 
 void Cgroup::add_process(pid_t pid)
 {
+#ifdef VERBOSE
     cerr << __PRETTY_FUNCTION__ << path + "/cgroup.procs" << pid << endl;
+#endif
 
     // ofstream( path + "/cgroup.procs" ) << pid; // WHY THIS DOESNT THROW?
     int fd = CHECK(open((path + "/cgroup.procs").c_str(), O_NONBLOCK | O_RDWR));
