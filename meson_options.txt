@@ -1,0 +1,2 @@
+option('YAML_CPP_BUILD_CONTRIB', type : 'boolean', value : true, description : 'Enable yaml-cpp contrib in library')
+option('YAML_CPP_BUILD_TOOLS', type : 'boolean', value : true, description : 'Enable parse tools')
