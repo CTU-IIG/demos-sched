@@ -1,5 +1,9 @@
 ## Compilation
 
+Initialize git submodules:
+
+    git submodule update --init
+
 We use the Meson build system. On Debian-based distro, it can be
 installed by:
 
