@@ -74,12 +74,6 @@ void Process::unfreeze()
     cgf.unfreeze();
 }
 
-void Process::recompute_budget()
-{
-    std::chrono::nanoseconds rnd_val = budget_jitter * rand() / RAND_MAX;
-    actual_budget = budget - budget_jitter / 2 + rnd_val;
-}
-
 std::chrono::nanoseconds Process::get_actual_budget()
 {
     return actual_budget;

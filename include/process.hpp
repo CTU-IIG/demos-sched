@@ -31,7 +31,6 @@ public:
 
     void freeze();
     void unfreeze();
-    void recompute_budget();
     std::chrono::nanoseconds get_actual_budget();
 
     bool is_completed();
