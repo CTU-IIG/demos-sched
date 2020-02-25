@@ -12,7 +12,7 @@ executable('demos-sched',
             'cgroup.cpp', 'timerfd.cpp'],
            include_directories : incdir,
 	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']),
-           dependencies : [libev_dep, dependency('yaml-cpp')] )
+           dependencies : [libev_dep, yaml_cpp_dep] )
 
 # executable('cgroup-test',
 #            ['cgroup_test.cpp', 'cgroup.cpp'],
@@ -53,5 +53,5 @@ test('timer_fd',
     )
 executable('yaml-demo',
            ['yaml_demo.cpp'],
-           dependencies : dependency('yaml-cpp'))
+           dependencies : yaml_cpp_dep)
         
