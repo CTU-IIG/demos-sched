@@ -133,18 +133,15 @@ void Partition::proc_exit_cb(Process &proc)
     cerr << __PRETTY_FUNCTION__ << " partition: " << name << " pid: " << proc.get_pid() << endl;
 #endif
 
-    // find proc in processes and clear it
-    for (Processes::iterator it = processes.begin(); it != processes.end(); it++) {
-        if (&proc == &(*it)) {
-            processes.erase(it);
-            break;
-        }
+    // check if there is no running processes in this partition
+    for( auto &p : processes) {
+        if( p.is_running() )
+            return;
     }
 
-    if (processes.empty()) {
-        empty = true;
-        // notify all slices which owns this partition
-        for (auto &cb : empty_cbs)
-            cb();
-    }
+    empty = true;
+    // notify all slices which owns this partition that there is no running process
+    for (auto &cb : empty_cbs)
+        cb();
+
 }

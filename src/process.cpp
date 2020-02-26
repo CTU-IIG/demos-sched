@@ -36,6 +36,7 @@ void Process::exec()
 
     // create new process
     pid = CHECK(vfork());
+    running = true;
 
     // launch new process
     if (pid == 0) {
@@ -56,12 +57,11 @@ void Process::exec()
 
 void Process::kill()
 {
-    if (!killed) {
+    if (running) {
         cgf.freeze();
         cgf.kill_all();
         cgf.unfreeze();
     }
-    killed = true;
 }
 
 void Process::freeze()
@@ -95,6 +95,11 @@ void Process::mark_uncompleted()
     completed = false;
 }
 
+bool Process::is_running()
+{
+    return running;
+}
+
 pid_t Process::get_pid() const
 {
     return pid;
@@ -103,6 +108,7 @@ pid_t Process::get_pid() const
 void Process::populated_cb(bool populated)
 {
     if (!populated) {
+        running = false;
         part.proc_exit_cb(*this);
     }
 }

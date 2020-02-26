@@ -37,6 +37,8 @@ public:
     void mark_completed();
     void mark_uncompleted();
 
+    bool is_running();
+
     pid_t get_pid() const;
 
     // delete copy constructor
@@ -56,7 +58,7 @@ private:
     std::chrono::nanoseconds actual_budget;
     bool completed = false;
     bool continuous;
-    bool killed = false;
+    bool running = false;
     pid_t pid = -1;
     //        Cgroup cgroup;
 };
