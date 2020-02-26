@@ -114,7 +114,6 @@ void load_cgroup_paths(Cgroup &unified,
         cpuset.add_process(getpid());
     } catch (system_error &e) {
         commands << "sudo chown -R " << getuid() << " " << cpuset_p << endl;
-        cerr << e.what() << endl;
     }
 
     if (!commands.str().empty()) {
@@ -183,9 +182,7 @@ int main(int argc, char *argv[])
                                               chrono::milliseconds(yprocess["budget"].as<int>()));
             }
         }
-#ifdef VERBOSE
         cerr << "parsed " << partitions.size() << " partitions" << endl;
-#endif
 
         Windows windows;
         for (auto ywindow : config["windows"]) {
@@ -212,9 +209,7 @@ int main(int argc, char *argv[])
             windows.push_back(
               make_unique<Window>(move(slices), chrono::milliseconds(ywindow["length"].as<int>())));
         }
-#ifdef VERBOSE
         cerr << "parsed " << windows.size() << " windows" << endl;
-#endif
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
