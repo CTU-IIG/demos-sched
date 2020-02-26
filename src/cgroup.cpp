@@ -1,4 +1,5 @@
 #include "cgroup.hpp"
+#include <err.h>
 #include <fstream>
 
 #include "demossched.hpp"
@@ -37,17 +38,9 @@ Cgroup::~Cgroup()
 {
     if (path.empty() || !remove)
         return;
-    try {
-        CHECK_MSG(rmdir(path.c_str()), "rmdir " + path);
-    } catch (const system_error &e) {
-        switch (e.code().value()) {
-            case EACCES:
-            case EPERM: /* ignore */;
-                break;
-            default:
-                throw;
-        }
-    }
+    int ret = rmdir(path.c_str());
+    if (ret == -1)
+        warn("rmdir %s", path.c_str());
 }
 
 void Cgroup::add_process(pid_t pid)

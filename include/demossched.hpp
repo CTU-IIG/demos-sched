@@ -20,6 +20,4 @@
         ret;                                                                                       \
     })
 
-//#define VERBOSE
-
 #endif // DEMOSSCHED_HPP
