@@ -39,6 +39,15 @@ the target ARM system.
         -g <CGROUP_NAME>   name of root cgroups, default "demos"
         -h                 print this message
 
+Configuration files are written according to [DEmOS specification](./demos-sched.pdf)
+
+- Major frame consist of one or more windows cyclically scheduled at time slots defined by `length`.
+- Window consist of one or more slices scheduled at different CPUs in one time. Format of CPU is its number `cpu: 1`, or range `cpu: 0-2`, or combination of both `cpu: 0,2,5-7`
+- Slice consist of safety critical `sc_partition` and best effort `be_partition` partitions
+- Partition consist of arbitrary number of processes which are cyclically scheduled in time according to their budgets within slice.
+
+![](./major_frame.png)
+
 
 ### Example configurations
 
