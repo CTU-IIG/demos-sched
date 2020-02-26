@@ -49,8 +49,10 @@ void load_cgroup_paths(Cgroup &unified,
         }
     }
 
+    cerr<<freezer_p<<endl;
+
     // check access rights
-    stringstream commands;
+    stringstream commands, critical_msg;
 
     try {
         unified = Cgroup(unified_p, true);
@@ -59,6 +61,10 @@ void load_cgroup_paths(Cgroup &unified,
             case EACCES:
             case EPERM:
                 commands << "sudo mkdir " << unified_p << endl;
+                break;
+            case EROFS:
+            case ENOENT:
+                critical_msg << "mount -t cgroup2 none /sys/fs/cgroup/unified" << endl;
                 break;
             default:
                 throw;
@@ -78,6 +84,10 @@ void load_cgroup_paths(Cgroup &unified,
             case EACCES:
             case EPERM:
                 commands << "sudo mkdir " << freezer_p << endl;
+                break;
+            case EROFS:
+            case ENOENT:
+                critical_msg << "mount -t cgroup -o freezer none /sys/fs/cgroup/freezer" << endl;
                 break;
             default:
                 throw;
@@ -110,6 +120,10 @@ void load_cgroup_paths(Cgroup &unified,
             case EPERM:
                 commands << "sudo mkdir " << cpuset_p << endl;
                 break;
+            case EROFS:
+            case ENOENT:
+                critical_msg << "mount -t cgroup -o cpuset none /sys/fs/cgroup/cpuset" << endl;
+                break;
             default:
                 throw;
         }
@@ -118,6 +132,17 @@ void load_cgroup_paths(Cgroup &unified,
         cpuset.add_process(getpid());
     } catch (system_error &e) {
         commands << "sudo chown -R " << getuid() << " " << cpuset_p << endl;
+    }
+
+    if (!critical_msg.str().empty()) {
+        cerr << "There is no cgroup controller. Run following commands:"
+             << endl
+             << critical_msg.str()
+             << "if it fails, check whether the controllers are available in the kernel"
+             << endl
+             << "zcat /proc/config.gz | grep -E CONFIG_CGROUP_FREEZER|CONFIG_CPUSETS"
+             << endl;
+        exit(1);
     }
 
     if (!commands.str().empty()) {
