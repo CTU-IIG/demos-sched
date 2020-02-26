@@ -16,7 +16,7 @@ using namespace std::chrono_literals;
 void print_help()
 {
     printf("Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
-           "  -c <CONFIG_FILE>   path to configuration file, default \"demos\"\n"
+           "  -c <CONFIG_FILE>   path to configuration file\n"
            "  -g <CGROUP_NAME>   name of root cgroups, default \"demos\"\n"
            "  -h                 print this message\n");
 }

@@ -1,0 +1,19 @@
+# one process switched between two cpus
+#
+# all times in ms
+# Major frame
+windows:
+  - length: 500
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+  - length: 500
+    slices:
+      - cpu: 1
+        sc_partition: SC1
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: yes > /dev/null
+        budget: 500

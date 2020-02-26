@@ -34,25 +34,69 @@ the target ARM system.
 
 ## Usage
 
-- move shell for demos-sched execution to user delegated v2 cgroup (man cgroups, v2 delegation)
+    demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]
+        -c <CONFIG_FILE>   path to configuration file
+        -g <CGROUP_NAME>   name of root cgroups, default "demos"
+        -h                 print this message
 
-        mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_shell
-        sudo echo $$ > .../my_shell/cgroup.procs
 
-- set clone_children flag in cpuset
+### Example configurations
 
-        sudo echo 1 > .../cpuset/cgroup.clone_children
+    # CPU_switching.yaml
+    # one process switched between two cpus
+    #
+    # all times in ms
+    # Major frame
+    windows:
+      - length: 500
+        slices:
+          - cpu: 0
+            sc_partition: SC1
+      - length: 500
+        slices:
+          - cpu: 1
+            sc_partition: SC1
 
-- create freezer and cpuset v1 cgroup and delegate it to the user
+    partitions:
+      - name: SC1
+        processes:
+          - cmd: yes > /dev/null
+            budget: 500
 
-        mkdir /sys/fs/cgroup/freezer/my_cgroup
-        sudo chown -R <user> ...
-        /sys/fs/cgroup/cpuset/my_cgroup
-        sudo chown -R <user> ...
+![](./test_config/CPU_switching.png)
 
-- create v2 cgroup
+    # more_partitions.yaml
+    # two slices with safety critical and best effort tasks within one window
 
-        mkdir /sys/fs/cgroup/unified/user.slice/user-1000.slice/user@1000.service/my_cgroup
+    # all times in ms
+    # Major frame
+    #period: 100 # not used, do we need this?
+    windows:
+      - length: 1500
+        slices:
+          - cpu: 0
+            sc_partition: SC1
+            be_partition: BE1
+          - cpu: 1
+            sc_partition: SC2
+
+    partitions:
+      - name: SC1
+        processes:
+          - cmd: yes > /dev/null
+            budget: 500
+          - cmd: yes > /dev/null
+            budget: 500
+      - name: BE1
+        processes:
+          - cmd: yes > /dev/null
+            budget: 500
+      - name: SC2
+        processes:
+          - cmd: yes > /dev/null
+            budget: 1000
+
+![](./test_config/more_partitions.png)
 
 - if everything sucks run this script
     ```
