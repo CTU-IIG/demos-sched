@@ -93,28 +93,28 @@ The result will look like in the figure below:
 #period: 100 # not used, do we need this?
 windows:
   - length: 1500
-	slices:
-	  - cpu: 0
-		sc_partition: SC1
-		be_partition: BE1
-	  - cpu: 1
-		sc_partition: SC2
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+        be_partition: BE1
+      - cpu: 1
+        sc_partition: SC2
 
 partitions:
   - name: SC1
-	processes:
-	  - cmd: yes > /dev/null
-		budget: 500
-	  - cmd: yes > /dev/null
-		budget: 500
+    processes:
+      - cmd: yes > /dev/null
+        budget: 500
+      - cmd: yes > /dev/null
+        budget: 500
   - name: BE1
-	processes:
-	  - cmd: yes > /dev/null
-		budget: 500
+    processes:
+      - cmd: yes > /dev/null
+        budget: 500
   - name: SC2
-	processes:
-	  - cmd: yes > /dev/null
-		budget: 1000
+    processes:
+      - cmd: yes > /dev/null
+        budget: 1000
 ```
 
 ![](./test_config/more_partitions.png)
