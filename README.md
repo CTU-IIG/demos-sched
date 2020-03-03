@@ -51,26 +51,28 @@ Configuration files are written according to [DEmOS specification](./demos-sched
 
 ### Example configurations
 
-    # CPU_switching.yaml
-    # one process switched between two cpus
-    #
-    # all times in ms
-    # Major frame
-    windows:
-      - length: 500
-        slices:
-          - cpu: 0
-            sc_partition: SC1
-      - length: 500
-        slices:
-          - cpu: 1
-            sc_partition: SC1
+``` yaml
+# CPU_switching.yaml
+# one process switched between two cpus
+#
+# all times in ms
+# Major frame
+windows:
+  - length: 500
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+  - length: 500
+    slices:
+      - cpu: 1
+        sc_partition: SC1
 
-    partitions:
-      - name: SC1
-        processes:
-          - cmd: yes > /dev/null
-            budget: 500
+partitions:
+  - name: SC1
+    processes:
+      - cmd: yes > /dev/null
+        budget: 500
+```
 
 To verify that `demos-sched` executes the partitions as intended, you
 can record and visualise the execution trace with the following
@@ -82,36 +84,38 @@ commands:
 The result will look like in the figure below:
 ![](./test_config/CPU_switching.png)
 
-    # more_partitions.yaml
-    # two slices with safety critical and best effort tasks within one window
+``` yaml
+# more_partitions.yaml
+# two slices with safety critical and best effort tasks within one window
 
-    # all times in ms
-    # Major frame
-    #period: 100 # not used, do we need this?
-    windows:
-      - length: 1500
-        slices:
-          - cpu: 0
-            sc_partition: SC1
-            be_partition: BE1
-          - cpu: 1
-            sc_partition: SC2
+# all times in ms
+# Major frame
+#period: 100 # not used, do we need this?
+windows:
+  - length: 1500
+	slices:
+	  - cpu: 0
+		sc_partition: SC1
+		be_partition: BE1
+	  - cpu: 1
+		sc_partition: SC2
 
-    partitions:
-      - name: SC1
-        processes:
-          - cmd: yes > /dev/null
-            budget: 500
-          - cmd: yes > /dev/null
-            budget: 500
-      - name: BE1
-        processes:
-          - cmd: yes > /dev/null
-            budget: 500
-      - name: SC2
-        processes:
-          - cmd: yes > /dev/null
-            budget: 1000
+partitions:
+  - name: SC1
+	processes:
+	  - cmd: yes > /dev/null
+		budget: 500
+	  - cmd: yes > /dev/null
+		budget: 500
+  - name: BE1
+	processes:
+	  - cmd: yes > /dev/null
+		budget: 500
+  - name: SC2
+	processes:
+	  - cmd: yes > /dev/null
+		budget: 1000
+```
 
 ![](./test_config/more_partitions.png)
 
