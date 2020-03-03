@@ -72,6 +72,14 @@ Configuration files are written according to [DEmOS specification](./demos-sched
           - cmd: yes > /dev/null
             budget: 500
 
+To verify that `demos-sched` executes the partitions as intended, you
+can record and visualise the execution trace with the following
+commands:
+
+    trace-cmd record -F -c -e sched_switch build/src/demos-sched -c …
+    kernelshark trace.dat
+
+The result will look like in the figure below:
 ![](./test_config/CPU_switching.png)
 
     # more_partitions.yaml
