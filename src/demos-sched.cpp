@@ -245,7 +245,11 @@ int main(int argc, char *argv[])
 
         // configure linux scheduler
         struct sched_param sp = {.sched_priority = 99};
-        sched_setscheduler( 0, SCHED_FIFO, &sp );
+        try{
+            CHECK(sched_setscheduler( 0, SCHED_FIFO, &sp ));
+        } catch (const std::exception &e) {
+            std::cerr << "Warning: running demos without rt priority, run it as root" << std::endl;
+        }
 
         loop.run();
 
