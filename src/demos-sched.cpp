@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sched.h>
 
 using namespace std;
 using namespace std::chrono_literals;
@@ -241,6 +242,10 @@ int main(int argc, char *argv[])
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
+
+        // configure linux scheduler
+        struct sched_param sp = {.sched_priority = 99};
+        sched_setscheduler( 0, SCHED_FIFO, &sp );
 
         loop.run();
 
