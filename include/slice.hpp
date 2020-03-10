@@ -15,14 +15,14 @@ class Slice
 public:
     Slice(ev::loop_ref loop,
           std::chrono::steady_clock::time_point start_time,
-          Partition &sc,
-          Partition &be,
+          Partition *sc,
+          Partition *be,
           std::string cpus = "0");
 
     void bind_empty_cb(std::function<void()>);
 
-    Partition &sc;
-    Partition &be;
+    Partition *sc;
+    Partition *be;
     std::string cpus;
     void start();
     void stop();
@@ -34,7 +34,7 @@ private:
     std::chrono::steady_clock::time_point timeout;
     ev::timerfd timer;
     void timeout_cb();
-    void move_proc_and_start_timer(Partition &p);
+    void move_proc_and_start_timer(Partition *p);
     void empty_partition_cb();
     bool empty = true;
 

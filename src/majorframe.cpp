@@ -63,8 +63,8 @@ void MajorFrame::kill_all()
 {
     for (auto &w : windows) {
         for (auto &s : w->slices) {
-            s->be.kill_all();
-            s->sc.kill_all();
+            if(s->be) s->be->kill_all();
+            if(s->sc) s->sc->kill_all();
         }
     }
 }

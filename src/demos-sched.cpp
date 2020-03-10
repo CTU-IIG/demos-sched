@@ -50,8 +50,6 @@ void load_cgroup_paths(Cgroup &unified,
         }
     }
 
-    cerr<<freezer_p<<endl;
-
     // check access rights
     stringstream commands, critical_msg;
 
@@ -196,7 +194,6 @@ int main(int argc, char *argv[])
             throw std::runtime_error("Cannot load configuration file: " + config_file);
         }
 
-        Partition empty_part(freezer_root, cpuset_root, unified_root, "empty_part");
         Partitions partitions;
 
         for (auto ypartition : config["partitions"]) {
@@ -218,8 +215,8 @@ int main(int argc, char *argv[])
             Slices slices;
             // Slices slices;
             for (auto yslice : ywindow["slices"]) {
-                Partition *sc_part_ptr = &empty_part;
-                Partition *be_part_ptr = &empty_part;
+                Partition *sc_part_ptr = nullptr;
+                Partition *be_part_ptr = nullptr;
                 // find and add partitions according to their names
                 if (yslice["sc_partition"]) {
                     sc_part_ptr = &*find_if(begin(partitions), end(partitions), [&yslice](auto &p) {
@@ -233,7 +230,7 @@ int main(int argc, char *argv[])
                 }
                 // create slice
                 slices.push_back(make_unique<Slice>(
-                  loop, start_time, *sc_part_ptr, *be_part_ptr, yslice["cpu"].as<string>()));
+                  loop, start_time, sc_part_ptr, be_part_ptr, yslice["cpu"].as<string>()));
             }
             windows.push_back(
               make_unique<Window>(move(slices), chrono::milliseconds(ywindow["length"].as<int>())));
@@ -248,7 +245,7 @@ int main(int argc, char *argv[])
         try{
             CHECK(sched_setscheduler( 0, SCHED_FIFO, &sp ));
         } catch (const std::exception &e) {
-            std::cerr << "Warning: running demos without rt priority, run it as root" << std::endl;
+            std::cerr << "Warning: running demos without rt priority, consider running as root" << std::endl;
         }
 
         loop.run();
