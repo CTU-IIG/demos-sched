@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 
         // configure linux scheduler
         struct sched_param sp = {.sched_priority = 99};
-        if( sched_setscheduler( 0, SCHED_FIFO, &sp ) )
+        if( sched_setscheduler( 0, SCHED_FIFO, &sp ) == -1 )
             cerr << "Warning: running demos without rt priority, consider running as root" << endl;
 
         loop.run();
