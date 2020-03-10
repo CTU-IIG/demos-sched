@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
         try {
             config = YAML::LoadFile(config_file);
         } catch (YAML::BadFile &e) {
-            throw std::runtime_error("Cannot load configuration file: " + config_file);
+            throw runtime_error("Cannot load configuration file: " + config_file);
         }
 
         Partitions partitions;
@@ -247,11 +247,11 @@ int main(int argc, char *argv[])
 
         loop.run();
 
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+    } catch (const exception &e) {
+        cerr << e.what() << endl;
 
     } catch (...) {
-        std::cerr << "Unknown exception" << std::endl;
+        cerr << "Unknown exception" << endl;
     }
 
     return 0;
