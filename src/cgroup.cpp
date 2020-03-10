@@ -115,7 +115,10 @@ CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/
 
 void CgroupCpuset::set_cpus(string cpus)
 {
-    CHECK(write(fd_cpus, cpus.c_str(), cpus.size()));
+    if( cpus.compare(current_cpus) != 0 ) {
+        CHECK(write(fd_cpus, cpus.c_str(), cpus.size()));
+        current_cpus = cpus;
+    }
 }
 
 CgroupEvents::CgroupEvents(ev::loop_ref loop,

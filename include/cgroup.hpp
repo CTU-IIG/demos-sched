@@ -78,6 +78,7 @@ public:
 
 private:
     int fd_cpus;
+    std::string current_cpus = "0";
 };
 
 class CgroupEvents : public Cgroup
