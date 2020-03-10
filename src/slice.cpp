@@ -62,7 +62,6 @@ void Slice::start()
         timeout += current_proc->get_actual_budget();
         timer.start(timeout);
     } else if ( be && !be->is_empty()) {
-        be->move_to_first_proc();
         current_proc = &be->get_current_proc();
         current_proc->unfreeze();
         timeout += current_proc->get_actual_budget();
