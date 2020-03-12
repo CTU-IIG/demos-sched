@@ -41,7 +41,7 @@ void ev::evfd::ev_callback(ev::io &w, int revents)
     if (EV_ERROR & revents)
         err(1, "ev cb: got invalid event");
 
-    //cout << "cb" << endl;
+    //cout <<__PRETTY_FUNCTION__<< endl;
     // read to have empty fd
     CHECK(::read(w.fd, &value, sizeof(value)));
     w.stop(); // Is this necessary?

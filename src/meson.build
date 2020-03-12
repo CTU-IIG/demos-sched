@@ -19,6 +19,11 @@ executable('eventfd-test',
            include_directories : incdir,
            dependencies : libev_dep )
 
+executable('api-test',
+           ['api_test.cpp','demos-sch.cpp'],
+           include_directories : incdir,
+           dependencies : libev_dep )
+
 # executable('cgroup-test',
 #            ['cgroup_test.cpp', 'cgroup.cpp'],
 #            include_directories : incdir,

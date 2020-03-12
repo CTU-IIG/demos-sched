@@ -32,6 +32,7 @@ Process::Process(ev::loop_ref loop,
     // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
     freeze();
     completed_w.set(std::bind(&Process::completed_cb, this));
+    //completed_w.start();
     p_efd = CHECK(eventfd(0, EFD_NONBLOCK));
 }
 
@@ -80,6 +81,7 @@ void Process::freeze()
 void Process::unfreeze()
 {
     cgf.unfreeze();
+    completed_w.start();
 }
 
 std::chrono::nanoseconds Process::get_actual_budget()
