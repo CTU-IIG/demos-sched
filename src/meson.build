@@ -14,6 +14,11 @@ executable('demos-sched',
 	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']),
            dependencies : [libev_dep, yaml_cpp_dep] )
 
+executable('eventfd-test',
+           ['eventfd_test.cpp','evfd.cpp'],
+           include_directories : incdir,
+           dependencies : libev_dep )
+
 # executable('cgroup-test',
 #            ['cgroup_test.cpp', 'cgroup.cpp'],
 #            include_directories : incdir,
