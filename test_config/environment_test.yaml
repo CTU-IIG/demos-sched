@@ -1,0 +1,16 @@
+windows:
+  - length: 500
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+        be_partition: BE1
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: printenv
+        budget: 500
+  - name: BE1
+    processes:
+      - cmd: printenv
+        budget: 500

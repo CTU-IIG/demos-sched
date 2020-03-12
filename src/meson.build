@@ -9,7 +9,7 @@ cxx = meson.get_compiler('cpp')
 executable('demos-sched',
            ['demos-sched.cpp','process.cpp','partition.cpp',
             'slice.cpp','window.cpp','majorframe.cpp',
-            'cgroup.cpp', 'timerfd.cpp'],
+            'cgroup.cpp', 'timerfd.cpp', 'evfd.cpp'],
            include_directories : incdir,
 	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']),
            dependencies : [libev_dep, yaml_cpp_dep] )

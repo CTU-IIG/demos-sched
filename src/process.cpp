@@ -2,6 +2,7 @@
 #include "partition.hpp"
 #include <functional>
 #include <system_error>
+#include <sys/eventfd.h>
 
 using namespace std::placeholders;
 using namespace std;
@@ -13,7 +14,9 @@ Process::Process(ev::loop_ref loop,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter,
                  bool contionuous)
-    : part(part)
+    : loop(loop)
+    , completed_w(loop)
+    , part(part)
     , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
     , cgf(part.cgf, name)
     , argv(argv)
@@ -28,6 +31,8 @@ Process::Process(ev::loop_ref loop,
 {
     // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
     freeze();
+    completed_w.set(std::bind(&Process::completed_cb, this));
+    p_efd = CHECK(eventfd(0, EFD_NONBLOCK));
 }
 
 void Process::exec()
@@ -41,7 +46,10 @@ void Process::exec()
     // launch new process
     if (pid == 0) {
         // CHILD PROCESS
-        CHECK(execl("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr));
+        string env1 = "COMPLETED_EFD=" + to_string(completed_w.get_fd());
+        string env2 = "NEW_PERIOD_EFD=" + to_string(p_efd);
+        char *const envp[3] = {const_cast<char*>(env1.c_str()), const_cast<char*>(env2.c_str()), NULL};
+        CHECK(execle("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr, envp));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
@@ -111,4 +119,9 @@ void Process::populated_cb(bool populated)
         running = false;
         part.proc_exit_cb(*this);
     }
+}
+
+void Process::completed_cb()
+{
+    cout<<__PRETTY_FUNCTION__<<endl;
 }

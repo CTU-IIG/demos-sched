@@ -4,13 +4,13 @@
 #include <chrono>
 #include <fcntl.h>
 #include <iostream>
-#include <sys/timerfd.h>
 #include <unistd.h>
 #include <vector>
 
 #include "cgroup.hpp"
 #include "demossched.hpp"
 #include "timerfd.hpp"
+#include "evfd.hpp"
 
 class Partition;
 
@@ -45,11 +45,16 @@ public:
     //        Process(const Process&) = delete;
     //        Process& operator=(const Process&) = delete;
 private:
+    ev::loop_ref loop;
+    ev::evfd completed_w;
+    int p_efd; // new period eventfd
+
     Partition &part;
     CgroupEvents cge;
     CgroupFreezer cgf;
 
     void populated_cb(bool populated);
+    void completed_cb();
 
     //        std::string partition_cgrp_name;
     std::string argv;
