@@ -20,7 +20,7 @@ executable('eventfd-test',
            dependencies : libev_dep )
 
 executable('api-test',
-           ['api_test.cpp','demos-sch.cpp'],
+           ['api_test.cpp','demos-sch.cpp','evfd.cpp'],
            include_directories : incdir,
            dependencies : libev_dep )
 

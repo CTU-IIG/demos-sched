@@ -6,19 +6,26 @@
 
 using namespace std;
 
+static int fd_completed;
+
 int demos_init()
 {
-    return 0;
+    char *fd1_str = getenv("COMPLETED_EFD");
+    char *fd2_str = getenv("NEW_PERIOD_EFD");
+
+    if(!fd1_str || !fd2_str)
+        return -1;
+
+    fd_completed = atoi(fd1_str);
+    int fd_new_period = atoi(fd2_str);
+
+    return fd_new_period;
 }
 
 int demos_completed()
 {
-    char *fd_str = getenv("COMPLETED_EFD");
-    if(!fd_str)
-        err(1,"getenv");
-    int fd = atoi(fd_str);
     uint64_t buf = 1;
-    if( write(fd, &buf, sizeof(buf)) == -1 )
+    if( write(fd_completed, &buf, sizeof(buf)) == -1 )
         err(1,"write");
 
     return 0;

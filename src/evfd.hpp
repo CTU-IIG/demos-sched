@@ -9,6 +9,7 @@ namespace ev {
 class evfd : private io
 {
 public:
+    evfd(loop_ref loop, int fd);
     evfd(ev::loop_ref loop);
     void set(std::function<void()> callback);
     int get_fd();

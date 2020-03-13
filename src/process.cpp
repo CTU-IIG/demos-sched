@@ -80,8 +80,10 @@ void Process::freeze()
 
 void Process::unfreeze()
 {
-    cgf.unfreeze();
     completed_w.start();
+    uint64_t buf = 1;
+    CHECK(write(p_efd, &buf, sizeof(buf)));
+    cgf.unfreeze();
 }
 
 std::chrono::nanoseconds Process::get_actual_budget()
@@ -126,4 +128,5 @@ void Process::populated_cb(bool populated)
 void Process::completed_cb()
 {
     cout<<__PRETTY_FUNCTION__<<endl;
+    // switch to next process
 }
