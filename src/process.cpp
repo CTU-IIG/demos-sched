@@ -127,6 +127,8 @@ void Process::populated_cb(bool populated)
 
 void Process::completed_cb()
 {
-    cout<<__PRETTY_FUNCTION__<<endl;
+    //cout<<__PRETTY_FUNCTION__<<endl;
     // switch to next process
+    completed = true;
+    part.completed_cb();
 }

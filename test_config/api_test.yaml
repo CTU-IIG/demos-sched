@@ -1,11 +1,16 @@
 windows:
-  - length: 2000
+  - length: 3000
     slices:
       - cpu: 0
         sc_partition: SC1
+        be_partition: BE1
 
 partitions:
   - name: SC1
     processes:
       - cmd: build/src/api-test
+        budget: 2000
+  - name: BE1
+    processes:
+      - cmd: yes > /dev/null
         budget: 2000

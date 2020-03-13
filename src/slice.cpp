@@ -13,7 +13,10 @@ Slice::Slice(ev::loop_ref loop,
     , timeout(start_time)
     , timer(loop)
 {
-    if(sc) sc->bind_empty_cb(std::bind(&Slice::empty_partition_cb, this));
+    if(sc){
+        sc->bind_empty_cb(std::bind(&Slice::empty_partition_cb, this));
+        sc->bind_complete_cb(std::bind(&Slice::timeout_cb, this));
+    }
     if(be) be->bind_empty_cb(std::bind(&Slice::empty_partition_cb, this));
     timer.set(std::bind(&Slice::timeout_cb, this));
     empty = false;
@@ -92,6 +95,7 @@ void Slice::timeout_cb()
     std::cerr << __PRETTY_FUNCTION__ << std::endl;
 #endif
 
+    timer.stop();
     current_proc->freeze();
     current_proc->mark_completed();
 
@@ -108,6 +112,4 @@ void Slice::timeout_cb()
         timer.start(timeout);
         return;
     }
-
-    timer.stop();
 }

@@ -115,6 +115,11 @@ void Partition::bind_empty_cb(std::function<void()> new_empty_cb)
     empty_cbs.push_back(new_empty_cb);
 }
 
+void Partition::bind_complete_cb(std::function<void()> new_complete_cb)
+{
+    completed_cb = new_complete_cb;
+}
+
 string Partition::get_name()
 {
     return name;
