@@ -6,16 +6,12 @@
 
 using namespace std;
 
-ev::evfd::evfd(loop_ref loop, int fd)
+ev::evfd::evfd(loop_ref loop)
     : io(loop)
 {
+    fd = CHECK(eventfd(0, EFD_NONBLOCK));
     io::set(fd, ev::READ);
     io::set<evfd, &evfd::ev_callback>(this);
-}
-
-ev::evfd::evfd(loop_ref loop)
-    : evfd(loop,CHECK(eventfd(0, EFD_NONBLOCK)))
-{
 }
 
 ev::evfd::~evfd()
