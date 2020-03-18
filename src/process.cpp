@@ -32,8 +32,8 @@ Process::Process(ev::loop_ref loop,
     // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
     freeze();
     completed_w.set(std::bind(&Process::completed_cb, this));
-    //completed_w.start();
-    efd_continue = CHECK(eventfd(0, EFD_NONBLOCK));
+    completed_w.start();
+    efd_continue = CHECK(eventfd(0, EFD_SEMAPHORE));
 }
 
 void Process::exec()
@@ -81,7 +81,10 @@ void Process::freeze()
 void Process::unfreeze()
 {
     uint64_t buf = 1;
-    CHECK(write(efd_continue, &buf, sizeof(buf)));
+    if( demos_completed ){
+        CHECK(write(efd_continue, &buf, sizeof(buf)));
+        demos_completed = false;
+    }
     cgf.unfreeze();
 }
 
@@ -129,5 +132,6 @@ void Process::completed_cb()
     //cout<<__PRETTY_FUNCTION__<<endl;
     // switch to next process
     completed = true;
+    demos_completed = true;
     part.completed_cb();
 }

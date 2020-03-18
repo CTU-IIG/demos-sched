@@ -62,6 +62,7 @@ private:
     std::chrono::nanoseconds budget_jitter;
     std::chrono::nanoseconds actual_budget;
     bool completed = false;
+    bool demos_completed = false;
     bool continuous;
     bool running = false;
     pid_t pid = -1;

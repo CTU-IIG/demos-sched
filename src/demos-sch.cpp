@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <err.h>
 
-static int fd_completed;
+static int fd_completed, fd_new_period;
 
 int demos_init()
 {
@@ -12,18 +12,22 @@ int demos_init()
     if( !str )
         return -1;
 
-    int fd_new_period;
     if( sscanf( str, "%d,%d", &fd_completed, &fd_new_period) != 2 )
         return -1;
 
-    return fd_new_period;
+    return 0;
 }
 
 int demos_completed()
 {
     uint64_t buf = 1;
+    // notify demos
     if( write(fd_completed, &buf, sizeof(buf)) == -1 )
         err(1,"write");
+
+    // block until become readable
+    if( read(fd_new_period, &buf, sizeof(buf)) == -1 )
+        err(1,"read");
 
     return 0;
 }
