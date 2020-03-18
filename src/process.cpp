@@ -33,7 +33,7 @@ Process::Process(ev::loop_ref loop,
     freeze();
     completed_w.set(std::bind(&Process::completed_cb, this));
     //completed_w.start();
-    p_efd = CHECK(eventfd(0, EFD_NONBLOCK));
+    efd_continue = CHECK(eventfd(0, EFD_NONBLOCK));
 }
 
 void Process::exec()
@@ -48,7 +48,7 @@ void Process::exec()
     if (pid == 0) {
         // CHILD PROCESS
         string env1 = "COMPLETED_EFD=" + to_string(completed_w.get_fd());
-        string env2 = "NEW_PERIOD_EFD=" + to_string(p_efd);
+        string env2 = "NEW_PERIOD_EFD=" + to_string(efd_continue);
         char *const envp[3] = {const_cast<char*>(env1.c_str()), const_cast<char*>(env2.c_str()), NULL};
         CHECK(execle("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr, envp));
         // END CHILD PROCESS
@@ -80,9 +80,8 @@ void Process::freeze()
 
 void Process::unfreeze()
 {
-    completed_w.start();
     uint64_t buf = 1;
-    CHECK(write(p_efd, &buf, sizeof(buf)));
+    CHECK(write(efd_continue, &buf, sizeof(buf)));
     cgf.unfreeze();
 }
 

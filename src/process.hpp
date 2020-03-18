@@ -47,7 +47,7 @@ public:
 private:
     ev::loop_ref loop;
     ev::evfd completed_w;
-    int p_efd; // new period eventfd
+    int efd_continue; // new period eventfd
 
     Partition &part;
     CgroupEvents cge;
