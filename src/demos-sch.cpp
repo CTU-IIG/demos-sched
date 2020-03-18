@@ -4,20 +4,17 @@
 #include <unistd.h>
 #include <err.h>
 
-using namespace std;
-
 static int fd_completed;
 
 int demos_init()
 {
-    char *fd1_str = getenv("COMPLETED_EFD");
-    char *fd2_str = getenv("NEW_PERIOD_EFD");
-
-    if(!fd1_str || !fd2_str)
+    char *str = getenv("DEMOS_EFD");
+    if( !str )
         return -1;
 
-    fd_completed = atoi(fd1_str);
-    int fd_new_period = atoi(fd2_str);
+    int fd_new_period;
+    if( sscanf( str, "%d,%d", &fd_completed, &fd_new_period) != 2 )
+        return -1;
 
     return fd_new_period;
 }

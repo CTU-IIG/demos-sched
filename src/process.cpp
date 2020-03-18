@@ -47,9 +47,9 @@ void Process::exec()
     // launch new process
     if (pid == 0) {
         // CHILD PROCESS
-        string env1 = "COMPLETED_EFD=" + to_string(completed_w.get_fd());
-        string env2 = "NEW_PERIOD_EFD=" + to_string(efd_continue);
-        char *const envp[3] = {const_cast<char*>(env1.c_str()), const_cast<char*>(env2.c_str()), NULL};
+        string env = "DEMOS_EFD=" + to_string(completed_w.get_fd())
+                + "," + to_string(efd_continue);
+        char *const envp[2] = {const_cast<char*>(env.c_str()), nullptr};
         CHECK(execle("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr, envp));
         // END CHILD PROCESS
     } else {
