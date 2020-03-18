@@ -42,8 +42,8 @@ public:
     bool is_empty();
     void kill_all();
 
-    void bind_complete_cb(std::function<void ()> new_complete_cb);
-    void bind_empty_cb(std::function<void()> new_empty_cb);
+    void set_complete_cb(std::function<void ()> new_complete_cb);
+    void set_empty_cb(std::function<void()> new_empty_cb);
 
     std::string get_name();
 

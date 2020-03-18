@@ -19,7 +19,7 @@ public:
           Partition *be,
           std::string cpus = "0");
 
-    void bind_empty_cb(std::function<void()>);
+    void set_empty_cb(std::function<void()>);
 
     Partition *sc;
     Partition *be;
