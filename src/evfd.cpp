@@ -23,7 +23,14 @@ ev::evfd::~evfd()
     close(fd);
 }
 
-void ev::evfd::set(std::function<void()> callback)
+void ev::evfd::write(const uint64_t val)
+{
+    if( ::write(fd,&val,sizeof(uint64_t)) == -1 )
+       throw std::system_error(errno, std::generic_category(),
+                               std::string(__PRETTY_FUNCTION__));
+}
+
+void ev::evfd::set(std::function<void(ev::evfd*, uint64_t)> callback)
 {
     this->callback = callback;
 }
@@ -33,11 +40,6 @@ int ev::evfd::get_fd()
     return fd;
 }
 
-uint64_t ev::evfd::get_value()
-{
-    return value;
-}
-
 void ev::evfd::ev_callback(ev::io &w, int revents)
 {
     if (EV_ERROR & revents)
@@ -45,7 +47,7 @@ void ev::evfd::ev_callback(ev::io &w, int revents)
 
     //cout <<__PRETTY_FUNCTION__<< endl;
     // read to have empty fd
-    CHECK(::read(w.fd, &value, sizeof(value)));
-    w.stop(); // Is this necessary?
-    callback();
+    uint64_t val;
+    CHECK(::read(w.fd, &val, sizeof(val)));
+    callback(this, val);
 }

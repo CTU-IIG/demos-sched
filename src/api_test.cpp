@@ -15,7 +15,7 @@ int main(){
     ev::default_loop loop;
     ev::evfd efd(loop,fd_per);
 
-    efd.set([&]() {
+    efd.set([&](ev::evfd*, uint64_t) {
         cout<<"new_period"<<endl;
         sleep(1);
         demos_completed();

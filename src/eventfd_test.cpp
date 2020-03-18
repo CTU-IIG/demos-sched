@@ -9,21 +9,18 @@ using namespace std;
 int main(){
     ev::default_loop loop;
     ev::evfd efd(loop);
-    efd.set([&]() {
-       cout << "read " << efd.get_value() << " from efd" << endl;
+    efd.set([&](ev::evfd* w, uint64_t val) {
+       cout << "read " << val << " from efd" << endl;
+       w->stop();
     });
 
     switch(fork()) {
     case -1:
         err(1,"fork");
     case 0:{
-        sleep(1);
         uint64_t buf = 1;
         printf("Child writing %lu to efd\n", buf);
-
-        ssize_t s = write(efd.get_fd(), &buf, sizeof(uint64_t));
-        if (s != sizeof(uint64_t))
-            err(1,"write");
+        efd.write(buf);
         break;}
     default:{
         efd.start();
