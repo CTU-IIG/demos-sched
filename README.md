@@ -3,6 +3,7 @@
 Initialize git submodules:
 
     git submodule update --init
+    git submodule foreach --recursive 'if [ $(git config remote.origin.url) = . ]; then git config remote.origin.url "$toplevel"; fi'
 
 We use the Meson build system. On Debian-based distro, it can be
 installed by:
