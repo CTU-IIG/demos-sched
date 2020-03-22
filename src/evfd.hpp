@@ -10,7 +10,7 @@ class evfd : private io
 {
 public:
     evfd(ev::loop_ref loop);
-    void set(std::function<void(ev::evfd*, uint64_t)> callback);
+    void set(std::function<void(ev::evfd&)> callback);
     int get_fd();
     using io::start;
     using io::stop;
@@ -18,7 +18,7 @@ public:
     void write(const uint64_t val);
 
 private:
-    std::function<void(ev::evfd*, uint64_t)> callback;
+    std::function<void(ev::evfd&)> callback;
     void ev_callback(ev::io &w, int revents);
 };
 }

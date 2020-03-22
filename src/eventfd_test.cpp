@@ -9,9 +9,9 @@ using namespace std;
 int main(){
     ev::default_loop loop;
     ev::evfd efd(loop);
-    efd.set([&](ev::evfd* w, uint64_t val) {
-       cout << "read " << val << " from efd" << endl;
-       w->stop();
+    efd.set([&](ev::evfd &w) {
+       cout << "read from efd" << endl;
+       w.stop();
     });
 
     switch(fork()) {
@@ -19,7 +19,7 @@ int main(){
         err(1,"fork");
     case 0:{
         uint64_t buf = 1;
-        printf("Child writing %lu to efd\n", buf);
+        printf("Writing to efd\n");
         efd.write(buf);
         break;}
     default:{

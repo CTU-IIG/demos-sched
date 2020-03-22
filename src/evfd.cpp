@@ -26,7 +26,7 @@ void ev::evfd::write(const uint64_t val)
                                std::string(__PRETTY_FUNCTION__));
 }
 
-void ev::evfd::set(std::function<void(ev::evfd*, uint64_t)> callback)
+void ev::evfd::set(std::function<void(ev::evfd&)> callback)
 {
     this->callback = callback;
 }
@@ -45,5 +45,5 @@ void ev::evfd::ev_callback(ev::io &w, int revents)
     // read to have empty fd
     uint64_t val;
     CHECK(::read(w.fd, &val, sizeof(val)));
-    callback(this, val);
+    callback(*this);
 }
