@@ -8,7 +8,7 @@ static int fd_completed, fd_new_period;
 
 int demos_init()
 {
-    char *str = getenv("DEMOS_EFD");
+    char *str = getenv("DEMOS_FDS");
     if( !str )
         return -1;
 

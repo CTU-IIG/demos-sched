@@ -47,7 +47,7 @@ void Process::exec()
     // launch new process
     if (pid == 0) {
         // CHILD PROCESS
-        string env = "DEMOS_EFD=" + to_string(completed_w.get_fd())
+        string env = "DEMOS_FDS=" + to_string(completed_w.get_fd())
                 + "," + to_string(efd_continue);
         char *const envp[2] = {const_cast<char*>(env.c_str()), nullptr};
         CHECK(execle("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr, envp));
