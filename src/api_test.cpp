@@ -14,7 +14,8 @@ int main(){
         cout << "new_period" << endl;
         sleep(1);
         cout << "completed" << endl;
-        demos_completed();
+        if( demos_completed() == -1)
+            err(1,"demos_completed");
     }
 
     return 0;
