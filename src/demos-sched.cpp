@@ -22,6 +22,7 @@ void print_help()
     cout <<
         "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
         "  -c <CONFIG_FILE>   path to configuration file\n"
+        "  -C <CONFIG>        in-line configuration in YAML format\n"
         "  -g <CGROUP_NAME>   name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
         "  -h                 print this message\n";
 }
@@ -156,14 +157,17 @@ void load_cgroup_paths(Cgroup &unified,
 int main(int argc, char *argv[])
 {
     int opt;
-    string config_file;
-    while ((opt = getopt(argc, argv, "hg:c:")) != -1) {
+    string config_file, config_str;
+    while ((opt = getopt(argc, argv, "hg:c:C:")) != -1) {
         switch (opt) {
             case 'g':
                 opt_demos_cg_name = optarg;
                 break;
             case 'c':
                 config_file = optarg;
+                break;
+            case 'C':
+                config_str = optarg;
                 break;
             case 'h':
                 print_help();
@@ -173,7 +177,7 @@ int main(int argc, char *argv[])
                 exit(1);
         }
     }
-    if (config_file.empty()) {
+    if (config_file.empty() && config_str.empty()) {
         print_help();
         exit(1);
     }
@@ -189,9 +193,15 @@ int main(int argc, char *argv[])
     try {
         YAML::Node config;
         try {
-            config = YAML::LoadFile(config_file);
-        } catch (YAML::BadFile &e) {
+            if (!config_file.empty()) {
+                config = YAML::LoadFile(config_file);
+            } else if (!config_str.empty()) {
+                config = YAML::Load(config_str);
+            }
+        } catch (const YAML::BadFile &e) {
             throw runtime_error("Cannot load configuration file: " + config_file);
+        } catch (const YAML::Exception &e) {
+            throw runtime_error("Configuration error: "s + e.what());
         }
 
         Partitions partitions;
