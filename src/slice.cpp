@@ -19,7 +19,6 @@ Slice::Slice(ev::loop_ref loop,
     }
     if(be) be->set_empty_cb(std::bind(&Slice::empty_partition_cb, this));
     timer.set(std::bind(&Slice::timeout_cb, this));
-    empty = false;
 }
 
 void Slice::set_empty_cb(std::function<void()> new_empty_cb)

@@ -52,9 +52,9 @@ public:
     CgroupCpuset cgc;
     Cgroup cge;
     void proc_exit_cb(Process &proc);
-    std::function<void()> completed_cb;
+    std::function<void()> completed_cb = nullptr;
 private:
-    Processes processes;
+    Processes processes = {};
     Processes::iterator current;
     std::string name;
     size_t proc_count = 0;
@@ -65,7 +65,7 @@ private:
     // cyclic queue
     void move_to_next_proc();
 
-    std::vector<std::function<void()>> empty_cbs;
+    std::vector<std::function<void()>> empty_cbs = {};
 };
 
 #endif // PARTITION_HPP

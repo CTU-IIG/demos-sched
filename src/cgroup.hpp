@@ -53,7 +53,7 @@ public:
 
 protected:
     bool remove = true;
-    std::string path;
+    std::string path = "";
 };
 
 class CgroupFreezer : public Cgroup
@@ -66,7 +66,7 @@ public:
     void unfreeze();
 
 private:
-    int fd_state;
+    int fd_state = -1;
 };
 
 class CgroupCpuset : public Cgroup
@@ -77,7 +77,7 @@ public:
     void set_cpus(std::string cpus);
 
 private:
-    int fd_cpus;
+    int fd_cpus = -1;
     std::string current_cpus = "";
 };
 
@@ -99,7 +99,7 @@ public:
     ~CgroupEvents();
 
 private:
-    int fd_events;
+    int fd_events = -1;
     ev::io events_w;
     std::function<void(bool)> populated_cb;
     void clean_cb(ev::io &w, int revents);

@@ -29,7 +29,7 @@ public:
     ~timerfd();
 
 private:
-    std::function<void()> callback;
+    std::function<void()> callback = nullptr;
     void ev_callback(ev::io &w, int revents);
 };
 }

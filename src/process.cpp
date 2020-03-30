@@ -18,6 +18,7 @@ Process::Process(ev::loop_ref loop,
                  bool contionuous)
     : loop(loop)
     , completed_w(loop)
+    , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
     , part(part)
     , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
     , cgf(part.cgf, name)
@@ -35,7 +36,6 @@ Process::Process(ev::loop_ref loop,
     freeze();
     completed_w.set(std::bind(&Process::completed_cb, this));
     completed_w.start();
-    efd_continue = CHECK(eventfd(0, EFD_SEMAPHORE));
 }
 
 void Process::exec()

@@ -18,7 +18,7 @@ public:
     void write(const uint64_t val);
 
 private:
-    std::function<void(ev::evfd&)> callback;
+    std::function<void(ev::evfd&)> callback = nullptr;
     void ev_callback(ev::io &w, int revents);
 };
 }

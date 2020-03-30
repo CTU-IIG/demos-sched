@@ -19,6 +19,9 @@ public:
           Partition *be,
           std::string cpus = "0");
 
+    Slice(const Slice&) = delete;
+    const Slice& operator=(const Slice&) = delete;
+
     void set_empty_cb(std::function<void()>);
 
     Partition *sc;
@@ -36,9 +39,9 @@ private:
     void timeout_cb();
     void move_proc_and_start_timer(Partition *p);
     void empty_partition_cb();
-    bool empty = true;
+    bool empty = false;
 
-    std::function<void()> empty_cb;
+    std::function<void()> empty_cb = nullptr;
 };
 
 #endif // SLICE_HPP
