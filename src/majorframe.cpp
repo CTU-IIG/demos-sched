@@ -17,7 +17,7 @@ MajorFrame::MajorFrame(ev::loop_ref loop,
     sigterm.start(SIGTERM);
 
     for (auto &w : this->windows)
-        w->bind_empty_cb(bind(&MajorFrame::empty_cb, this));
+        w->set_empty_cb(bind(&MajorFrame::empty_cb, this));
 }
 
 void MajorFrame::move_to_next_window()

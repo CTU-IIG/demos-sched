@@ -42,7 +42,8 @@ public:
     bool is_empty();
     void kill_all();
 
-    void bind_empty_cb(std::function<void()> new_empty_cb);
+    void set_complete_cb(std::function<void ()> new_complete_cb);
+    void set_empty_cb(std::function<void()> new_empty_cb);
 
     std::string get_name();
 
@@ -51,7 +52,7 @@ public:
     CgroupCpuset cgc;
     Cgroup cge;
     void proc_exit_cb(Process &proc);
-
+    std::function<void()> completed_cb;
 private:
     Processes processes;
     Processes::iterator current;
@@ -64,8 +65,7 @@ private:
     // cyclic queue
     void move_to_next_proc();
 
-    std::vector<std::function<void()>>
-      empty_cbs; // = std::bind(&Partition::default_empty_cb, this);
+    std::vector<std::function<void()>> empty_cbs;
 };
 
 #endif // PARTITION_HPP

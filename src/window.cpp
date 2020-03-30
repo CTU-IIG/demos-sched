@@ -7,11 +7,11 @@ Window::Window(Slices &&slices, std::chrono::nanoseconds length)
     , slices(move(slices))
 {
     for (auto &s : this->slices)
-        s->bind_empty_cb(bind(&Window::empty_slice_cb, this));
+        s->set_empty_cb(bind(&Window::empty_slice_cb, this));
     empty = false;
 }
 
-void Window::bind_empty_cb(std::function<void()> new_empty_cb)
+void Window::set_empty_cb(std::function<void()> new_empty_cb)
 {
     empty_cb = new_empty_cb;
 }

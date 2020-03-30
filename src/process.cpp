@@ -2,6 +2,7 @@
 #include "partition.hpp"
 #include <functional>
 #include <system_error>
+#include <sys/eventfd.h>
 
 using namespace std::placeholders;
 using namespace std;
@@ -13,7 +14,9 @@ Process::Process(ev::loop_ref loop,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter,
                  bool contionuous)
-    : part(part)
+    : loop(loop)
+    , completed_w(loop)
+    , part(part)
     , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
     , cgf(part.cgf, name)
     , argv(argv)
@@ -28,6 +31,9 @@ Process::Process(ev::loop_ref loop,
 {
     // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
     freeze();
+    completed_w.set(std::bind(&Process::completed_cb, this));
+    completed_w.start();
+    efd_continue = CHECK(eventfd(0, EFD_SEMAPHORE));
 }
 
 void Process::exec()
@@ -41,7 +47,10 @@ void Process::exec()
     // launch new process
     if (pid == 0) {
         // CHILD PROCESS
-        CHECK(execl("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr));
+        string env = "DEMOS_FDS=" + to_string(completed_w.get_fd())
+                + "," + to_string(efd_continue);
+        char *const envp[2] = {const_cast<char*>(env.c_str()), nullptr};
+        CHECK(execle("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr, envp));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
@@ -71,6 +80,11 @@ void Process::freeze()
 
 void Process::unfreeze()
 {
+    uint64_t buf = 1;
+    if( demos_completed ){
+        CHECK(write(efd_continue, &buf, sizeof(buf)));
+        demos_completed = false;
+    }
     cgf.unfreeze();
 }
 
@@ -111,4 +125,13 @@ void Process::populated_cb(bool populated)
         running = false;
         part.proc_exit_cb(*this);
     }
+}
+
+void Process::completed_cb()
+{
+    //cout<<__PRETTY_FUNCTION__<<endl;
+    // switch to next process
+    completed = true;
+    demos_completed = true;
+    part.completed_cb();
 }

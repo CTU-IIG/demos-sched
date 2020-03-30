@@ -13,7 +13,7 @@ class Window
 {
 public:
     Window(Slices &&slices, std::chrono::nanoseconds length);
-    void bind_empty_cb(std::function<void()> new_empty_cb);
+    void set_empty_cb(std::function<void()> new_empty_cb);
 
     std::chrono::nanoseconds length;
     Slices slices;
