@@ -3,10 +3,10 @@
 using namespace std;
 
 Slice::Slice(ev::loop_ref loop,
-             std::chrono::steady_clock::time_point start_time,
+             chrono::steady_clock::time_point start_time,
              Partition *sc,
              Partition *be,
-             std::string cpus)
+             string cpus)
     : sc(sc)
     , be(be)
     , cpus(cpus)
@@ -14,15 +14,15 @@ Slice::Slice(ev::loop_ref loop,
     , timer(loop)
 {
     if (sc) {
-        sc->set_empty_cb(std::bind(&Slice::empty_partition_cb, this));
-        sc->set_complete_cb(std::bind(&Slice::timeout_cb, this));
+        sc->set_empty_cb(bind(&Slice::empty_partition_cb, this));
+        sc->set_complete_cb(bind(&Slice::timeout_cb, this));
     }
     if (be)
-        be->set_empty_cb(std::bind(&Slice::empty_partition_cb, this));
-    timer.set(std::bind(&Slice::timeout_cb, this));
+        be->set_empty_cb(bind(&Slice::empty_partition_cb, this));
+    timer.set(bind(&Slice::timeout_cb, this));
 }
 
-void Slice::set_empty_cb(std::function<void()> new_empty_cb)
+void Slice::set_empty_cb(function<void()> new_empty_cb)
 {
     empty_cb = new_empty_cb;
 }
@@ -84,7 +84,7 @@ bool Slice::is_empty()
     return empty;
 }
 
-void Slice::update_timeout(std::chrono::steady_clock::time_point actual_time)
+void Slice::update_timeout(chrono::steady_clock::time_point actual_time)
 {
     timeout = actual_time;
 }
@@ -92,7 +92,7 @@ void Slice::update_timeout(std::chrono::steady_clock::time_point actual_time)
 void Slice::timeout_cb()
 {
 #ifdef VERBOSE
-    std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    cerr << __PRETTY_FUNCTION__ << endl;
 #endif
 
     timer.stop();
