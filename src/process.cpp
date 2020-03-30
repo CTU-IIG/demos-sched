@@ -1,6 +1,8 @@
 #include "process.hpp"
 #include "partition.hpp"
 #include <functional>
+#include <stdio.h>
+#include <stdlib.h>
 #include <system_error>
 #include <sys/eventfd.h>
 
@@ -41,16 +43,16 @@ void Process::exec()
     // TODO pipe
 
     // create new process
-    pid = CHECK(vfork());
+    pid = CHECK(fork());
     running = true;
 
     // launch new process
     if (pid == 0) {
         // CHILD PROCESS
-        string env = "DEMOS_FDS=" + to_string(completed_w.get_fd())
-                + "," + to_string(efd_continue);
-        char *const envp[2] = {const_cast<char*>(env.c_str()), nullptr};
-        CHECK(execle("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr, envp));
+        char val[100];
+        sprintf(val, "%d,%d", completed_w.get_fd(), efd_continue);
+        CHECK(setenv("DEMOS_FDS", val, 1));
+        CHECK(execl("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
