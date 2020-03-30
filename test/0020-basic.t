@@ -1,6 +1,6 @@
 #!/bin/bash
 . testlib
-plan_tests 5
+plan_tests 4
 
 out=$(demos-sched -C "bad config")
 is $? 1 "bad config exit code"
