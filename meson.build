@@ -1,4 +1,4 @@
-project('demos-sched', 'cpp',
+project('demos-sched', ['cpp', 'c'],
 	default_options : [
 	  'cpp_std=c++14',
 	  'default_library=static',

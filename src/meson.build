@@ -2,26 +2,17 @@
 #libev_dep = dependency('ev') # why this doesn't work? because ev doesn't provide pkgconfig .pc file
 #libev_dep = meson.get_compiler('cpp').find_library('ev')
 
-incdir = include_directories('../include')
-
 cxx = meson.get_compiler('cpp')
 
 executable('demos-sched',
            ['demos-sched.cpp','process.cpp','partition.cpp',
             'slice.cpp','window.cpp','majorframe.cpp',
             'cgroup.cpp', 'timerfd.cpp', 'evfd.cpp'],
-           include_directories : incdir,
 	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']),
            dependencies : [libev_dep, yaml_cpp_dep] )
 
 executable('eventfd-test',
            ['eventfd_test.cpp','evfd.cpp'],
-           include_directories : incdir,
-           dependencies : libev_dep )
-
-executable('api-test',
-           ['api_test.cpp','demos-sch.cpp','evfd.cpp'],
-           include_directories : incdir,
            dependencies : libev_dep )
 
 # executable('cgroup-test',
@@ -58,10 +49,19 @@ executable('infinite_proc', 'infinite_proc.cpp')
 test('timer_fd',
      executable('timerfd_test',
 		['timerfd_test.cpp', 'timerfd.cpp'],
-		include_directories : incdir,
 		dependencies : libev_dep),
     )
 executable('yaml-demo',
            ['yaml_demo.cpp'],
            dependencies : yaml_cpp_dep)
-        
+
+incdir = include_directories('../include')
+libdemos_sch = library('demos-sch', [ 'demos-sch.c' ],
+		       include_directories : incdir)
+libdemos_sch_dep = declare_dependency(
+  link_with : libdemos_sch,
+  include_directories : incdir,
+)
+
+executable('api-test', ['api_test.c'],
+           dependencies : [ libdemos_sch_dep ])

@@ -1,20 +1,18 @@
 #include "demos-sch.h"
 #include <err.h>
-#include <iostream>
+#include <stdbool.h>
+#include <stdio.h>
 #include <unistd.h>
-
-using namespace std;
 
 int main()
 {
-
     if (demos_init() == -1)
         err(1, "demos_init");
 
     while (true) {
-        cout << "new_period" << endl;
+        printf("new_period\n");
         sleep(1);
-        cout << "completed" << endl;
+        printf("completed\n");
         if (demos_completed() == -1)
             err(1, "demos_completed");
     }
