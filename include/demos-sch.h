@@ -4,7 +4,6 @@
 /*
  * Initialize interface for demos-sched.
  * @return Zero if successful, -1 otherwise and errno is set appropriately
- * @todo set errno
  */
 int demos_init();
 

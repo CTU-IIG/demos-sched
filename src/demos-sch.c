@@ -1,4 +1,5 @@
 #include "demos-sch.h"
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,11 +10,15 @@ static int fd_completed, fd_new_period;
 int demos_init()
 {
     char *str = getenv("DEMOS_FDS");
-    if( !str )
+    if( !str ) {
+        errno = ENOKEY;
         return -1;
+    }
 
-    if( sscanf( str, "%d,%d", &fd_completed, &fd_new_period) != 2 )
+    if( sscanf( str, "%d,%d", &fd_completed, &fd_new_period) != 2 ) {
+        errno = EBADMSG;
         return -1;
+    }
 
     return 0;
 }
