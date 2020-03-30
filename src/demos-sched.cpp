@@ -182,10 +182,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    Cgroup unified_root, freezer_root, cpuset_root;
-
-    load_cgroup_paths(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
-
     auto start_time = chrono::steady_clock::now();
 
     ev::default_loop loop;
@@ -203,6 +199,9 @@ int main(int argc, char *argv[])
         } catch (const YAML::Exception &e) {
             throw runtime_error("Configuration error: "s + e.what());
         }
+
+        Cgroup unified_root, freezer_root, cpuset_root;
+        load_cgroup_paths(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
 
         Partitions partitions;
 
