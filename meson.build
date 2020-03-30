@@ -18,3 +18,4 @@ if meson.version().version_compare('>=0.52')
 endif
 
 subdir('src')
+subdir('test')
