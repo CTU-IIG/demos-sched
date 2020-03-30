@@ -13,11 +13,12 @@ Slice::Slice(ev::loop_ref loop,
     , timeout(start_time)
     , timer(loop)
 {
-    if(sc){
+    if (sc) {
         sc->set_empty_cb(std::bind(&Slice::empty_partition_cb, this));
         sc->set_complete_cb(std::bind(&Slice::timeout_cb, this));
     }
-    if(be) be->set_empty_cb(std::bind(&Slice::empty_partition_cb, this));
+    if (be)
+        be->set_empty_cb(std::bind(&Slice::empty_partition_cb, this));
     timer.set(std::bind(&Slice::timeout_cb, this));
 }
 
@@ -28,7 +29,8 @@ void Slice::set_empty_cb(std::function<void()> new_empty_cb)
 
 void Slice::move_proc_and_start_timer(Partition *p)
 {
-    if(!p) return;
+    if (!p)
+        return;
     p->move_to_next_unfinished_proc();
     timeout += p->get_current_proc().get_actual_budget();
     timer.start(timeout);
@@ -48,22 +50,22 @@ void Slice::empty_partition_cb()
 
 void Slice::start()
 {
-    if(sc){
+    if (sc) {
         sc->clear_completed_flag();
         sc->set_cpus(cpus);
     }
-    if(be){
+    if (be) {
         be->clear_completed_flag();
         be->set_cpus(cpus);
     }
 
-    if ( sc && !sc->is_empty() ) {
+    if (sc && !sc->is_empty()) {
         sc->move_to_first_proc();
         current_proc = &sc->get_current_proc();
         current_proc->unfreeze();
         timeout += current_proc->get_actual_budget();
         timer.start(timeout);
-    } else if ( be && !be->is_empty()) {
+    } else if (be && !be->is_empty()) {
         current_proc = &be->get_current_proc();
         current_proc->unfreeze();
         timeout += current_proc->get_actual_budget();
@@ -98,13 +100,13 @@ void Slice::timeout_cb()
     current_proc->freeze();
     current_proc->mark_completed();
 
-    if ( sc && (!sc->is_empty() && !sc->is_completed() && sc->move_to_next_unfinished_proc()) ) {
+    if (sc && (!sc->is_empty() && !sc->is_completed() && sc->move_to_next_unfinished_proc())) {
         current_proc = &sc->get_current_proc();
         current_proc->unfreeze();
         timeout += current_proc->get_actual_budget();
         timer.start(timeout);
         return;
-    } else if ( be && (!be->is_empty() && !be->is_completed() && be->move_to_next_unfinished_proc())) {
+    } else if (be && (!be->is_empty() && !be->is_completed() && be->move_to_next_unfinished_proc())) {
         current_proc = &be->get_current_proc();
         current_proc->unfreeze();
         timeout += current_proc->get_actual_budget();
