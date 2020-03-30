@@ -62,15 +62,14 @@ void Slice::start()
     if (sc && !sc->is_empty()) {
         sc->move_to_first_proc();
         current_proc = &sc->get_current_proc();
-        current_proc->unfreeze();
-        timeout += current_proc->get_actual_budget();
-        timer.start(timeout);
     } else if (be && !be->is_empty()) {
         current_proc = &be->get_current_proc();
-        current_proc->unfreeze();
-        timeout += current_proc->get_actual_budget();
-        timer.start(timeout);
+    } else {
+        return;
     }
+    current_proc->unfreeze();
+    timeout += current_proc->get_actual_budget();
+    timer.start(timeout);
 }
 
 void Slice::stop()
@@ -100,17 +99,14 @@ void Slice::timeout_cb()
     current_proc->freeze();
     current_proc->mark_completed();
 
-    if (sc && (!sc->is_empty() && !sc->is_completed() && sc->move_to_next_unfinished_proc())) {
+    if (sc && (!sc->is_empty() && !sc->is_completed() && sc->move_to_next_unfinished_proc()))
         current_proc = &sc->get_current_proc();
-        current_proc->unfreeze();
-        timeout += current_proc->get_actual_budget();
-        timer.start(timeout);
-        return;
-    } else if (be && (!be->is_empty() && !be->is_completed() && be->move_to_next_unfinished_proc())) {
+    else if (be && (!be->is_empty() && !be->is_completed() && be->move_to_next_unfinished_proc()))
         current_proc = &be->get_current_proc();
-        current_proc->unfreeze();
-        timeout += current_proc->get_actual_budget();
-        timer.start(timeout);
+    else
         return;
-    }
+
+    current_proc->unfreeze();
+    timeout += current_proc->get_actual_budget();
+    timer.start(timeout);
 }
