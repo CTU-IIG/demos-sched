@@ -16,6 +16,7 @@ using namespace std;
 using namespace std::chrono_literals;
 
 string opt_demos_cg_name = "demos";
+size_t anonyme_partition_counter = 0;
 
 void print_help()
 {
@@ -154,21 +155,45 @@ void load_cgroup_paths(Cgroup &unified,
     }
 }
 
-void add_partitions_to_slice(Slices &s, Partitions &part, YAML::Node &n, ev::default_loop & loop, std::chrono::steady_clock::time_point start_time)
+void create_partition(YAML::Node &n, Partitions &partitions, string key, string name, Cgroup &freezer_root, Cgroup &cpuset_root, Cgroup &unified_root, ev::default_loop &loop)
 {
-    Partition *sc_part_ptr = nullptr;
-    Partition *be_part_ptr = nullptr;
+    partitions.emplace_back(
+      freezer_root, cpuset_root, unified_root, name);
+
+    for (auto yprocess : n[key]) {
+        // add process to partition
+        partitions.back().add_process(loop,
+                                      yprocess["cmd"].as<string>(),
+                                      chrono::milliseconds(yprocess["budget"].as<int>()));
+    }
+}
+
+Partition *find_partition(YAML::Node &n, Partitions &partitions, std::string key, Cgroup &freezer_root, Cgroup &cpuset_root, Cgroup &unified_root, ev::default_loop &loop)
+{
+    Partition *part_ptr = nullptr;
     // find and add partitions according to their names
-    if (n["sc_partition"]) {
-        sc_part_ptr = &*find_if(begin(part), end(part), [&n](auto &p) {
-            return p.get_name() == n["sc_partition"].as<string>();
+    if (n[key+"_partition"]) {
+        part_ptr = &*find_if(begin(partitions), end(partitions), [&n, key](auto &p) {
+            return p.get_name() == n[key+"_partition"].as<string>();
         });
+    } else if (n[key+"_processes"]){
+        create_partition(n, partitions, key+"_processes", "anonyme" + to_string(anonyme_partition_counter),
+                         freezer_root, cpuset_root, unified_root, loop);
+        anonyme_partition_counter++;
+        part_ptr = &partitions.back();
     }
-    if (n["be_partition"]) {
-        be_part_ptr = &*find_if(begin(part), end(part), [&n](auto &p) {
-            return p.get_name() == n["be_partition"].as<string>();
-        });
-    }
+
+
+
+    return part_ptr;
+}
+
+void add_partitions_to_slice(Slices &slices, Partitions &partitions, YAML::Node &n, ev::default_loop & loop, std::chrono::steady_clock::time_point start_time,
+                             Cgroup &freezer_root, Cgroup &cpuset_root, Cgroup &unified_root)
+{
+    Partition *sc_part_ptr = find_partition(n, partitions, "sc", freezer_root, cpuset_root, unified_root, loop);
+    Partition *be_part_ptr = find_partition(n, partitions, "be", freezer_root, cpuset_root, unified_root, loop);
+
     // create slice
     string procs;
     // all procs are set by default
@@ -177,7 +202,7 @@ void add_partitions_to_slice(Slices &s, Partitions &part, YAML::Node &n, ev::def
     else
         procs = "0-" + to_string(MAX_NPROC-1);
 
-    s.push_back(make_unique<Slice>(
+    slices.push_back(make_unique<Slice>(
                     loop, start_time, sc_part_ptr, be_part_ptr, procs));
 }
 
@@ -233,33 +258,25 @@ int main(int argc, char *argv[])
         Partitions partitions;
 
         for (auto ypartition : config["partitions"]) {
-            // create partition
-            partitions.emplace_back(
-              freezer_root, cpuset_root, unified_root, ypartition["name"].as<string>());
-
-            for (auto yprocess : ypartition["processes"]) {
-                // add process to partition
-                partitions.back().add_process(loop,
-                                              yprocess["cmd"].as<string>(),
-                                              chrono::milliseconds(yprocess["budget"].as<int>()));
-            }
+            create_partition(ypartition, partitions, "processes", ypartition["name"].as<string>(),
+                             freezer_root, cpuset_root, unified_root, loop);
         }
-        cerr << "parsed " << partitions.size() << " partitions" << endl;
 
         Windows windows;
         for (auto ywindow : config["windows"]) {
             Slices slices;
             // Slices slices;
             if(!ywindow["slices"]){
-                add_partitions_to_slice(slices, partitions, ywindow, loop, start_time);
+                add_partitions_to_slice(slices, partitions, ywindow, loop, start_time, freezer_root, cpuset_root, unified_root);
             } else {
                 for (auto yslice : ywindow["slices"])
-                    add_partitions_to_slice(slices, partitions, yslice, loop, start_time);
+                    add_partitions_to_slice(slices, partitions, yslice, loop, start_time, freezer_root, cpuset_root, unified_root);
             }
             windows.push_back(
                         make_unique<Window>(move(slices), chrono::milliseconds(ywindow["length"].as<int>())));
         }
-        cerr << "parsed " << windows.size() << " windows" << endl;
+        cerr << "parsed " << partitions.size() << " partitions" << endl
+             << "parsed " << windows.size() << " windows" << endl;
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
