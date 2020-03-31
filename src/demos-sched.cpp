@@ -154,6 +154,33 @@ void load_cgroup_paths(Cgroup &unified,
     }
 }
 
+void add_partitions_to_slice(Slices &s, Partitions &part, YAML::Node &n, ev::default_loop & loop, std::chrono::steady_clock::time_point start_time)
+{
+    Partition *sc_part_ptr = nullptr;
+    Partition *be_part_ptr = nullptr;
+    // find and add partitions according to their names
+    if (n["sc_partition"]) {
+        sc_part_ptr = &*find_if(begin(part), end(part), [&n](auto &p) {
+            return p.get_name() == n["sc_partition"].as<string>();
+        });
+    }
+    if (n["be_partition"]) {
+        be_part_ptr = &*find_if(begin(part), end(part), [&n](auto &p) {
+            return p.get_name() == n["be_partition"].as<string>();
+        });
+    }
+    // create slice
+    string procs;
+    // all procs are set by default
+    if(n["cpu"])
+        procs = n["cpu"].as<string>();
+    else
+        procs = "0-" + to_string(MAX_NPROC-1);
+
+    s.push_back(make_unique<Slice>(
+                    loop, start_time, sc_part_ptr, be_part_ptr, procs));
+}
+
 int main(int argc, char *argv[])
 {
     int opt;
@@ -223,26 +250,14 @@ int main(int argc, char *argv[])
         for (auto ywindow : config["windows"]) {
             Slices slices;
             // Slices slices;
-            for (auto yslice : ywindow["slices"]) {
-                Partition *sc_part_ptr = nullptr;
-                Partition *be_part_ptr = nullptr;
-                // find and add partitions according to their names
-                if (yslice["sc_partition"]) {
-                    sc_part_ptr = &*find_if(begin(partitions), end(partitions), [&yslice](auto &p) {
-                        return p.get_name() == yslice["sc_partition"].as<string>();
-                    });
-                }
-                if (yslice["be_partition"]) {
-                    be_part_ptr = &*find_if(begin(partitions), end(partitions), [&yslice](auto &p) {
-                        return p.get_name() == yslice["be_partition"].as<string>();
-                    });
-                }
-                // create slice
-                slices.push_back(make_unique<Slice>(
-                  loop, start_time, sc_part_ptr, be_part_ptr, yslice["cpu"].as<string>()));
+            if(!ywindow["slices"]){
+                add_partitions_to_slice(slices, partitions, ywindow, loop, start_time);
+            } else {
+                for (auto yslice : ywindow["slices"])
+                    add_partitions_to_slice(slices, partitions, yslice, loop, start_time);
             }
             windows.push_back(
-              make_unique<Window>(move(slices), chrono::milliseconds(ywindow["length"].as<int>())));
+                        make_unique<Window>(move(slices), chrono::milliseconds(ywindow["length"].as<int>())));
         }
         cerr << "parsed " << windows.size() << " windows" << endl;
 
