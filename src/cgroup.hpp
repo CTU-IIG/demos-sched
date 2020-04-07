@@ -21,10 +21,10 @@
 #include <sys/types.h>
 #include <vector>
 
-// maximum supported number of processors
-#define MAX_NPROC 8
+#include "config.h"
+
 // cpu usage mask
-typedef std::bitset<MAX_NPROC> Cpu;
+typedef std::bitset<MAX_CPUS> Cpu;
 
 class Process;
 

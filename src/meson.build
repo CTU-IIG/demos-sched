@@ -65,3 +65,12 @@ libdemos_sch_dep = declare_dependency(
 
 executable('api-test', ['api_test.c'],
            dependencies : [ libdemos_sch_dep ])
+
+conf_data = configuration_data({
+  'MAX_CPUS' : get_option('max_cpus'),
+})
+
+configure_file(
+  output : 'config.h',
+  configuration : conf_data,
+)
