@@ -41,38 +41,67 @@ Partition *find_partition_by_name(std::string name, Config &c, Partitions &parti
     return nullptr;
 }
 
+Partition *parse_partitions( const std::string key, std::chrono::milliseconds &default_budget,
+                             Partitions &partitions, YAML::Node &n, Config &c)
+{
+    Partition *part_ptr;
+    // try to find partition name in partitions
+    try{
+        part_ptr = find_partition_by_name(
+                n[key].as<string>(),
+                c, partitions, default_budget);
+        // if name not found in partitions, treat it as cmd
+        if( !part_ptr ){
+            string name = to_string(anonyme_partition_counter++);
+            partitions.emplace_back(c.freezer_cg, c.cpuset_cg,
+                                    c.unified_cg, name);
+            partitions.back().add_process( c.loop,
+                                           n[key].as<string>(),
+                                           default_budget);
+            part_ptr = &partitions.back();
+        }
+    } catch (YAML::BadConversion e) {
+        // partition name not defined, try to treat it as array of cmds
+        try{
+            auto cmd_strings = n[key];
+            cmd_strings[0].as<string>();
+
+            string name = to_string(anonyme_partition_counter++);
+            partitions.emplace_back(c.freezer_cg, c.cpuset_cg,
+                                    c.unified_cg, name);
+            for ( auto cmd : cmd_strings) {
+                partitions.back().add_process( c.loop,
+                                               cmd.as<string>(),
+                                               default_budget);
+            }
+            part_ptr = &partitions.back();
+        } catch(YAML::BadConversion e) {
+            // try to find "cmd" in slice def.
+            string name = to_string(anonyme_partition_counter++);
+            create_partition( name, key, partitions, c, n, default_budget);
+            part_ptr = &partitions.back();
+        }
+    }
+    return part_ptr;
+}
+
 void add_partitions_to_slice(YAML::Node &n, Config &c, Slices &slices, Partitions &partitions, int length, std::string &cpus)
 {
-    Partition *scpart_ptr = nullptr, *bepart_ptr = nullptr;
+    Partition *sc_part_ptr = nullptr, *be_part_ptr = nullptr;
     if(n["sc_partition"]){
         auto default_budget = chrono::milliseconds( int(0.6*length) );
-        try{
-            scpart_ptr = find_partition_by_name(
-                    n["sc_partition"].as<string>(),
-                    c, partitions, default_budget);
-        } catch (YAML::BadConversion e) {
-            // partition name not defined, try to find "cmd" in slice def.
-            string name = to_string(anonyme_partition_counter++);
-            create_partition( name, "sc_partition", partitions, c, n, default_budget);
-            scpart_ptr = &partitions.back();
-        }
+        sc_part_ptr = parse_partitions( "sc_partition", default_budget,
+                           partitions, n, c);
     }
     if(n["be_partition"]){
         auto default_budget = chrono::milliseconds( length );
-        try{
-            bepart_ptr = find_partition_by_name(
-                    n["be_partition"].as<string>(),
-                    c, partitions, default_budget);
-        } catch (YAML::BadConversion e) {
-            // partition name not defined, try to find "cmd" in slice def.
-            string name = to_string(anonyme_partition_counter++);
-            create_partition( name, "be_partition", partitions, c, n, default_budget);
-            bepart_ptr = &partitions.back();
-        }
+        be_part_ptr = parse_partitions( "be_partition", default_budget,
+                           partitions, n, c);
     }
+
     slices.push_back(make_unique<Slice>(
                     c.loop, c.start_time,
-                    scpart_ptr, bepart_ptr, cpus));
+                    sc_part_ptr, be_part_ptr, cpus));
 }
 
 void parse_config(Config &c, Windows &windows, Partitions &partitions)
