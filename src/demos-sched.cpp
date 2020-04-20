@@ -219,8 +219,7 @@ int main(int argc, char *argv[])
 
         parse_config(c, windows, partitions);
 
-        cerr << "parsed " << partitions.size() << " partitions"
-             << "and " << windows.size() << " windows" << endl;
+        cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows" << endl;
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
