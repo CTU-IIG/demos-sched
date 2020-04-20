@@ -11,10 +11,13 @@ void create_partition(std::string &name, const std::string key, Partitions &part
     partitions.emplace_back(c.freezer_cg, c.cpuset_cg,
                             c.unified_cg, name);
     for (auto yprocess : n[key]){
-        // todo if not budget
+        auto budget = default_budget;
+        if (yprocess["budget"]){
+            budget = chrono::milliseconds( yprocess["budget"].as<int>() );
+        }
         partitions.back().add_process(
                     c.loop, yprocess["cmd"].as<string>(),
-                    chrono::milliseconds(yprocess["budget"].as<int>()));
+                    budget);
     }
 }
 
@@ -38,30 +41,32 @@ Partition *find_partition_by_name(std::string name, Config &c, Partitions &parti
     return nullptr;
 }
 
-void add_partitions_to_slice(YAML::Node &n, Config &c, Slices &slices, Partitions &partitions, std::chrono::milliseconds &length, std::string &cpus)
+void add_partitions_to_slice(YAML::Node &n, Config &c, Slices &slices, Partitions &partitions, int length, std::string &cpus)
 {
     Partition *scpart_ptr = nullptr, *bepart_ptr = nullptr;
     if(n["sc_partition"]){
+        auto default_budget = chrono::milliseconds( int(0.6*length) );
         try{
             scpart_ptr = find_partition_by_name(
                     n["sc_partition"].as<string>(),
-                    c, partitions, length);
+                    c, partitions, default_budget);
         } catch (YAML::BadConversion e) {
             // partition name not defined, try to find "cmd" in slice def.
             string name = to_string(anonyme_partition_counter++);
-            create_partition( name, "sc_partition", partitions, c, n, length);
+            create_partition( name, "sc_partition", partitions, c, n, default_budget);
             scpart_ptr = &partitions.back();
         }
     }
     if(n["be_partition"]){
+        auto default_budget = chrono::milliseconds( length );
         try{
             bepart_ptr = find_partition_by_name(
                     n["be_partition"].as<string>(),
-                    c, partitions, length);
+                    c, partitions, default_budget);
         } catch (YAML::BadConversion e) {
             // partition name not defined, try to find "cmd" in slice def.
             string name = to_string(anonyme_partition_counter++);
-            create_partition( name, "be_partition", partitions, c, n, length);
+            create_partition( name, "be_partition", partitions, c, n, default_budget);
             bepart_ptr = &partitions.back();
         }
     }
@@ -74,7 +79,7 @@ void parse_config(Config &c, Windows &windows, Partitions &partitions)
 {
     for (auto ywindow : c.config["windows"]) {
         // todo try
-        auto length = chrono::milliseconds(ywindow["length"].as<int>());
+        int length = ywindow["length"].as<int>();
         Slices slices;
 
         if(ywindow["slices"]){
@@ -86,6 +91,8 @@ void parse_config(Config &c, Windows &windows, Partitions &partitions)
             string cpus = "0-" + to_string(MAX_NPROC-1  );
             add_partitions_to_slice(ywindow, c, slices, partitions, length, cpus);
         }
-        windows.push_back( make_unique<Window>(move(slices), length) );
+
+        auto budget = chrono::milliseconds( length );
+        windows.push_back( make_unique<Window>(move(slices), budget) );
     }
 }

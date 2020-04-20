@@ -17,6 +17,4 @@ typedef struct{
 
 void parse_config(Config &c, Windows &windows, Partitions &partitions);
 
-Partition *find_partition_by_name(std::string name, Config &c, Partitions &partitions, std::chrono::milliseconds &default_budget);
-
 #endif // CONFIG_PARSING_HPP
