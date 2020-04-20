@@ -220,6 +220,9 @@ int main(int argc, char *argv[])
         parse_config(c, windows, partitions);
 
         cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows" << endl;
+        if( partitions.size() == 0 || windows.size() == 0 ) {
+            throw runtime_error( "need at least one partition in one window" );
+        }
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
