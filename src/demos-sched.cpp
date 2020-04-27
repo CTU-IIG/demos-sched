@@ -1,6 +1,6 @@
+#include "config_parsing.hpp"
 #include "demossched.hpp"
 #include "majorframe.hpp"
-#include "config_parsing.hpp"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -8,25 +8,26 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <sched.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sched.h>
 
 using namespace std;
 using namespace std::chrono_literals;
 
 string opt_demos_cg_name = "demos";
-//size_t anonyme_partition_counter = 0;
+// size_t anonyme_partition_counter = 0;
 
 void print_help()
 {
-    cout <<
-        "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
-        "  -c <CONFIG_FILE>   path to configuration file\n"
-        "  -C <CONFIG>        in-line configuration in YAML format\n"
-        "  -g <CGROUP_NAME>   name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
-        "  -h                 print this message\n";
+    cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
+            "  -c <CONFIG_FILE>   path to configuration file\n"
+            "  -C <CONFIG>        in-line configuration in YAML format\n"
+            "  -g <CGROUP_NAME>   name of root cgroups, default \""
+         << opt_demos_cg_name
+         << "\"\n"
+            "  -h                 print this message\n";
 }
 
 using namespace std;
@@ -137,13 +138,10 @@ void load_cgroup_paths(Cgroup &unified,
     }
 
     if (!critical_msg.str().empty()) {
-        cerr << "There is no cgroup controller. Run following commands:"
-             << endl
+        cerr << "There is no cgroup controller. Run following commands:" << endl
              << critical_msg.str()
-             << "if it fails, check whether the controllers are available in the kernel"
-             << endl
-             << "zcat /proc/config.gz | grep -E CONFIG_CGROUP_FREEZER|CONFIG_CPUSETS"
-             << endl;
+             << "if it fails, check whether the controllers are available in the kernel" << endl
+             << "zcat /proc/config.gz | grep -E CONFIG_CGROUP_FREEZER|CONFIG_CPUSETS" << endl;
         exit(1);
     }
 
@@ -155,7 +153,6 @@ void load_cgroup_paths(Cgroup &unified,
         exit(1);
     }
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -206,30 +203,29 @@ int main(int argc, char *argv[])
         Cgroup unified_root, freezer_root, cpuset_root;
         load_cgroup_paths(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
 
-        Config c = {
-            .config = config,
-            .unified_cg = unified_root,
-            .cpuset_cg = cpuset_root,
-            .freezer_cg = freezer_root,
-            .loop = loop,
-            .start_time = start_time
-        };
+        Config c = { .config = config,
+                     .unified_cg = unified_root,
+                     .cpuset_cg = cpuset_root,
+                     .freezer_cg = freezer_root,
+                     .loop = loop,
+                     .start_time = start_time };
         Partitions partitions;
         Windows windows;
 
         parse_config(c, windows, partitions);
 
-        cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows" << endl;
-        if( partitions.size() == 0 || windows.size() == 0 ) {
-            throw runtime_error( "need at least one partition in one window" );
+        cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows"
+             << endl;
+        if (partitions.size() == 0 || windows.size() == 0) {
+            throw runtime_error("need at least one partition in one window");
         }
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
 
         // configure linux scheduler
-        struct sched_param sp = {.sched_priority = 99};
-        if( sched_setscheduler( 0, SCHED_FIFO, &sp ) == -1 )
+        struct sched_param sp = { .sched_priority = 99 };
+        if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1)
             cerr << "Warning: running demos without rt priority, consider running as root" << endl;
 
         loop.run();

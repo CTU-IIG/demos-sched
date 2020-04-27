@@ -3,10 +3,11 @@
 
 #include "demossched.hpp"
 #include "majorframe.hpp"
-#include <yaml-cpp/yaml.h>
 #include <ev++.h>
+#include <yaml-cpp/yaml.h>
 
-typedef struct{
+typedef struct
+{
     YAML::Node &config;
     Cgroup &unified_cg;
     Cgroup &cpuset_cg;
