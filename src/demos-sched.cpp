@@ -203,16 +203,21 @@ int main(int argc, char *argv[])
         Cgroup unified_root, freezer_root, cpuset_root;
         load_cgroup_paths(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
 
-        Config c = { .config = config,
-                     .unified_cg = unified_root,
-                     .cpuset_cg = cpuset_root,
-                     .freezer_cg = freezer_root,
-                     .loop = loop,
-                     .start_time = start_time };
+        CgroupConfig cc = { .unified_cg = unified_root,
+                            .cpuset_cg = cpuset_root,
+                            .freezer_cg = freezer_root,
+                            .loop = loop,
+                            .start_time = start_time };
         Partitions partitions;
         Windows windows;
 
-        parse_config(c, windows, partitions);
+        YAML::Node normalized_config;
+        normalize_config(config, normalized_config);
+        cerr << "Creating cgroup from this configuration:" << endl;
+        cerr << normalized_config << endl;
+        throw "tady to ted konci";
+
+        parse_config(normalized_config, cc, windows, partitions);
 
         cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows"
              << endl;

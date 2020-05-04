@@ -8,14 +8,14 @@
 
 typedef struct
 {
-    YAML::Node &config;
     Cgroup &unified_cg;
     Cgroup &cpuset_cg;
     Cgroup &freezer_cg;
     ev::default_loop &loop;
     std::chrono::steady_clock::time_point &start_time;
-} Config;
+} CgroupConfig;
 
-void parse_config(Config &c, Windows &windows, Partitions &partitions);
+void normalize_config(YAML::Node &in_c, YAML::Node &out_c);
+void parse_config(YAML::Node &config, CgroupConfig &c, Windows &windows, Partitions &partitions);
 
 #endif // CONFIG_PARSING_HPP
