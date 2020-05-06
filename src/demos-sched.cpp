@@ -215,7 +215,6 @@ int main(int argc, char *argv[])
         normalize_config(config, normalized_config);
         cerr << "Creating cgroup from this configuration:" << endl;
         cerr << normalized_config << endl;
-        throw "tady to ted konci";
 
         parse_config(normalized_config, cc, windows, partitions);
 
