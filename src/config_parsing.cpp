@@ -124,7 +124,7 @@ void normalize_config(YAML::Node &in_c, YAML::Node &out_c)
     }
 }
 
-Partition *find_partition(const string name, Partitions &partitions)
+static Partition *find_partition(const string name, Partitions &partitions)
 {
     for (auto &p : partitions)
         if (p.get_name() == name)

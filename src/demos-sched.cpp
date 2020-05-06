@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 
         YAML::Node normalized_config;
         normalize_config(config, normalized_config);
-        cerr << "Creating cgroup from this configuration:" << endl;
+        cerr << "Normalized configuration is:" << endl;
         cerr << normalized_config << endl;
 
         parse_config(normalized_config, cc, windows, partitions);
