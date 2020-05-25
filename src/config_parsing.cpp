@@ -51,7 +51,7 @@ static void create_partition_from_window(Node &norm_slice,
     for (auto yproc : parent[part_key]) {
         Node norm_proc;
         norm_proc["cmd"] = yproc["cmd"];
-        if (norm_proc["budget"])
+        if (yproc["budget"])
             norm_proc["budget"] = yproc["budget"];
         else
             norm_proc["budget"] = default_budget;
@@ -64,7 +64,7 @@ static void create_partition_from_cmds(Node &norm_slice,
                                        Node &parent,
                                        Node &out_c,
                                        const string key,
-                                       int budget)
+                                       int default_budget)
 {
     Node norm_part;
     const string name = "anonymous_" + to_string(anonymous_partition_counter++);
@@ -76,13 +76,13 @@ static void create_partition_from_cmds(Node &norm_slice,
         for (auto ycmd : parent[part_key]) {
             Node norm_proc;
             norm_proc["cmd"] = ycmd.as<string>();
-            norm_proc["budget"] = budget;
+            norm_proc["budget"] = default_budget;
             norm_part["processes"].push_back(norm_proc);
         }
     } else if (parent[part_key].IsScalar()) {
         Node norm_proc;
         norm_proc["cmd"] = parent[part_key].as<string>();
-        norm_proc["budget"] = budget;
+        norm_proc["budget"] = default_budget;
         norm_part["processes"].push_back(norm_proc);
     }
     out_c["partitions"].push_back(norm_part);
