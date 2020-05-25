@@ -24,7 +24,6 @@ static void find_partition_by_name(const string name,
                 Node norm_proc;
                 norm_proc["cmd"] = yproc["cmd"];
 
-                // TODO default budget
                 if (yproc["budget"])
                     norm_proc["budget"] = yproc["budget"];
                 else
@@ -36,17 +35,6 @@ static void find_partition_by_name(const string name,
             return;
         }
     }
-
-    // if name not found, treat it as cmd
-    const string part_name = "anonymous_" + to_string(anonymous_partition_counter++);
-    Node part;
-    part["name"] = part_name;
-    Node proc;
-    proc["cmd"] = name;
-    proc["budget"] = default_budget;
-    part["processes"].push_back(proc);
-    out_config["partitions"].push_back(part);
-    norm_slice[part_key] = part_name;
 }
 
 static void create_partition_from_window(Node &norm_slice,
@@ -72,10 +60,41 @@ static void create_partition_from_window(Node &norm_slice,
     out_c["partitions"].push_back(norm_part);
 }
 
+static void create_partition_from_cmds(Node &norm_slice,
+                                       Node &parent,
+                                       Node &out_c,
+                                       const string key,
+                                       int budget)
+{
+    Node norm_part;
+    const string name = "anonymous_" + to_string(anonymous_partition_counter++);
+    norm_part["name"] = name;
+    norm_slice[key + "_partition"] = name;
+
+    const string part_key = key + "_processes";
+    if (parent[part_key].IsSequence()) {
+        for (auto ycmd : parent[part_key]) {
+            Node norm_proc;
+            norm_proc["cmd"] = ycmd.as<string>();
+            norm_proc["budget"] = budget;
+            norm_part["processes"].push_back(norm_proc);
+        }
+    } else if (parent[part_key].IsScalar()) {
+        Node norm_proc;
+        norm_proc["cmd"] = parent[part_key].as<string>();
+        norm_proc["budget"] = budget;
+        norm_part["processes"].push_back(norm_proc);
+    }
+    out_c["partitions"].push_back(norm_part);
+}
+
 static void parse_partitions(Node &norm_slice, Node &parent, Node &out_c, Node &in_c, int w_length)
 {
+
     // safety critical
+    bool has_sc_part = false;
     if (parent["sc_partition"]) {
+        has_sc_part = true;
         auto tmpn = parent["sc_partition"];
         if (tmpn.IsScalar()) {
             // partiton defined by name
@@ -88,7 +107,9 @@ static void parse_partitions(Node &norm_slice, Node &parent, Node &out_c, Node &
     }
 
     // best effort
+    bool has_be_part = false;
     if (parent["be_partition"]) {
+        has_be_part = true;
         auto tmpn = parent["be_partition"];
         if (tmpn.IsScalar()) {
             // partiton defined by name
@@ -99,6 +120,21 @@ static void parse_partitions(Node &norm_slice, Node &parent, Node &out_c, Node &
             create_partition_from_window(norm_slice, parent, out_c, "be", w_length);
         }
     }
+
+    // partition defined as array of commands
+    if (parent["sc_processes"]) {
+        if (has_sc_part)
+            throw std::logic_error(
+              "bad configuration, cannot have both sc_partition and sc_processes");
+        create_partition_from_cmds(norm_slice, parent, out_c, "sc", int(0.6 * w_length));
+    }
+
+    if (parent["be_processes"]) {
+        if (has_be_part)
+            throw std::logic_error(
+              "bad configuration, cannot have both be_partition and be_processes");
+        create_partition_from_cmds(norm_slice, parent, out_c, "be", w_length);
+    }
 }
 
 void normalize_config(YAML::Node &in_c, YAML::Node &out_c)
@@ -107,18 +143,18 @@ void normalize_config(YAML::Node &in_c, YAML::Node &out_c)
         Node norm_win;
         norm_win["length"] = ywin["length"];
         int w_length = ywin["length"].as<int>();
-
         if (!ywin["slices"]) {
             Node norm_slice;
             norm_slice["cpu"] = "0-" + to_string(MAX_NPROC - 1);
             parse_partitions(norm_slice, ywin, out_c, in_c, w_length);
             norm_win["slices"].push_back(norm_slice);
-        }
-        for (auto yslice : ywin["slices"]) {
-            Node norm_slice;
-            norm_slice["cpu"] = yslice["cpu"];
-            parse_partitions(norm_slice, yslice, out_c, in_c, w_length);
-            norm_win["slices"].push_back(norm_slice);
+        } else {
+            for (auto yslice : ywin["slices"]) {
+                Node norm_slice;
+                norm_slice["cpu"] = yslice["cpu"];
+                parse_partitions(norm_slice, yslice, out_c, in_c, w_length);
+                norm_win["slices"].push_back(norm_slice);
+            }
         }
         out_c["windows"].push_back(norm_win);
     }
