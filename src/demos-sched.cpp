@@ -236,9 +236,10 @@ int main(int argc, char *argv[])
 
     } catch (const exception &e) {
         cerr << e.what() << endl;
-
+        return 1;
     } catch (...) {
         cerr << "Unknown exception" << endl;
+        return 1;
     }
 
     return 0;
