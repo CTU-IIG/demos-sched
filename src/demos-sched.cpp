@@ -27,6 +27,7 @@ void print_help()
             "  -g <CGROUP_NAME>   name of root cgroups, default \""
          << opt_demos_cg_name
          << "\"\n"
+            "  -d                 dump config file without execution\n"
             "  -h                 print this message\n";
 }
 
@@ -158,7 +159,8 @@ int main(int argc, char *argv[])
 {
     int opt;
     string config_file, config_str;
-    while ((opt = getopt(argc, argv, "hg:c:C:")) != -1) {
+    bool dump_config = false;
+    while ((opt = getopt(argc, argv, "dhg:c:C:")) != -1) {
         switch (opt) {
             case 'g':
                 opt_demos_cg_name = optarg;
@@ -168,6 +170,9 @@ int main(int argc, char *argv[])
                 break;
             case 'C':
                 config_str = optarg;
+                break;
+            case 'd':
+                dump_config = true;
                 break;
             case 'h':
                 print_help();
@@ -200,6 +205,14 @@ int main(int argc, char *argv[])
             throw runtime_error("Configuration error: "s + e.what());
         }
 
+        YAML::Node normalized_config;
+        normalize_config(config, normalized_config);
+
+        if (dump_config) {
+            cout << normalized_config << endl;
+            return 0;
+        }
+
         Cgroup unified_root, freezer_root, cpuset_root;
         load_cgroup_paths(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
 
@@ -210,11 +223,6 @@ int main(int argc, char *argv[])
                             .start_time = start_time };
         Partitions partitions;
         Windows windows;
-
-        YAML::Node normalized_config;
-        normalize_config(config, normalized_config);
-        cerr << "Normalized configuration is:" << endl;
-        cerr << normalized_config << endl;
 
         parse_config(normalized_config, cc, windows, partitions);
 

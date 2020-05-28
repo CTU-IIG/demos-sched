@@ -12,13 +12,6 @@ executable('demos-sched',
 	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']),
            dependencies : [libev_dep, yaml_cpp_dep] )
 
-executable('config-parsing-test',
-           ['config_parsing_test.cpp','config_parsing.cpp',
-            'process.cpp','partition.cpp',
-            'slice.cpp','window.cpp','majorframe.cpp',
-            'cgroup.cpp', 'timerfd.cpp', 'evfd.cpp'],
-           dependencies : [libev_dep, yaml_cpp_dep] )
-
 executable('eventfd-test',
            ['eventfd_test.cpp','evfd.cpp'],
            dependencies : libev_dep )

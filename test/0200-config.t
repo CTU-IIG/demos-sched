@@ -2,10 +2,10 @@
 . testlib
 plan_tests 5
 
-out=$(config-parsing-test -C "{
+out=$(demos-sched -C "{
     windows: [ {length: 500, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }]
-}")
+}" -d)
 out_cmp="partitions:
   - name: SC
     processes:
@@ -18,9 +18,9 @@ windows:
         sc_partition: SC"
 is "$out" "$out_cmp" "missing slice definition"
 
-out=$(config-parsing-test -C "{
+out=$(demos-sched -C "{
     windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
-}")
+}" -d)
 out_cmp="partitions:
   - name: anonymous_0
     processes:
@@ -33,9 +33,9 @@ windows:
         sc_partition: anonymous_0"
 is "$out" "$out_cmp" "partition definition in window"
 
-out=$(config-parsing-test -C "{
+out=$(demos-sched -C "{
     windows: [ {length: 500, sc_partition: [{cmd: proc1}] } ]
-}")
+}" -d)
 out_cmp="partitions:
   - name: anonymous_0
     processes:
@@ -48,9 +48,9 @@ windows:
         sc_partition: anonymous_0"
 is "$out" "$out_cmp" "default budget"
 
-out=$(config-parsing-test -C "{
+out=$(demos-sched -C "{
     windows: [ {length: 500, sc_processes: proc} ]
-}")
+}" -d)
 out_cmp="partitions:
   - name: anonymous_0
     processes:
@@ -63,9 +63,9 @@ windows:
         sc_partition: anonymous_0"
 is "$out" "$out_cmp" "Process as string"
 
-out=$(config-parsing-test -C "{
+out=$(demos-sched -C "{
     windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
-}")
+}" -d)
 out_cmp="partitions:
   - name: anonymous_0
     processes:
