@@ -35,19 +35,78 @@ the target ARM system.
 
 ## Usage
 
-    demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]
-        -c <CONFIG_FILE>   path to configuration file
-        -g <CGROUP_NAME>   name of root cgroups, default "demos"
-        -h                 print this message
+    Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]
+      -c <CONFIG_FILE>   path to configuration file
+      -C <CONFIG>        in-line configuration in YAML format
+      -g <CGROUP_NAME>   name of root cgroups, default "demos"
+      -d                 dump config file without execution
+      -h                 print this message
+
 
 Configuration files are written according to [DEmOS specification](./demos-sched.pdf)
 
-- Major frame consist of one or more windows cyclically scheduled at time slots defined by `length`.
-- Window consist of one or more slices scheduled at different CPUs in one time. Format of CPU is its number `cpu: 1`, or range `cpu: 0-2`, or combination of both `cpu: 0,2,5-7`
-- Slice consist of safety critical `sc_partition` and best effort `be_partition` partitions
-- Partition consist of arbitrary number of processes which are cyclically scheduled in time according to their budgets within slice.
+## Guide for writing configurations
 
-![](./major_frame.png)
+### Normal form of configuration file
+
+- Define `partitions`. Each partition is defined by `name` and `processes`
+- `processes` are defined by command string `cmd` and `budget` in miliseconds
+- Define `windows`. Each window is defined by `length` in miliseconds and `slices`
+- `slices` are defined by `cpu` string, where it is scheduled, and by safety sritical partition `sc_partition` and best effort partition `be_partition`.
+- Format of `cpu` is its number `cpu: 1`, or range `cpu: 0-2`, or combination of both `cpu: 0,2,5-7`
+- `xx_partition` is defined by the name reffering to the `partitions`
+
+### Simplified form of configuration file
+
+- You can ommit `slice` keyword. Then it is expected that there is just one slice inside window scheduled at all cpus.
+
+``` yaml
+windows: [ {length: 500, sc_partition: SC} ],
+partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }]
+```
+
+is the same as
+
+``` yaml
+partitions:
+  - name: SC
+    processes:
+      - cmd: echo
+        budget: 300
+windows:
+  - length: 500
+    slices:
+      - cpu: 0-7
+        sc_partition: SC
+```
+
+- You can define partition directly inside `windows` instead of partition name.
+
+``` yaml
+windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
+```
+
+is the same as
+
+``` yaml
+partitions:
+  - name: anonymous_0
+    processes:
+      - cmd: proc1
+        budget: 500
+windows:
+  - length: 500
+    slices:
+      - cpu: 0-7
+        sc_partition: anonymous_0
+```
+
+- If process `budget` is not set, then the default budget `0.6 * length` of window is set for `sc_partition` processes and `length` of window is set for `be_partition` processes.
+- You can use `xx_processes` keyword for definition of partition by the list of commands.
+
+``` yaml
+windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
+```
 
 
 ### Example configurations
