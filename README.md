@@ -56,6 +56,33 @@ Configuration files are written according to [DEmOS specification](./demos-sched
 - Format of `cpu` is its number `cpu: 1`, or range `cpu: 0-2`, or combination of both `cpu: 0,2,5-7`
 - `xx_partition` is defined by the name reffering to the `partitions`
 
+``` yaml
+partitions:
+  - name: SC1
+    processes:
+      - cmd: ./safety_critical_application
+        budget: 300
+  - name: BE1
+    processes:
+      - cmd: ./best_effort_application1
+        budget: 200
+  - name: BE2
+    processes:
+      - cmd: ./best_effort_application2
+        budget: 200
+      - cmd: ./best_effort_application3
+        budget: 200
+        
+windows:
+  - length: 500
+    slices:
+      - cpu: 1
+        sc_partition: SC1
+        be_partitions: BE1
+      - cpu: 2,5-7
+        be_partitions: BE2
+```
+
 ### Simplified form of configuration file
 
 - You can ommit `slice` keyword. Then it is expected that there is just one slice inside window scheduled at all cpus.
