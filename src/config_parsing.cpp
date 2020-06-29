@@ -126,7 +126,8 @@ static void parse_partitions(Node &norm_slice, Node &parent, Node &out_c, Node &
               tmpn.as<string>(), norm_slice, parent, out_c, in_c, "be", w_length);
         } else if (tmpn.IsSequence()) {
             // partition definition inside window
-            create_partition_from_window(norm_slice, parent, out_c, "be", w_length);
+            int total_budget = has_sc_part ? int(0.4 * w_length) : w_length;
+            create_partition_from_window(norm_slice, parent, out_c, "be", total_budget);
         }
     }
 
@@ -136,13 +137,15 @@ static void parse_partitions(Node &norm_slice, Node &parent, Node &out_c, Node &
             throw std::logic_error(
               "bad configuration, cannot have both sc_partition and sc_processes");
         create_partition_from_cmds(norm_slice, parent, out_c, "sc", int(0.6 * w_length));
+        has_sc_part = true;
     }
 
     if (parent["be_processes"]) {
         if (has_be_part)
             throw std::logic_error(
               "bad configuration, cannot have both be_partition and be_processes");
-        create_partition_from_cmds(norm_slice, parent, out_c, "be", w_length);
+        int total_budget = has_sc_part ? int(0.4 * w_length) : w_length;
+        create_partition_from_cmds(norm_slice, parent, out_c, "be", total_budget);
     }
 }
 
