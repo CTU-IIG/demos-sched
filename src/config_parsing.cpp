@@ -7,19 +7,26 @@ using namespace YAML;
 
 static int anonymous_partition_counter = 0;
 
+static int compute_default_budget(int total_budget, int num_of_procs)
+{
+    return total_budget / num_of_procs;
+}
+
 static void find_partition_by_name(const string name,
                                    Node &norm_slice,
                                    Node &parent,
                                    Node &out_config,
                                    Node &in_config,
                                    const string key,
-                                   int default_budget)
+                                   int total_budget)
 {
     const string part_key = key + "_partition";
     for (auto ypart : in_config["partitions"]) {
         if (name == ypart["name"].as<string>()) {
             Node norm_part;
             norm_part["name"] = ypart["name"];
+            int default_budget =
+              compute_default_budget(total_budget, int(ypart["processes"].size()));
             for (auto yproc : ypart["processes"]) {
                 Node norm_proc;
                 norm_proc["cmd"] = yproc["cmd"];
@@ -41,13 +48,14 @@ static void create_partition_from_window(Node &norm_slice,
                                          Node &parent,
                                          Node &out_c,
                                          const string key,
-                                         int default_budget)
+                                         int total_budget)
 {
     const string part_key = key + "_partition";
     Node norm_part;
     const string name = "anonymous_" + to_string(anonymous_partition_counter++);
     norm_part["name"] = name;
     norm_slice[part_key] = name;
+    int default_budget = compute_default_budget(total_budget, int(parent[part_key].size()));
     for (auto yproc : parent[part_key]) {
         Node norm_proc;
         norm_proc["cmd"] = yproc["cmd"];
@@ -64,7 +72,7 @@ static void create_partition_from_cmds(Node &norm_slice,
                                        Node &parent,
                                        Node &out_c,
                                        const string key,
-                                       int default_budget)
+                                       int total_budget)
 {
     Node norm_part;
     const string name = "anonymous_" + to_string(anonymous_partition_counter++);
@@ -73,6 +81,7 @@ static void create_partition_from_cmds(Node &norm_slice,
 
     const string part_key = key + "_processes";
     if (parent[part_key].IsSequence()) {
+        int default_budget = compute_default_budget(total_budget, int(parent[part_key].size()));
         for (auto ycmd : parent[part_key]) {
             Node norm_proc;
             norm_proc["cmd"] = ycmd.as<string>();
@@ -82,7 +91,7 @@ static void create_partition_from_cmds(Node &norm_slice,
     } else if (parent[part_key].IsScalar()) {
         Node norm_proc;
         norm_proc["cmd"] = parent[part_key].as<string>();
-        norm_proc["budget"] = default_budget;
+        norm_proc["budget"] = total_budget;
         norm_part["processes"].push_back(norm_proc);
     }
     out_c["partitions"].push_back(norm_part);

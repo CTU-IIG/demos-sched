@@ -70,9 +70,9 @@ out_cmp="partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
-        budget: 300
+        budget: 150
       - cmd: proc2
-        budget: 300
+        budget: 150
 windows:
   - length: 500
     slices:
