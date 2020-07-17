@@ -24,14 +24,10 @@ void print_help()
     cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
             "  -c <CONFIG_FILE>   path to configuration file\n"
             "  -C <CONFIG>        in-line configuration in YAML format\n"
-            "  -g <CGROUP_NAME>   name of root cgroups, default \""
-         << opt_demos_cg_name
-         << "\"\n"
+            "  -g <CGROUP_NAME>   name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
             "  -d                 dump config file without execution\n"
             "  -h                 print this message\n";
 }
-
-using namespace std;
 
 void load_cgroup_paths(Cgroup &unified,
                        Cgroup &freezer,
