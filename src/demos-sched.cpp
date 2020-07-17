@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
         Partitions partitions;
         Windows windows;
 
-        parse_config(normalized_config, cc, windows, partitions);
+        create_demos_objects(normalized_config, cc, windows, partitions);
 
         cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows"
              << endl;

@@ -16,6 +16,6 @@ typedef struct
 } CgroupConfig;
 
 void normalize_config(YAML::Node &in_c, YAML::Node &out_c);
-void parse_config(YAML::Node &config, CgroupConfig &c, Windows &windows, Partitions &partitions);
+void create_demos_objects(const YAML::Node &config, const CgroupConfig &c, Windows &windows, Partitions &partitions);
 
 #endif // CONFIG_PARSING_HPP

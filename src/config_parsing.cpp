@@ -180,7 +180,10 @@ static Partition *find_partition(const string name, Partitions &partitions)
     return nullptr;
 }
 
-void parse_config(YAML::Node &config, CgroupConfig &c, Windows &windows, Partitions &partitions)
+void create_demos_objects(const YAML::Node &config,
+                          const CgroupConfig &c,
+                          Windows &windows,
+                          Partitions &partitions)
 {
     for (auto ypart : config["partitions"]) {
         partitions.emplace_back(
