@@ -16,7 +16,6 @@ public:
                std::chrono::steady_clock::time_point start_time,
                Windows &&windows);
 
-    void move_to_next_window();
     Window &get_current_window();
 
     void start();
@@ -30,6 +29,8 @@ private:
     ev::timerfd timer{ loop };
     ev::sig sigint{ loop };
     ev::sig sigterm{ loop };
+
+    void move_to_next_window();
     void timeout_cb();
     void sigint_cb(ev::sig &w, int revents);
     void empty_cb();
