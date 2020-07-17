@@ -59,20 +59,26 @@ void load_cgroup_paths(Cgroup &unified,
                        Cgroup &cpuset,
                        const std::string demos_cg_name)
 {
-    ifstream cgroup_f("/proc/" + to_string(getpid()) + "/cgroup");
-    int num;
-    string path;
-    string cpuset_parent;
     string unified_p, freezer_p, cpuset_p;
+    string cpus, mems;
 
-    while (cgroup_f >> num >> path) {
-        if (num == 0)
-            unified_p = "/sys/fs/cgroup/unified/" + path.substr(2) + "/../" + demos_cg_name;
-        if (path.find(":freezer:") == 0)
-            freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
-        if (path.find(":cpuset:") == 0) {
-            cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
-            cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
+    // Get information about our current cgroups
+    {
+        int num;
+        string path;
+        ifstream cgroup_f("/proc/" + to_string(getpid()) + "/cgroup");
+
+        while (cgroup_f >> num >> path) {
+            if (num == 0)
+                unified_p = "/sys/fs/cgroup/unified/" + path.substr(2) + "/../" + demos_cg_name;
+            if (path.find(":freezer:") == 0)
+                freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
+            if (path.find(":cpuset:") == 0) {
+                cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
+                string cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
+                ifstream(cpuset_parent + "/cpuset.cpus") >> cpus;
+                ifstream(cpuset_parent + "/cpuset.mems") >> mems;
+            }
         }
     }
 
@@ -88,6 +94,8 @@ void load_cgroup_paths(Cgroup &unified,
         unified.add_process(getpid());
     } catch (system_error &) {
         commands << "sudo chown -R " << getuid() << " " << unified_p << endl;
+
+        // MS: Why is the below command needed for unified and not other controllers?
         commands << "sudo echo " << getppid() << " > " << unified_p + "/cgroup.procs" << endl;
     }
 
@@ -105,19 +113,9 @@ void load_cgroup_paths(Cgroup &unified,
 
     try {
         cpuset = Cgroup(cpuset_p, true);
-
-        ifstream cpus_f(cpuset_parent + "/cpuset.cpus");
-        string cpus;
-        cpus_f >> cpus;
         ofstream(cpuset_p + "/cpuset.cpus") << cpus;
-
-        ifstream mems_f(cpuset_parent + "/cpuset.mems");
-        string mems;
-        mems_f >> mems;
         ofstream(cpuset_p + "/cpuset.mems") << mems;
-
         ofstream(cpuset_p + "/cgroup.clone_children") << "1";
-
     } catch (system_error &e) {
         handle_cgroup_exc(commands, mount_cmds, e, cpuset_p);
     }
