@@ -47,11 +47,11 @@ the target ARM system.
       -h                 print this message
 
 
-Configuration files are written according to [DEmOS specification](./demos-sched.pdf)
+Format of configuration files is documented in the next section.
 
 ## Guide for writing configurations
 
-### Normal form of configuration file
+### Canonical form of configuration file
 
 - Define `partitions`. Each partition is defined by `name` and `processes`
 - `processes` are defined by command string `cmd` and `budget` in miliseconds
