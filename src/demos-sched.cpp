@@ -54,7 +54,7 @@ void handle_cgroup_exc(stringstream &commands,
     }
 }
 
-void load_cgroup_paths(Cgroup &unified,
+void create_toplevel_cgroups(Cgroup &unified,
                        Cgroup &freezer,
                        Cgroup &cpuset,
                        const std::string demos_cg_name)
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
         }
 
         Cgroup unified_root, freezer_root, cpuset_root;
-        load_cgroup_paths(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
+        create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
 
         CgroupConfig cc = { .unified_cg = unified_root,
                             .cpuset_cg = cpuset_root,
