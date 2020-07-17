@@ -45,7 +45,7 @@ public:
     void set_complete_cb(std::function<void ()> new_complete_cb);
     void set_empty_cb(std::function<void()> new_empty_cb);
 
-    std::string get_name();
+    std::string get_name() const;
 
     // protected:
     CgroupFreezer cgf;

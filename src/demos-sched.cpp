@@ -1,10 +1,10 @@
+#include "config.hpp"
 #include "config_parsing.hpp"
 #include "demossched.hpp"
 #include "majorframe.hpp"
 #include <fstream>
 #include <iostream>
 #include <list>
-#include <yaml-cpp/yaml.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -178,25 +178,19 @@ int main(int argc, char *argv[])
 
     ev::default_loop loop;
 
+    Config config;
+
     try {
-        YAML::Node config;
-        try {
-            if (!config_file.empty()) {
-                config = YAML::LoadFile(config_file);
-            } else if (!config_str.empty()) {
-                config = YAML::Load(config_str);
-            }
-        } catch (const YAML::BadFile &e) {
-            throw runtime_error("Cannot load configuration file: " + config_file);
-        } catch (const YAML::Exception &e) {
-            throw runtime_error("Configuration error: "s + e.what());
+        if (!config_file.empty()) {
+            config.loadFile(config_file);
+        } else if (!config_str.empty()) {
+            config.loadStr(config_str);
         }
 
-        YAML::Node normalized_config;
-        normalize_config(config, normalized_config);
+        config.normalize();
 
         if (dump_config) {
-            cout << normalized_config << endl;
+            cout << config.get() << endl;
             return 0;
         }
 
@@ -211,7 +205,7 @@ int main(int argc, char *argv[])
         Partitions partitions;
         Windows windows;
 
-        create_demos_objects(normalized_config, cc, windows, partitions);
+        config.create_demos_objects(cc, windows, partitions);
 
         cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows"
              << endl;
