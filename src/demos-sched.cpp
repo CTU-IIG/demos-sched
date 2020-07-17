@@ -29,6 +29,31 @@ void print_help()
             "  -h                 print this message\n";
 }
 
+void handle_cgroup_exc(stringstream &commands,
+                       stringstream &mount_cmds,
+                       const system_error &e,
+                       const string &sys_fs_cg_path)
+{
+    switch (e.code().value()) {
+        case EACCES:
+        case EPERM:
+            commands << "sudo mkdir " << sys_fs_cg_path << endl;
+            break;
+        case EROFS:
+        case ENOENT:
+            if (sys_fs_cg_path.find("/sys/fs/cgroup/") != 0)
+                throw "Unexpected cgroup path " + sys_fs_cg_path;
+            if (sys_fs_cg_path.find("freezer/", 15) != string::npos) mount_cmds << "mount -t cgroup -o freezer none /sys/fs/cgroup/freezer";
+            if (sys_fs_cg_path.find("cpuset/",  15) != string::npos) mount_cmds << "mount -t cgroup -o cpuset none /sys/fs/cgroup/cpuset";
+            if (sys_fs_cg_path.find("unified/", 15) != string::npos) mount_cmds << "mount -t cgroup2 none /sys/fs/cgroup/unified";
+            else throw "Unexpected cgroup controller path" + sys_fs_cg_path;
+            mount_cmds << endl;
+            break;
+        default:
+            throw;
+    }
+}
+
 void load_cgroup_paths(Cgroup &unified,
                        Cgroup &freezer,
                        Cgroup &cpuset,
@@ -52,23 +77,12 @@ void load_cgroup_paths(Cgroup &unified,
     }
 
     // check access rights
-    stringstream commands, critical_msg;
+    stringstream commands, mount_cmds;
 
     try {
         unified = Cgroup(unified_p, true);
     } catch (system_error &e) {
-        switch (e.code().value()) {
-            case EACCES:
-            case EPERM:
-                commands << "sudo mkdir " << unified_p << endl;
-                break;
-            case EROFS:
-            case ENOENT:
-                critical_msg << "mount -t cgroup2 none /sys/fs/cgroup/unified" << endl;
-                break;
-            default:
-                throw;
-        }
+        handle_cgroup_exc(commands, mount_cmds, e, unified_p);
     }
     try {
         unified.add_process(getpid());
@@ -80,19 +94,9 @@ void load_cgroup_paths(Cgroup &unified,
     try {
         freezer = Cgroup(freezer_p, true);
     } catch (system_error &e) {
-        switch (e.code().value()) {
-            case EACCES:
-            case EPERM:
-                commands << "sudo mkdir " << freezer_p << endl;
-                break;
-            case EROFS:
-            case ENOENT:
-                critical_msg << "mount -t cgroup -o freezer none /sys/fs/cgroup/freezer" << endl;
-                break;
-            default:
-                throw;
-        }
+        handle_cgroup_exc(commands, mount_cmds, e, freezer_p);
     }
+
     try {
         freezer.add_process(getpid());
     } catch (system_error &) {
@@ -115,18 +119,7 @@ void load_cgroup_paths(Cgroup &unified,
         ofstream(cpuset_p + "/cgroup.clone_children") << "1";
 
     } catch (system_error &e) {
-        switch (e.code().value()) {
-            case EACCES:
-            case EPERM:
-                commands << "sudo mkdir " << cpuset_p << endl;
-                break;
-            case EROFS:
-            case ENOENT:
-                critical_msg << "mount -t cgroup -o cpuset none /sys/fs/cgroup/cpuset" << endl;
-                break;
-            default:
-                throw;
-        }
+        handle_cgroup_exc(commands, mount_cmds, e, cpuset_p);
     }
     try {
         cpuset.add_process(getpid());
@@ -134,16 +127,16 @@ void load_cgroup_paths(Cgroup &unified,
         commands << "sudo chown -R " << getuid() << " " << cpuset_p << endl;
     }
 
-    if (!critical_msg.str().empty()) {
+    if (!mount_cmds.str().empty()) {
         cerr << "There is no cgroup controller. Run following commands:" << endl
-             << critical_msg.str()
+             << mount_cmds.str()
              << "if it fails, check whether the controllers are available in the kernel" << endl
              << "zcat /proc/config.gz | grep -E CONFIG_CGROUP_FREEZER|CONFIG_CPUSETS" << endl;
         exit(1);
     }
 
     if (!commands.str().empty()) {
-        cerr << "Cannot create necessary cgroups. Run me as root or run the "
+        cerr << "Cannot create necessary cgroups. Run demos-sched as root or run the "
                 "following commands:"
              << endl
              << commands.str();
