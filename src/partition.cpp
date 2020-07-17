@@ -120,7 +120,7 @@ void Partition::set_complete_cb(std::function<void()> new_complete_cb)
     completed_cb = new_complete_cb;
 }
 
-string Partition::get_name()
+string Partition::get_name() const
 {
     return name;
 }

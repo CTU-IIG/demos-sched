@@ -14,6 +14,8 @@ src/cgroup.cpp
 src/cgroup_notif_test.cpp
 src/cgroup_test.cpp
 src/cgrp.cpp
+src/config.cpp
+src/config.hpp
 src/demos-sched.cpp
 src/demossched.cpp
 src/config.yaml
