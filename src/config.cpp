@@ -182,7 +182,7 @@ void Config::normalize()
         int w_length = ywin["length"].as<int>();
         if (!ywin["slices"]) {
             Node norm_slice;
-            norm_slice["cpu"] = "0-" + to_string(MAX_NPROC - 1);
+            norm_slice["cpu"] = "0-" + to_string(MAX_CPUS - 1);
             parse_partitions(norm_slice, ywin, out_c, in_c, w_length);
             norm_win["slices"].push_back(norm_slice);
         } else {

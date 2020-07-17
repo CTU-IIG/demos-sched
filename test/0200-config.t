@@ -14,7 +14,7 @@ out_cmp="partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-7
+      - cpu: 0-63
         sc_partition: SC"
 is "$out" "$out_cmp" "missing slice definition"
 
@@ -29,7 +29,7 @@ out_cmp="partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-7
+      - cpu: 0-63
         sc_partition: anonymous_0"
 is "$out" "$out_cmp" "partition definition in window"
 
@@ -44,7 +44,7 @@ out_cmp="partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-7
+      - cpu: 0-63
         sc_partition: anonymous_0"
 is "$out" "$out_cmp" "default budget"
 
@@ -59,7 +59,7 @@ out_cmp="partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-7
+      - cpu: 0-63
         sc_partition: anonymous_0"
 is "$out" "$out_cmp" "Process as string"
 
@@ -76,6 +76,6 @@ out_cmp="partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-7
+      - cpu: 0-63
         sc_partition: anonymous_0"
 is "$out" "$out_cmp" "Processes as string"
