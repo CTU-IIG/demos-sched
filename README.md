@@ -1,3 +1,7 @@
+# DEmOS scheduler
+
+Scheduler for simulation of avionics multi-core workloads on Linux.
+
 ## Compilation
 
 Initialize git submodules:
