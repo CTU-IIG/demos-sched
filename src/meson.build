@@ -10,7 +10,9 @@ executable('demos-sched',
             'cgroup.cpp', 'timerfd.cpp', 'evfd.cpp',
             'config.cpp'],
 	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']),
-           dependencies : [libev_dep, yaml_cpp_dep] )
+           dependencies : [libev_dep, yaml_cpp_dep],
+	   install : true,
+	  )
 
 executable('eventfd-test',
            ['eventfd_test.cpp','evfd.cpp'],

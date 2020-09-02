@@ -1,0 +1,84 @@
+From ff1c0cb311757daf85f5d72e08b934b24b6eebb1 Mon Sep 17 00:00:00 2001
+From: Michal Sojka <sojkam1@fel.cvut.cz>
+Date: Tue, 22 Aug 2017 17:30:00 +0200
+Subject: [PATCH] Add experimental support for EPOLLPRI to the epoll backend
+
+Signed-off-by: Michal Sojka <sojkam1@fel.cvut.cz>
+
+diff --git a/ev.c b/ev.c
+index 5f68687..0dc2f78 100644
+--- a/ev.c
++++ b/ev.c
+@@ -4182,7 +4182,7 @@ ev_io_start (EV_P_ ev_io *w) EV_NOEXCEPT
+     return;
+ 
+   assert (("libev: ev_io_start called with negative fd", fd >= 0));
+-  assert (("libev: ev_io_start called with illegal event mask", !(w->events & ~(EV__IOFDSET | EV_READ | EV_WRITE))));
++  assert (("libev: ev_io_start called with illegal event mask", !(w->events & ~(EV__IOFDSET | EV_READ | EV_WRITE | EV_EXCEPTION))));
+ 
+ #if EV_VERIFY >= 2
+   assert (("libev: ev_io_start called on watcher with invalid fd", fd_valid (fd)));
+diff --git a/ev_epoll.c b/ev_epoll.c
+index 58cfa68..450aec4 100644
+--- a/ev_epoll.c
++++ b/ev_epoll.c
+@@ -91,7 +91,8 @@ epoll_modify (EV_P_ int fd, int oev, int nev)
+   ev.data.u64 = (uint64_t)(uint32_t)fd
+               | ((uint64_t)(uint32_t)++anfds [fd].egen << 32);
+   ev.events   = (nev & EV_READ  ? EPOLLIN  : 0)
+-              | (nev & EV_WRITE ? EPOLLOUT : 0);
++              | (nev & EV_WRITE ? EPOLLOUT : 0)
++              | (nev & EV_EXCEPTION ? EPOLLPRI : 0);
+ 
+   if (ecb_expect_true (!epoll_ctl (backend_fd, oev && oldmask != nev ? EPOLL_CTL_MOD : EPOLL_CTL_ADD, fd, &ev)))
+     return;
+@@ -170,7 +171,8 @@ epoll_poll (EV_P_ ev_tstamp timeout)
+       int fd = (uint32_t)ev->data.u64; /* mask out the lower 32 bits */
+       int want = anfds [fd].events;
+       int got  = (ev->events & (EPOLLOUT | EPOLLERR | EPOLLHUP) ? EV_WRITE : 0)
+-               | (ev->events & (EPOLLIN  | EPOLLERR | EPOLLHUP) ? EV_READ  : 0);
++               | (ev->events & (EPOLLIN  | EPOLLERR | EPOLLHUP) ? EV_READ  : 0)
++               | (ev->events & (EPOLLPRI | EPOLLERR | EPOLLHUP) ? EV_EXCEPTION : 0);
+ 
+       /*
+        * check for spurious notification.
+@@ -201,7 +203,8 @@ epoll_poll (EV_P_ ev_tstamp timeout)
+            * to EV_READ or EV_WRITE, we might issue redundant EPOLL_CTL_MOD calls.
+            */
+           ev->events = (want & EV_READ  ? EPOLLIN  : 0)
+-                     | (want & EV_WRITE ? EPOLLOUT : 0);
++                     | (want & EV_WRITE ? EPOLLOUT : 0)
++                     | (want & EV_EXCEPTION ? EPOLLPRI : 0);
+ 
+           /* pre-2.6.9 kernels require a non-null pointer with EPOLL_CTL_DEL, */
+           /* which is fortunately easy to do for us. */
+diff --git a/ev++.h b/ev++.h
+similarity index 99%
+rename from ev++.h
+rename to /ev++.h
+index 0e1b60d..966d4b5 100644
+--- a/ev++.h
++++ b/ev++.h
+@@ -63,6 +63,7 @@ namespace ev {
+     NONE     = EV_NONE,
+     READ     = EV_READ,
+     WRITE    = EV_WRITE,
++    EXCEPTION= EV_EXCEPTION,
+ #if EV_COMPAT3
+     TIMEOUT  = EV_TIMEOUT,
+ #endif
+diff --git a/ev.h b/ev.h
+similarity index 99%
+rename from ev.h
+rename to /ev.h
+index f20711a..69bea82 100644
+--- a/ev.h
++++ b/ev.h
+@@ -223,6 +223,7 @@ enum {
+   EV_NONE     =            0x00, /* no events */
+   EV_READ     =            0x01, /* ev_io detected read will not block */
+   EV_WRITE    =            0x02, /* ev_io detected write will not block */
++  EV_EXCEPTION=            0x04, /* ev_io detected exceptional condition */
+   EV__IOFDSET =            0x80, /* internal use only */
+   EV_IO       =         EV_READ, /* alias for type-detection */
+   EV_TIMER    =      0x00000100, /* timer timed out */
