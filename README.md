@@ -51,15 +51,35 @@ Format of configuration files is documented in the next section.
 
 ## Guide for writing configurations
 
+Configuration files are written in the YAML format. They can have
+either canonical or simplified form, with the latter being
+automatically converted to the former. Canonical form is most
+flexible, but for same cases a bit verbose. Verbosity can be reduced
+by using the simplified form. Both forms are described bellow.
+
 ### Canonical form of configuration file
 
-- Define `partitions`. Each partition is defined by `name` and `processes`
-- `processes` are defined by command string `cmd` and `budget` in miliseconds
-- Define `windows`. Each window is defined by `length` in miliseconds and `slices`
-- `slices` are defined by `cpu` string, where it is scheduled, and by safety sritical partition `sc_partition` and best effort partition `be_partition`.
-- Format of `cpu` is its number `cpu: 1`, or range `cpu: 0-2`, or combination of both `cpu: 0,2,5-7`
-- `xx_partition` is defined by the name reffering to the `partitions`
+- Configuration file is a mapping with the following keys:
+  `partitions` and `windows`.
+- `partitions` is an array of partition definitions.
+- *Partition definition* is a mapping with `name` and `processes` keys.
+- `processes` is an array of process definitions.
+- *Process definition* is mapping with `cmd` and `budget` keys.
+- `cmd` is a string with a command to be executed (passed to `/bin/sh -c`).
+- `budget` specifies process budget in milliseconds.
+- `windows` is an array of window definitions.
+- *Window definition* is a mapping with `length` and `slices` keys.
+- `length` defined length of the window in milliseconds.
+- `slices` is an array of slice definitions.
+- *Slice definition* is a mapping with the `cpu` key and optional
+  `sc_partition` and `be_partition` keys.
+- `cpu` is a string defining scheduling CPU constraints. The value can
+  specify a single CPU by its zero-based number (e.g. `cpu: 1`), or a
+  range of CPUs (`cpu: 0-2`), or combination of both (`cpu: 0,2,5-7`).
+  `sc_partition` and `be_partition` are strings referring to
+  partition definitions by their `name`s.
 
+Example canonical configuration can look like this:
 ``` yaml
 partitions:
   - name: SC1
