@@ -53,6 +53,7 @@ public:
     Cgroup cge;
     void proc_exit_cb(Process &proc);
     std::function<void()> completed_cb = nullptr;
+
 private:
     Processes processes = {};
     Processes::iterator current;

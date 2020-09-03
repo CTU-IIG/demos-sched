@@ -19,7 +19,6 @@ private:
     YAML::Node config {};
     int anonymous_partition_counter = 0;
 
-
     void parse_partitions(YAML::Node &norm_slice,
             const YAML::Node &parent,
             YAML::Node &out_c,

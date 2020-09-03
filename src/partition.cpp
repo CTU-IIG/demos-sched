@@ -139,8 +139,8 @@ void Partition::proc_exit_cb(Process &proc)
 #endif
 
     // check if there is no running processes in this partition
-    for( auto &p : processes) {
-        if( p.is_running() )
+    for (auto &p : processes) {
+        if (p.is_running())
             return;
     }
 
@@ -148,5 +148,4 @@ void Partition::proc_exit_cb(Process &proc)
     // notify all slices which owns this partition that there is no running process
     for (auto &cb : empty_cbs)
         cb();
-
 }
