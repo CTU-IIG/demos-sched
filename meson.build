@@ -2,7 +2,9 @@ project('demos-sched', ['cpp', 'c'],
 	default_options : [
 	  'cpp_std=c++14',
 	  'default_library=static',
-	])
+	],
+	meson_version : '>=0.49.2',
+       )
 add_global_arguments(['-Weffc++'], language : 'cpp')
 
 cpp = meson.get_compiler('cpp')
