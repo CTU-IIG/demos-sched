@@ -76,7 +76,7 @@ by using the simplified form. Both forms are described bellow.
 - `cpu` is a string defining scheduling CPU constraints. The value can
   specify a single CPU by its zero-based number (e.g. `cpu: 1`), or a
   range of CPUs (`cpu: 0-2`), or combination of both (`cpu: 0,2,5-7`).
-  `sc_partition` and `be_partition` are strings referring to
+- `sc_partition` and `be_partition` are strings referring to
   partition definitions by their `name`s.
 
 Example canonical configuration can look like this:
