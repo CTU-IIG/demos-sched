@@ -112,8 +112,10 @@ windows:
 - You can omit `slice` keyword. Then it is expected that there is just one slice inside window scheduled at all cpus.
 
 ``` yaml
-windows: [ {length: 500, sc_partition: SC} ],
-partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }]
+{
+  partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }],
+  windows: [ {length: 500, sc_partition: SC} ]
+}
 ```
 
 is the same as
