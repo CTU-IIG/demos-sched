@@ -109,7 +109,7 @@ windows:
 
 ### Simplified form of configuration file
 
-- You can ommit `slice` keyword. Then it is expected that there is just one slice inside window scheduled at all cpus.
+- You can omit `slice` keyword. Then it is expected that there is just one slice inside window scheduled at all cpus.
 
 ``` yaml
 windows: [ {length: 500, sc_partition: SC} ],
