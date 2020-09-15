@@ -1,16 +1,27 @@
 #!/bin/bash
 . testlib
-plan_tests 7
+plan_tests 12
+
+test_normalization() {
+    local test_name=$1
+    local cfg_in=$2
+    local cfg_out_expected=$3
+
+    local cfg_out=$(demos-sched -d -C "$cfg_in" 2>&1)
+    is $? 0 "$test_name (exit code)"
+    is "$cfg_out" "$cfg_out_expected" "$test_name (normalization)"
+}
 
 out=$(demos-sched -C "{ windows: [], partitions: [], garbage: garbage}" 2>&1)
 is $? 1 "garbage causes failure"
 like "$out" garbage "garbage reported"
 
-out=$(demos-sched -C "{
+test_normalization "missing slice definition" \
+"{
     windows: [ {length: 500, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100}] }]
-}" -d)
-expected="partitions:
+}" \
+"partitions:
   - name: SC
     processes:
       - cmd: echo
@@ -20,12 +31,13 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: SC"
-is "$out" "$expected" "missing slice definition"
 
-out=$(demos-sched -C "{
+
+test_normalization "partition definition in window" \
+"{
     windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
-}" -d)
-expected="partitions:
+}" \
+"partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
@@ -35,12 +47,12 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: anonymous_0"
-is "$out" "$expected" "partition definition in window"
 
-out=$(demos-sched -C "{
+test_normalization "default budget" \
+"{
     windows: [ {length: 500, sc_partition: [{cmd: proc1}] } ]
-}" -d)
-expected="partitions:
+}" \
+"partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
@@ -50,14 +62,14 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: anonymous_0"
-is "$out" "$expected" "default budget"
 
 # This is the case, why we need sc_processes and cannot reuse
 # sc_partition here.
-out=$(demos-sched -C "{
+test_normalization "process as string" \
+"{
     windows: [ {length: 500, sc_processes: proc} ]
-}" -d)
-expected="partitions:
+}" \
+"partitions:
   - name: anonymous_0
     processes:
       - cmd: proc
@@ -67,12 +79,12 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: anonymous_0"
-is "$out" "$expected" "Process as string"
 
-out=$(demos-sched -C "{
+test_normalization "Processes as string" \
+"{
     windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
-}" -d)
-expected="partitions:
+}" \
+"partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
@@ -84,4 +96,3 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: anonymous_0"
-is "$out" "$expected" "Processes as string"
