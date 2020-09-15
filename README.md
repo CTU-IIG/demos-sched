@@ -111,55 +111,55 @@ windows:
 
 - You can omit `slice` keyword. Then it is expected that there is just one slice inside window scheduled at all cpus.
 
-``` yaml
-{
-  partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }],
-  windows: [ {length: 500, sc_partition: SC} ]
-}
-```
+  ``` yaml
+  {
+    partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }],
+    windows: [ {length: 500, sc_partition: SC} ]
+  }
+  ```
 
-is the same as
+  is the same as
 
-``` yaml
-partitions:
-  - name: SC
-    processes:
-      - cmd: echo
-        budget: 300
-windows:
-  - length: 500
-    slices:
-      - cpu: 0-7
-        sc_partition: SC
-```
+  ``` yaml
+  partitions:
+    - name: SC
+      processes:
+        - cmd: echo
+          budget: 300
+  windows:
+    - length: 500
+      slices:
+        - cpu: 0-7
+          sc_partition: SC
+  ```
 
 - You can define partition directly inside `windows` instead of partition name.
 
-``` yaml
-windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
-```
+  ``` yaml
+  windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
+  ```
 
-is the same as
+  is the same as
 
-``` yaml
-partitions:
-  - name: anonymous_0
-    processes:
-      - cmd: proc1
-        budget: 500
-windows:
-  - length: 500
-    slices:
-      - cpu: 0-7
-        sc_partition: anonymous_0
-```
+  ``` yaml
+  partitions:
+    - name: anonymous_0
+      processes:
+        - cmd: proc1
+          budget: 500
+  windows:
+    - length: 500
+      slices:
+        - cpu: 0-7
+          sc_partition: anonymous_0
+  ```
 
 - If process `budget` is not set, then the default budget `0.6 * length` of window is set for `sc_partition` processes and `length` of window is set for `be_partition` processes.
 - You can use `xx_processes` keyword for definition of partition by the list of commands.
 
-``` yaml
-windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
-```
+  ``` yaml
+  windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
+  ```
 
 
 ### Example configurations
