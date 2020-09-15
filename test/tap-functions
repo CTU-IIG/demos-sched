@@ -276,6 +276,7 @@ _is_diag(){
 
 	diag "         got: '$result'" 
 	diag "    expected: '$expected'"
+	diag "        diff: \n$(diff --color=always -u --label=expected <(echo "$expected") --label=received <(echo "$result"))"
 }
 
 
