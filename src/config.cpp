@@ -26,177 +26,213 @@ void Config::loadStr(string cfg)
     }
 }
 
-int Config::compute_default_budget(int total_budget, int num_of_procs)
+Node Config::normalize_process(const Node &proc,
+                               float default_budget)
 {
-    return total_budget / num_of_procs;
-}
-
-void Config::create_partition_from_cmds(Node &norm_slice,
-                                        const Node &parent,
-                                        Node &out_c,
-                                        const string prefix,
-                                        int total_budget)
-{
-    Node norm_part;
-    const string name = "anonymous_" + to_string(anonymous_partition_counter++);
-    norm_part["name"] = name;
-    norm_slice[prefix + "_partition"] = name;
-
-    const string part_key = prefix + "_processes";
-    if (parent[part_key].IsSequence()) {
-        int default_budget = compute_default_budget(total_budget, int(parent[part_key].size()));
-        for (auto ycmd : parent[part_key]) {
-            Node norm_proc;
-            norm_proc["cmd"] = ycmd.as<string>();
-            norm_proc["budget"] = default_budget;
-            norm_part["processes"].push_back(norm_proc);
+    Node norm_proc;
+    if (proc.IsScalar()) {
+        norm_proc["cmd"] = proc.as<string>();
+    } else {
+        for (auto key : proc) {
+            string k = key.first.as<string>();
+            if (k == "cmd")
+                norm_proc[k] = proc[k].as<string>();
+            else if (k == "budget")
+                norm_proc[k] = proc[k].as<int>();
+            else
+                throw runtime_error("Unexpected key: " + k);
         }
-    } else if (parent[part_key].IsScalar()) {
-        Node norm_proc;
-        norm_proc["cmd"] = parent[part_key].as<string>();
-        norm_proc["budget"] = total_budget;
-        norm_part["processes"].push_back(norm_proc);
     }
-    out_c["partitions"].push_back(norm_part);
+
+    if (!norm_proc["budget"]) {
+        if (isnan(default_budget))
+                throw runtime_error("Missing budget");
+        norm_proc["budget"] = default_budget;
+    }
+
+    return norm_proc;
 }
 
-void Config::find_partition_by_name(const string name,
-                                    Node &norm_slice,
-                                    const Node &parent,
-                                    Node &out_config,
-                                    const Node &in_config,
-                                    const string key,
-                                    int total_budget)
+Node Config::normalize_processes(const Node &processes, int total_budget)
 {
-    const string part_key = key + "_partition";
-    for (auto ypart : in_config["partitions"]) {
-        if (name == ypart["name"].as<string>()) {
-            Node norm_part;
-            norm_part["name"] = ypart["name"];
-            int default_budget =
-                compute_default_budget(total_budget, int(ypart["processes"].size()));
-            for (auto yproc : ypart["processes"]) {
-                Node norm_proc;
-                norm_proc["cmd"] = yproc["cmd"];
+    Node norm_processes;
+    if (processes.IsSequence()) {
+        for (const auto &proc : processes)
+            norm_processes.push_back(normalize_process(proc, total_budget / processes.size()));
+    } else {
+        norm_processes.push_back(normalize_process(processes, total_budget));
+    }
+    return norm_processes;
+}
 
-                if (yproc["budget"])
-                    norm_proc["budget"] = yproc["budget"];
-                else
-                    norm_proc["budget"] = default_budget;
-                norm_part["processes"].push_back(norm_proc);
+Node Config::normalize_partition(const Node &part,
+                                 float total_budget // can be NAN to enforce budget
+                                 )
+{
+    Node norm_part, processes;
+
+    if (part.IsSequence()) { // seq. of processes
+        processes = normalize_processes(part, total_budget);
+    } else if (part.IsMap()) {
+        for (auto key : part) {
+            string k = key.first.as<string>();
+            if (k == "name")
+                norm_part[k] = part[k].as<string>();
+            else if (k == "processes")
+                processes = normalize_processes(part[k], total_budget);
+            else if (k == "cmd")
+                ;
+            else if (k == "budget")
+                ;
+            else
+                throw runtime_error("Unexpected key: " + k);
+        }
+    }
+
+    if (!norm_part["name"]) {
+        string name = "anonymous_" + to_string(anonymous_partition_counter);
+        norm_part["name"] = name;
+    }
+
+    if (!norm_part["processes"]) {
+        if (!processes) {
+            Node process;
+            process["cmd"] = part["cmd"];
+            if (part["budget"]) {
+                process["budget"] = part["budget"];
             }
-            out_config["partitions"].push_back(norm_part);
-            norm_slice[part_key] = parent[part_key];
-            return;
+            processes.push_back(normalize_process(process, total_budget));
         }
+        norm_part["processes"] = processes;
     }
+
+    return norm_part;
 }
 
-void Config::create_partition_from_window(Node &norm_slice,
-                                          const Node &parent,
-                                          Node &out_c,
-                                          const string key,
-                                          int total_budget)
+string Config::process_xx_partition_and_get_name(
+        const Node &part,
+        float total_budget,
+        Node &partitions // out: partitions defind here
+        )
 {
-    const string part_key = key + "_partition";
-    Node norm_part;
-    const string name = "anonymous_" + to_string(anonymous_partition_counter++);
-    norm_part["name"] = name;
-    norm_slice[part_key] = name;
-    int default_budget = compute_default_budget(total_budget, int(parent[part_key].size()));
-    for (auto yproc : parent[part_key]) {
-        Node norm_proc;
-        norm_proc["cmd"] = yproc["cmd"];
-        if (yproc["budget"])
-            norm_proc["budget"] = yproc["budget"];
+    if (part.IsScalar())
+        return part.as<string>();
+
+    Node norm_part = normalize_partition(part, total_budget);
+    partitions.push_back(norm_part);
+    return norm_part["name"].as<string>();
+}
+
+string Config::process_xx_processes_and_get_name(
+        const Node &processes,
+        float total_budget,
+        Node &partitions // out: partitions defind here
+        )
+{
+    Node part;
+    part["processes"] = processes;
+    Node norm_part = normalize_partition(part, total_budget);
+    partitions.push_back(norm_part);
+    return norm_part["name"].as<string>();
+}
+
+Node Config::normalize_slice(const Node &slice,
+                             float win_length,
+                             Node &partitions // out: partitions defined in the slice
+                             )
+{
+    Node norm_slice;
+
+    for (auto key : slice) {
+        string k = key.first.as<string>();
+        if (k == "cpu")
+            norm_slice[k] = slice[k].as<string>();
+        else if (k == "sc_partition")
+            norm_slice[k] = process_xx_partition_and_get_name(slice[k], win_length * 0.6, partitions);
+        else if (k == "be_partition")
+            norm_slice[k] = process_xx_partition_and_get_name(slice[k], win_length * 1.0, partitions);
+        else if (k == "sc_processes")
+            norm_slice["sc_partition"] = process_xx_processes_and_get_name(slice[k], win_length * 0.6, partitions);
+        else if (k == "be_processes")
+            norm_slice["be_partition"] = process_xx_processes_and_get_name(slice[k], win_length * 1.0, partitions);
         else
-            norm_proc["budget"] = default_budget;
-        norm_part["processes"].push_back(norm_proc);
+            throw runtime_error("Unexpected key: " + k);
     }
-    out_c["partitions"].push_back(norm_part);
+    return norm_slice;
 }
 
-void Config::parse_partitions(Node &norm_slice,
-                              const Node &parent,
-                              Node &out_c,
-                              const Node &in_c,
-                              int w_length)
+Node Config::normalize_window(
+        const Node &win, // in: window to normalize
+        Node &partitions // out: partitions defined in windows
+        )
 {
-    // safety critical
-    bool has_sc_part = false;
-    if (parent["sc_partition"]) {
-        has_sc_part = true;
-        auto tmpn = parent["sc_partition"];
-        if (tmpn.IsScalar()) {
-            // partiton defined by name
-            find_partition_by_name(
-                tmpn.as<string>(), norm_slice, parent, out_c, in_c, "sc", int(0.6 * w_length));
-        } else if (tmpn.IsSequence()) {
-            // partition definition inside window
-            create_partition_from_window(norm_slice, parent, out_c, "sc", int(0.6 * w_length));
+    Node norm_win;
+    int win_length = win["length"].as<int>();
+
+    if (win["slices"] &&
+        (win["sc_partition"] || win["be_partition"]))
+            throw runtime_error("Cannot have both 'slices' and '*_partition' in windows definition.");
+    if (win["slices"] &&
+        (win["sc_processes"] || win["be_processes"]))
+            throw runtime_error("Cannot have both 'slices' and '*_processes' in windows definition.");
+    if ((win["sc_partition"] && win["sc_processes"]) ||
+        (win["be_partition"] && win["be_processes"]))
+        throw runtime_error("Cannot have both '*_partition' and '*_processes' in the same window.");
+
+    for (auto key : win) {
+        string k = key.first.as<string>();
+        if (k == "length")
+            norm_win[k] = win_length;
+        else if (k == "slices") {
+            Node slices;
+            for (const auto &slice : win[k])
+                slices.push_back(normalize_slice(slice, win_length, partitions));
+            norm_win[k] = slices;
         }
+        else if (k == "sc_partition")
+            ;
+        else if (k == "be_partition")
+            ;
+        else if (k == "sc_processes")
+            ;
+        else if (k == "be_processes")
+            ;
+        else
+            throw runtime_error("Unexpected key: " + k);
     }
 
-    // best effort
-    bool has_be_part = false;
-    if (parent["be_partition"]) {
-        has_be_part = true;
-        auto tmpn = parent["be_partition"];
-        if (tmpn.IsScalar()) {
-            // partiton defined by name
-            find_partition_by_name(
-                tmpn.as<string>(), norm_slice, parent, out_c, in_c, "be", w_length);
-        } else if (tmpn.IsSequence()) {
-            // partition definition inside window
-            int total_budget = has_sc_part ? int(0.4 * w_length) : w_length;
-            create_partition_from_window(norm_slice, parent, out_c, "be", total_budget);
+    if (!norm_win["slices"]) {
+        Node slice;
+        slice["cpu"] = "0-" + to_string(MAX_CPUS - 1);
+        for (const string &key : { "sc_partition", "be_partition", "sc_processes", "be_processes" }) {
+            if (win[key])
+                slice[key] = win[key];
         }
+        norm_win["slices"].push_back(normalize_slice(slice, win_length, partitions));
     }
-
-    // partition defined as array of commands
-    if (parent["sc_processes"]) {
-        if (has_sc_part)
-            throw std::logic_error(
-                "bad configuration, cannot have both sc_partition and sc_processes");
-        create_partition_from_cmds(norm_slice, parent, out_c, "sc", int(0.6 * w_length));
-        has_sc_part = true;
-    }
-
-    if (parent["be_processes"]) {
-        if (has_be_part)
-            throw std::logic_error(
-                "bad configuration, cannot have both be_partition and be_processes");
-        int total_budget = has_sc_part ? int(0.4 * w_length) : w_length;
-        create_partition_from_cmds(norm_slice, parent, out_c, "be", total_budget);
-    }
+    return norm_win;
 }
 
 void Config::normalize()
 {
-    const Node &in_c = config;
-    Node out_c;
+    Node norm_partitions;
+    for (const auto &part : config["partitions"])
+        norm_partitions.push_back(normalize_partition(part, NAN));
+    config.remove("partitions");
 
-    for (auto ywin : in_c["windows"]) {
-        Node norm_win;
-        norm_win["length"] = ywin["length"];
-        int w_length = ywin["length"].as<int>();
-        if (!ywin["slices"]) {
-            Node norm_slice;
-            norm_slice["cpu"] = "0-" + to_string(MAX_CPUS - 1);
-            parse_partitions(norm_slice, ywin, out_c, in_c, w_length);
-            norm_win["slices"].push_back(norm_slice);
-        } else {
-            for (auto yslice : ywin["slices"]) {
-                Node norm_slice;
-                norm_slice["cpu"] = yslice["cpu"];
-                parse_partitions(norm_slice, yslice, out_c, in_c, w_length);
-                norm_win["slices"].push_back(norm_slice);
-            }
-        }
-        out_c["windows"].push_back(norm_win);
-    }
+    Node norm_windows;
+    for (const auto &win : config["windows"])
+        norm_windows.push_back(normalize_window(win, norm_partitions));
+    config.remove("windows");
 
-    config = out_c;
+    for (const auto &node : config)
+        throw runtime_error("Unexpected key: " + node.first.as<string>());
+
+    Node norm_config;
+    norm_config["partitions"] = norm_partitions;
+    norm_config["windows"] = norm_windows;
+
+    config = norm_config;
 }
 
 static Partition *find_partition(const string name, Partitions &partitions)

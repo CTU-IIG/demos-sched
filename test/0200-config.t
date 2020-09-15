@@ -52,6 +52,8 @@ windows:
         sc_partition: anonymous_0"
 is "$out" "$expected" "default budget"
 
+# This is the case, why we need sc_processes and cannot reuse
+# sc_partition here.
 out=$(demos-sched -C "{
     windows: [ {length: 500, sc_processes: proc} ]
 }" -d)
