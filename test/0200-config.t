@@ -1,6 +1,10 @@
 #!/bin/bash
 . testlib
-plan_tests 5
+plan_tests 7
+
+out=$(demos-sched -C "{ windows: [], partitions: [], garbage: garbage}" 2>&1)
+is $? 1 "garbage causes failure"
+like "$out" garbage "garbage reported"
 
 out=$(demos-sched -C "{
     windows: [ {length: 500, sc_partition: SC} ],
