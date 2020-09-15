@@ -4,13 +4,13 @@ plan_tests 5
 
 out=$(demos-sched -C "{
     windows: [ {length: 500, sc_partition: SC} ],
-    partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }]
+    partitions: [ {name: SC, processes: [{cmd: echo, budget: 100}] }]
 }" -d)
 expected="partitions:
   - name: SC
     processes:
       - cmd: echo
-        budget: 300
+        budget: 100
 windows:
   - length: 500
     slices:
