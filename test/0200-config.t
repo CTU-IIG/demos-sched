@@ -1,6 +1,6 @@
 #!/bin/bash
 . testlib
-plan_tests 12
+plan_tests 8
 
 test_normalization() {
     local test_name=$1
@@ -8,8 +8,7 @@ test_normalization() {
     local cfg_out_expected=$3
 
     local cfg_out=$(demos-sched -d -C "$cfg_in" 2>&1)
-    is $? 0 "$test_name (exit code)"
-    is "$cfg_out" "$cfg_out_expected" "$test_name (normalization)"
+    is "$cfg_out" "$cfg_out_expected" "$test_name"
 }
 
 out=$(demos-sched -C "{ windows: [], partitions: [], garbage: garbage}" 2>&1)
