@@ -53,7 +53,7 @@ Node Config::normalize_process(const Node &proc,
     return norm_proc;
 }
 
-Node Config::normalize_processes(const Node &processes, int total_budget)
+Node Config::normalize_processes(const Node &processes, float total_budget)
 {
     Node norm_processes;
     if (processes.IsSequence()) {
@@ -115,7 +115,7 @@ string Config::process_xx_partition_and_get_name(
         Node &partitions // out: partitions defind here
         )
 {
-    if (part.IsScalar())
+    if (part.IsScalar()) // string in canonical configuration
         return part.as<string>();
 
     Node norm_part = normalize_partition(part, total_budget);

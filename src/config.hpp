@@ -48,7 +48,7 @@ private:
             int total_budget);
 
     YAML::Node normalize_window(const YAML::Node &win, YAML::Node &partitions);
-    YAML::Node normalize_processes(const YAML::Node &processes, int total_budget);
+    YAML::Node normalize_processes(const YAML::Node &processes, float total_budget);
     YAML::Node normalize_partition(const YAML::Node &part, float total_budget);
     YAML::Node normalize_process(const YAML::Node &process, float default_budget);
     YAML::Node normalize_slice(const YAML::Node &slice, float win_length, YAML::Node &partitions);

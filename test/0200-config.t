@@ -96,3 +96,7 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: anonymous_0"
+
+test_normalization "missing budget in canonical config" \
+		   "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
+		   "Missing budget"
