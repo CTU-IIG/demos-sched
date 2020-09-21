@@ -142,6 +142,11 @@ void create_toplevel_cgroups(Cgroup &unified,
     }
 }
 
+string pluralize(int count, string noun)
+{
+    return to_string(count) + " " + noun + (count != 1 ? "s" : "");
+}
+
 int main(int argc, char *argv[])
 {
     int opt;
@@ -207,12 +212,10 @@ int main(int argc, char *argv[])
 
         config.create_demos_objects(cc, windows, partitions);
 
-        cerr << "parsed " << partitions.size() << " partitions and " << windows.size() << " windows"
-             << endl;
-        if (partitions.size() == 0 || windows.size() == 0) {
-            cerr << "Warning: need at least one partition in one window" << endl;
-            return 0;
-        }
+        cerr << "Parsed " << pluralize(partitions.size(), "partition") << " and " << pluralize(windows.size(), "window") << endl;
+
+        if (partitions.size() == 0 || windows.size() == 0)
+            errx(1, "Need at least one partition in one window");
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
