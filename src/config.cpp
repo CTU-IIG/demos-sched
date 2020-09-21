@@ -258,6 +258,11 @@ void Config::create_demos_objects(const CgroupConfig &c,
         }
     }
 
+    // Read current CPU affinity mask.
+    cpu_set allowed_cpus;
+    sched_getaffinity(0, allowed_cpus.size(), allowed_cpus.ptr());
+
+
     for (auto ywindow : config["windows"]) {
         int length = ywindow["length"].as<int>();
         Slices slices;
@@ -272,6 +277,10 @@ void Config::create_demos_objects(const CgroupConfig &c,
             }
 
             cpu_set cpus(yslice["cpu"].as<string>());
+            if ((cpus & allowed_cpus) != cpus) {
+                cerr << "Warning: Running on CPUs " << (cpus & allowed_cpus).as_list() << " instead of " << cpus.as_list() << endl;
+                cpus &= allowed_cpus;
+            }
             slices.push_back(
               make_unique<Slice>(c.loop, c.start_time, sc_part_ptr, be_part_ptr, cpus));
         }
