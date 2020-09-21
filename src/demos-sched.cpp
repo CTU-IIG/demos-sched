@@ -12,6 +12,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cassert>
+#include <cstring>
 
 using namespace std;
 using namespace std::chrono_literals;
@@ -85,6 +87,10 @@ void create_toplevel_cgroups(Cgroup &unified,
 
     // check access rights
     stringstream commands, mount_cmds;
+
+    assert(!unified_p.empty());
+    assert(!freezer_p.empty());
+    assert(!cpuset_p.empty());
 
     try {
         unified = Cgroup(unified_p, true);
