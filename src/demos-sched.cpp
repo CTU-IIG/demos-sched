@@ -71,7 +71,7 @@ void create_toplevel_cgroups(Cgroup &unified,
 
         while (cgroup_f >> num >> path) {
             if (num == 0)
-                unified_p = "/sys/fs/cgroup/unified/" + path.substr(2) + "/../" + demos_cg_name;
+                unified_p = "/sys/fs/cgroup/unified" + path.substr(2) + "/" + demos_cg_name;
             if (path.find(":freezer:") == 0)
                 freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
             if (path.find(":cpuset:") == 0) {
