@@ -25,6 +25,7 @@ void print_help()
             "  -c <CONFIG_FILE>   path to configuration file\n"
             "  -C <CONFIG>        in-line configuration in YAML format\n"
             "  -g <CGROUP_NAME>   name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
+            "  -s                 rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
             "  -d                 dump config file without execution\n"
             "  -h                 print this message\n";
 }
@@ -147,12 +148,35 @@ string pluralize(int count, string noun)
     return to_string(count) + " " + noun + (count != 1 ? "s" : "");
 }
 
+void reexec_via_systemd_run(int argc, char *argv[], const Config &config)
+{
+    vector<const char*> args({
+        "systemd-run", "--scope", "-p",  "Delegate=yes", "--user"
+    });
+
+    for (int i = 0; i < argc; i++)
+        if (i == 0 || strcmp(argv[i], "-s") != 0)
+            args.push_back(argv[i]);
+    args.push_back(nullptr);
+
+    for (const auto arg : args) {
+        if (arg)
+            cerr << arg << " ";
+        else
+            cerr << endl;
+    }
+
+    CHECK(execvp(args[0], const_cast<char**>(args.data())));
+}
+
 int main(int argc, char *argv[])
 {
     int opt;
     string config_file, config_str;
     bool dump_config = false;
-    while ((opt = getopt(argc, argv, "dhg:c:C:")) != -1) {
+    bool systemd_run = false;
+
+    while ((opt = getopt(argc, argv, "dhg:c:C:s")) != -1) {
         switch (opt) {
             case 'g':
                 opt_demos_cg_name = optarg;
@@ -165,6 +189,9 @@ int main(int argc, char *argv[])
                 break;
             case 'd':
                 dump_config = true;
+                break;
+            case 's':
+                systemd_run = true;
                 break;
             case 'h':
                 print_help();
@@ -198,6 +225,9 @@ int main(int argc, char *argv[])
             cout << config.get() << endl;
             return 0;
         }
+
+        if (systemd_run)
+            reexec_via_systemd_run(argc, argv, config);
 
         Cgroup unified_root, freezer_root, cpuset_root;
         create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
