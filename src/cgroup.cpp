@@ -115,7 +115,7 @@ CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/
 
 void CgroupCpuset::set_cpus(string cpus)
 {
-    if( cpus.compare(current_cpus) != 0 ) {
+    if (cpus.compare(current_cpus) != 0) {
         CHECK(write(fd_cpus, cpus.c_str(), cpus.size()));
         current_cpus = cpus;
     }
