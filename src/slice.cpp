@@ -6,7 +6,7 @@ Slice::Slice(ev::loop_ref loop,
              chrono::steady_clock::time_point start_time,
              Partition *sc,
              Partition *be,
-             string cpus)
+             cpu_set cpus)
     : sc(sc)
     , be(be)
     , cpus(cpus)

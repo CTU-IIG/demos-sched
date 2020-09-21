@@ -65,7 +65,7 @@ void Partition::add_process(ev::loop_ref loop,
     empty = false;
 }
 
-void Partition::set_cpus(string cpus)
+void Partition::set_cpus(const cpu_set cpus)
 {
     cgc.set_cpus(cpus);
 }

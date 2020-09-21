@@ -7,6 +7,7 @@
 #include <chrono>
 #include <functional>
 #include <list>
+#include "cpu_set.hpp"
 
 using namespace std::placeholders;
 
@@ -31,7 +32,7 @@ public:
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 
-    void set_cpus(std::string cpus);
+    void set_cpus(const cpu_set cpus);
 
     void move_to_first_proc();
     // return false if there is none

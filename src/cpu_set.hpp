@@ -4,6 +4,9 @@
 #include <sched.h>
 #include <stdexcept>
 #include <cstring>
+extern "C" {
+#include "cpuset.h"
+}
 
 // C++ wrapper over C's cpu_set_t
 class cpu_set {
@@ -17,6 +20,11 @@ public:
         for (size_t i = 0; i < sizeof(mask) * 8; i++)
             if (mask & (1UL<<i))
                 set(i); }
+    cpu_set(std::string cpulist, bool fail = false) : cpu_set() {
+        int ret = cpulist_parse(cpulist.c_str(), s, size(), fail);
+        if (ret != 0)
+            throw std::runtime_error("cpulist_parse error");
+    }
     ~cpu_set() { CPU_FREE(s); }
 
     void zero() { CPU_ZERO_S(size(), s); }
@@ -32,6 +40,7 @@ public:
     size_t size() const { return CPU_ALLOC_SIZE(max_cpus); }
     cpu_set_t* ptr() const { return s; }
     int as_int() const { int mask = 0; for (int i = 0; i < max_cpus; i++) if (is_set(i)) mask |= 1<<i; return mask; }
+    std::string as_list() const { char list[100]; cpulist_create(list, sizeof(list), s, size()); return list; }
     explicit operator bool() const { return count() > 0; }
 
     cpu_set &operator =(const cpu_set& o) { memcpy(s, o.s, size()); return *this; }

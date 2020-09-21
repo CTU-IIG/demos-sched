@@ -113,10 +113,11 @@ CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/
     : CgroupCpuset(parent.get_path(), name)
 {}
 
-void CgroupCpuset::set_cpus(string cpus)
+void CgroupCpuset::set_cpus(cpu_set cpus)
 {
-    if (cpus.compare(current_cpus) != 0) {
-        CHECK(write(fd_cpus, cpus.c_str(), cpus.size()));
+    if (cpus != current_cpus) {
+        string s = cpus.as_list();
+        CHECK_MSG(write(fd_cpus, s.c_str(), s.size()), "Cannot set cpuset to " + s);
         current_cpus = cpus;
     }
 }

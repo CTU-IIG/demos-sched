@@ -2,6 +2,7 @@
 #include <exception>
 #include "window.hpp"
 #include "partition.hpp"
+#include "cpu_set.hpp"
 
 using namespace std;
 using namespace YAML;
@@ -269,7 +270,8 @@ void Config::create_demos_objects(const CgroupConfig &c,
             if (yslice["be_partition"]) {
                 be_part_ptr = find_partition(yslice["be_partition"].as<string>(), partitions);
             }
-            string cpus = yslice["cpu"].as<string>();
+
+            cpu_set cpus(yslice["cpu"].as<string>());
             slices.push_back(
               make_unique<Slice>(c.loop, c.start_time, sc_part_ptr, be_part_ptr, cpus));
         }

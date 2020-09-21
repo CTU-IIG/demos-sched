@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <vector>
 
+#include "cpu_set.hpp"
 #include "config.h"
 
 // cpu usage mask
@@ -74,11 +75,11 @@ class CgroupCpuset : public Cgroup
 public:
     CgroupCpuset(std::string parent_path, std::string name);
     CgroupCpuset(Cgroup &parent, std::string name);
-    void set_cpus(std::string cpus);
+    void set_cpus(cpu_set cpus);
 
 private:
     int fd_cpus = -1;
-    std::string current_cpus = "";
+    cpu_set current_cpus = {0};
 };
 
 class CgroupEvents : public Cgroup

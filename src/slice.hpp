@@ -7,6 +7,7 @@
 #include <chrono>
 #include <ev++.h>
 #include <functional>
+#include "cpu_set.hpp"
 
 typedef std::list<Partition> Partitions;
 
@@ -17,7 +18,7 @@ public:
           std::chrono::steady_clock::time_point start_time,
           Partition *sc,
           Partition *be,
-          std::string cpus = "0");
+          cpu_set cpus = cpu_set(0x1));
 
     Slice(const Slice&) = delete;
     const Slice& operator=(const Slice&) = delete;
@@ -26,7 +27,7 @@ public:
 
     Partition *sc;
     Partition *be;
-    std::string cpus;
+    const cpu_set cpus;
     void start();
     void stop();
     bool is_empty();
