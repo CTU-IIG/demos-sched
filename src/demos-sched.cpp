@@ -62,7 +62,7 @@ void create_toplevel_cgroups(Cgroup &unified,
                        Cgroup &cpuset,
                        const std::string demos_cg_name)
 {
-    string unified_p, freezer_p, cpuset_p;
+    string unified_path, freezer_path, cpuset_path;
     string cpus, mems;
 
     // Get information about our current cgroups
@@ -73,11 +73,12 @@ void create_toplevel_cgroups(Cgroup &unified,
 
         while (cgroup_f >> num >> path) {
             if (num == 0)
-                unified_p = "/sys/fs/cgroup/unified" + path.substr(2) + "/" + demos_cg_name;
+                unified_path = "/sys/fs/cgroup/unified" + path.substr(2) + "/" + demos_cg_name;
             if (path.find(":freezer:") == 0)
-                freezer_p = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
+                freezer_path = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
             if (path.find(":cpuset:") == 0) {
-                cpuset_p = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
+                cpuset_path = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
+                // Read settings from currect cpuset cgroup
                 string cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
                 ifstream(cpuset_parent + "/cpuset.cpus") >> cpus;
                 ifstream(cpuset_parent + "/cpuset.mems") >> mems;
@@ -88,48 +89,48 @@ void create_toplevel_cgroups(Cgroup &unified,
     // check access rights
     stringstream commands, mount_cmds;
 
-    assert(!unified_p.empty());
-    assert(!freezer_p.empty());
-    assert(!cpuset_p.empty());
+    assert(!unified_path.empty());
+    assert(!freezer_path.empty());
+    assert(!cpuset_path.empty());
 
     try {
-        unified = Cgroup(unified_p, true);
+        unified = Cgroup(unified_path, true);
     } catch (system_error &e) {
-        handle_cgroup_exc(commands, mount_cmds, e, unified_p);
+        handle_cgroup_exc(commands, mount_cmds, e, unified_path);
     }
     try {
         unified.add_process(getpid());
     } catch (system_error &) {
-        commands << "sudo chown -R " << getuid() << " " << unified_p << endl;
+        commands << "sudo chown -R " << getuid() << " " << unified_path << endl;
 
         // MS: Why is the below command needed for unified and not other controllers?
-        commands << "sudo echo " << getppid() << " > " << unified_p + "/cgroup.procs" << endl;
+        commands << "sudo echo " << getppid() << " > " << unified_path + "/cgroup.procs" << endl;
     }
 
     try {
-        freezer = Cgroup(freezer_p, true);
+        freezer = Cgroup(freezer_path, true);
     } catch (system_error &e) {
-        handle_cgroup_exc(commands, mount_cmds, e, freezer_p);
+        handle_cgroup_exc(commands, mount_cmds, e, freezer_path);
     }
 
     try {
         freezer.add_process(getpid());
     } catch (system_error &) {
-        commands << "sudo chown -R " << getuid() << " " << freezer_p << endl;
+        commands << "sudo chown -R " << getuid() << " " << freezer_path << endl;
     }
 
     try {
-        cpuset = Cgroup(cpuset_p, true);
-        ofstream(cpuset_p + "/cpuset.cpus") << cpus;
-        ofstream(cpuset_p + "/cpuset.mems") << mems;
-        ofstream(cpuset_p + "/cgroup.clone_children") << "1";
+        cpuset = Cgroup(cpuset_path, true);
+        ofstream(cpuset_path + "/cpuset.cpus") << cpus;
+        ofstream(cpuset_path + "/cpuset.mems") << mems;
+        ofstream(cpuset_path + "/cgroup.clone_children") << "1";
     } catch (system_error &e) {
-        handle_cgroup_exc(commands, mount_cmds, e, cpuset_p);
+        handle_cgroup_exc(commands, mount_cmds, e, cpuset_path);
     }
     try {
         cpuset.add_process(getpid());
     } catch (system_error &e) {
-        commands << "sudo chown -R " << getuid() << " " << cpuset_p << endl;
+        commands << "sudo chown -R " << getuid() << " " << cpuset_path << endl;
     }
 
     if (!mount_cmds.str().empty()) {
