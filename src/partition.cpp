@@ -57,7 +57,7 @@ void Partition::add_process(ev::loop_ref loop,
     // cerr<< cmd_name <<endl;
 
     processes.emplace_back(
-      loop, to_string(proc_count) + "todo", *this, argv, budget, budget_jitter);
+      loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
     proc_count++;
     current = --processes.end();
     current->exec();
