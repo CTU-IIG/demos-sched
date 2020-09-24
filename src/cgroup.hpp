@@ -82,6 +82,9 @@ private:
     cpu_set current_cpus = {0};
 };
 
+// Monitors cgroup.events (Cgroups v2) for changes and on every change
+// calls populated_cb callback with information whether the cgroup is
+// populated or not.
 class CgroupEvents : public Cgroup
 {
 public:
@@ -103,7 +106,7 @@ private:
     int fd_events = -1;
     ev::io events_w;
     std::function<void(bool)> populated_cb;
-    void clean_cb(ev::io &w, int revents);
+    void event_cb(ev::io &w, int revents);
 };
 
 #endif // CGROUP_HPP

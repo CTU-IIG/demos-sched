@@ -132,7 +132,7 @@ CgroupEvents::CgroupEvents(ev::loop_ref loop,
 {
     fd_events = CHECK(open((path + "/cgroup.events").c_str(), O_RDONLY | O_NONBLOCK));
 
-    events_w.set<CgroupEvents, &CgroupEvents::clean_cb>(this);
+    events_w.set<CgroupEvents, &CgroupEvents::event_cb>(this);
     events_w.start(fd_events, ev::EXCEPTION);
 }
 
@@ -155,7 +155,7 @@ CgroupEvents::~CgroupEvents()
     events_w.stop();
 }
 
-void CgroupEvents::clean_cb(ev::io &w, int revents)
+void CgroupEvents::event_cb(ev::io &w, int revents)
 {
     char buf[100];
     CHECK(pread(w.fd, buf, sizeof(buf) - 1, 0));
