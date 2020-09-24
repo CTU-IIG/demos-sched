@@ -91,7 +91,7 @@ Node Config::normalize_partition(const Node &part,
     }
 
     if (!norm_part["name"]) {
-        string name = "anonymous_" + to_string(anonymous_partition_counter);
+        string name = "anonymous_" + to_string(anonymous_partition_counter++);
         norm_part["name"] = name;
     }
 
