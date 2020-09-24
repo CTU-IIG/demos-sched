@@ -129,6 +129,8 @@ void Process::populated_cb(bool populated)
     }
 }
 
+// Called when the process signalizes completion in the current window
+// by calling demos_completed().
 void Process::completed_cb()
 {
     //cout<<__PRETTY_FUNCTION__<<endl;
