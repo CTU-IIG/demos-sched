@@ -3,7 +3,7 @@
 plan_tests 4
 
 out=$(demos-sched -C "bad config")
-is $? 1 "bad config exit code"
+is $? 1 "bad config => exit code 1"
 okx demos-sched -C "{windows: [], partitions: []}"
 
 out=$(demos-sched -C "{
