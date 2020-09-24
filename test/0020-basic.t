@@ -4,7 +4,8 @@ plan_tests 4
 
 out=$(demos-sched -C "bad config")
 is $? 1 "bad config => exit code 1"
-okx demos-sched -C "{windows: [], partitions: []}"
+demos-sched -C "{windows: [], partitions: []}"
+is $? 1 "empty config => exit code 1"
 
 out=$(demos-sched -C "{
     windows: [ {length: 50, slices: [ { cpu: 0, sc_partition: SC1 }] } ],
