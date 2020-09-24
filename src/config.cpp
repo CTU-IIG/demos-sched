@@ -3,6 +3,7 @@
 #include "window.hpp"
 #include "partition.hpp"
 #include "cpu_set.hpp"
+#include <cmath>
 
 using namespace std;
 using namespace YAML;
