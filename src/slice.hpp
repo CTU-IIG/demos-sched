@@ -37,7 +37,7 @@ private:
     Process *current_proc = nullptr;
     std::chrono::steady_clock::time_point timeout;
     ev::timerfd timer;
-    void timeout_cb();
+    void schedule_next();
     void move_proc_and_start_timer(Partition *p);
     void empty_partition_cb();
     bool empty = false;

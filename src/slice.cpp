@@ -15,11 +15,11 @@ Slice::Slice(ev::loop_ref loop,
 {
     if (sc) {
         sc->set_empty_cb(bind(&Slice::empty_partition_cb, this));
-        sc->set_complete_cb(bind(&Slice::timeout_cb, this));
+        sc->set_complete_cb(bind(&Slice::schedule_next, this));
     }
     if (be)
         be->set_empty_cb(bind(&Slice::empty_partition_cb, this));
-    timer.set(bind(&Slice::timeout_cb, this));
+    timer.set(bind(&Slice::schedule_next, this));
 }
 
 void Slice::set_empty_cb(function<void()> new_empty_cb)
@@ -89,7 +89,8 @@ void Slice::update_timeout(chrono::steady_clock::time_point actual_time)
     timeout = actual_time;
 }
 
-void Slice::timeout_cb()
+// Called as a response to timeout or process completion.
+void Slice::schedule_next()
 {
 #ifdef VERBOSE
     cerr << __PRETTY_FUNCTION__ << endl;
