@@ -83,7 +83,7 @@ void Process::freeze()
 void Process::unfreeze()
 {
     uint64_t buf = 1;
-    if( demos_completed ){
+    if (demos_completed) {
         CHECK(write(efd_continue, &buf, sizeof(buf)));
         demos_completed = false;
     }
