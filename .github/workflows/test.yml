@@ -17,8 +17,15 @@ jobs:
       with:
         name: thermac
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-    - name: Register gcc problem matcher
+    - name: Configure
+      run: nix-shell --run "make build/build.ninja"
+    - name: Build subprojects
+      run: nix-shell --run "ninja -C build subprojects/libev/libev.a subprojects/yaml-cpp/libyaml-cpp.a"
+    - name: Register gcc problem matcher # After subprojects to not see their warings
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - run: nix-shell --run "make"
-    - run: nix-shell --run "cd build && meson test --wrapper=sudo"
-    - run: nix-build test.nix
+    - name: Build demos-sched
+      run: nix-shell --run "make"
+    - name: Tests
+      run: nix-shell --run "cd build && meson test --wrapper=sudo"
+    - name: Other builds
+      run: nix-build test.nix
