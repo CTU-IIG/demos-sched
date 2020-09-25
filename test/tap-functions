@@ -269,14 +269,21 @@ _matches(){
 	fi
 }
 
+_first_line() {
+    local text=${1:?}
+    readarray -t lines <<<$text
+    [[ ${#lines[@]} -gt 1 ]] && local ellipsis=…
+    echo "${lines[0]}${ellipsis}"
+}
 
 _is_diag(){
 	local result=${1:?}
 	local expected=${2:?}
 
-	diag "         got: '$result'" 
-	diag "    expected: '$expected'"
-	diag "        diff: \n$(diff --color=always -u --label=expected <(echo "$expected") --label=received <(echo "$result"))"
+	diag "         got: '$(_first_line "$result")'"
+	diag "    expected: '$(_first_line "$expected")'"
+	diag "        diff: see stderr"
+	diff --color=always -u --label="$name: expected" <(echo "$expected") --label="$name: received" <(echo "$result") >&2
 }
 
 
