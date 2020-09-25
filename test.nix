@@ -1,3 +1,6 @@
+{
+  pkgsUnstable ? import (fetchTarball "https://github.com/NixOS/nixpkgs-channels/archive/nixos-unstable.tar.gz") { }
+}:
 let
   pkgsMeson-0-49-2 = import (builtins.fetchGit {
     name = "nixpkgs-with-meson-0.49.2";
@@ -5,9 +8,6 @@ let
     ref = "refs/heads/nixpkgs-unstable";
     rev = "4599f2bb9a5a6b1482e72521ead95cb24e0aa819";
   }) { };
-  pkgsUnstable = import (fetchTarball
-    "https://github.com/NixOS/nixpkgs-channels/archive/nixos-unstable.tar.gz")
-    { };
   demosSchedWithCC = cc:
     let
       pkgs = pkgsUnstable;
