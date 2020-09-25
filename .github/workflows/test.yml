@@ -17,6 +17,8 @@ jobs:
       with:
         name: thermac
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - run: nix-shell --run "make"
     - run: nix-shell --run "cd build && meson test --wrapper=sudo"
     - run: nix-build test.nix
