@@ -29,3 +29,5 @@ jobs:
       run: nix-shell --run "cd build && meson test --wrapper=sudo"
     - name: Other builds
       run: nix-build test.nix --arg pkgsUnstable 'import <nixpkgs> {}'
+    - name: Aarch64
+      run: nix-build --argstr crossSystem aarch64-linux
