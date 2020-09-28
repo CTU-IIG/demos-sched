@@ -6,15 +6,15 @@ Scheduler for simulation of avionics multi-core workloads on Linux.
 
 Initialize git submodules:
 
+    git update-ref refs/heads/master.trac origin/master.trac
     git submodule update --init
-    git submodule foreach --recursive 'if [ $(git config remote.origin.url) = . ]; then git config remote.origin.url "$toplevel"; fi'
 
 We use the Meson build system. On Debian-based distro, it can be
 installed by:
 
     apt install meson
 
-It is recommended, though not necessary, to uses Meson >= 0.52. If
+It is recommended, though not necessary, to use Meson >= 0.52. If
 your distribution has an older version, you can install a new one by:
 
     pip3 install --user meson
