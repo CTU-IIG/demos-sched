@@ -264,6 +264,9 @@ int main(int argc, char *argv[])
         if (partitions.size() == 0 || windows.size() == 0)
             errx(1, "Need at least one partition in one window");
 
+        for (auto &p : partitions)
+            p.exec_processes();
+
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
 
@@ -273,6 +276,9 @@ int main(int argc, char *argv[])
             logger->warn("Running demos without rt priority, consider running as root");
 
         loop.run();
+
+        for (auto &p : partitions)
+            p.kill_all();
 
     } catch (const exception &e) {
         logger->error("Exception: {}", e.what());

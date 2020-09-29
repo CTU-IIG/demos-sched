@@ -32,6 +32,8 @@ public:
                      std::chrono::nanoseconds budget,
                      std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
 
+    void exec_processes();
+
     void set_cpus(const cpu_set cpus);
 
     void move_to_first_proc();

@@ -61,9 +61,13 @@ void Partition::add_process(ev::loop_ref loop,
       loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
     proc_count++;
     current_proc = --processes.end();
+    empty = false;
+}
+
+void Partition::exec_processes()
+{
     current_proc->exec();
     cgc.add_process(current_proc->get_pid());
-    empty = false;
 }
 
 void Partition::set_cpus(const cpu_set cpus)
@@ -107,8 +111,9 @@ bool Partition::is_empty()
 
 void Partition::kill_all()
 {
-    for (Process &p : processes)
+    for (Process &p : processes) {
         p.kill();
+    }
 }
 
 void Partition::set_empty_cb(std::function<void()> new_empty_cb)
