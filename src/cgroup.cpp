@@ -158,7 +158,7 @@ CgroupEvents::~CgroupEvents()
 void CgroupEvents::event_cb(ev::io &w, int revents)
 {
     char buf[100];
-    CHECK(pread(w.fd, buf, sizeof(buf) - 1, 0));
-    bool populated = (std::string(buf).find("populated 1") != std::string::npos);
+    ssize_t size = CHECK(pread(w.fd, buf, sizeof(buf) - 1, 0));
+    bool populated = (std::string(buf, size).find("populated 1") != std::string::npos);
     populated_cb(populated);
 }
