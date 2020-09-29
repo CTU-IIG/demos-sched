@@ -47,6 +47,7 @@ public:
 private:
     ev::loop_ref loop;
     ev::evfd completed_w;
+    ev::child child_w;
     int efd_continue; // new period eventfd
 
     Partition &part;
@@ -55,6 +56,7 @@ private:
 
     void populated_cb(bool populated);
     void completed_cb();
+    void child_terminated_cb(ev::child &w, int revents);
 
     //        std::string partition_cgrp_name;
     std::string argv;

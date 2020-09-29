@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <system_error>
 #include <sys/eventfd.h>
+#include <sys/wait.h>
 
 using namespace std::placeholders;
 using namespace std;
@@ -18,6 +19,7 @@ Process::Process(ev::loop_ref loop,
                  bool contionuous)
     : loop(loop)
     , completed_w(loop)
+    , child_w(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
     , part(part)
     , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
@@ -36,6 +38,7 @@ Process::Process(ev::loop_ref loop,
     freeze();
     completed_w.set(std::bind(&Process::completed_cb, this));
     completed_w.start();
+    child_w.set<Process, &Process::child_terminated_cb>(this);
 }
 
 void Process::exec()
@@ -59,6 +62,7 @@ void Process::exec()
 #ifdef VERBOSE
         std::cerr << __PRETTY_FUNCTION__ << " " << argv << " pid: " << pid << std::endl;
 #endif
+        child_w.start(pid, 0);
         // add process to cgroup (echo PID > cgroup.procs)
         cge.add_process(pid);
         cgf.add_process(pid);
@@ -138,4 +142,15 @@ void Process::completed_cb()
     completed = true;
     demos_completed = true;
     part.completed_cb();
+}
+
+void Process::child_terminated_cb(ev::child &w, int revents)
+{
+    w.stop();
+    int wstatus = w.rstatus;
+    if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != 0) {
+        cerr << "Process '" << argv << "' exited with status " << WEXITSTATUS(wstatus) << endl;
+    } else if (WIFSIGNALED(wstatus)) {
+        cerr << "Process '" << argv << "' terminated by signal " << WTERMSIG(wstatus) << endl;
+    }
 }
