@@ -96,6 +96,7 @@ windows:
       - cpu: 0-63
         sc_partition: anonymous_0"
 
+export DEMOS_PLAIN_LOG=1
 test_normalization "missing budget in canonical config" \
 		   "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
-		   "Missing budget"
+		   ">>> [error] Exception: Missing budget"

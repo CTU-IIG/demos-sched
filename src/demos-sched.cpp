@@ -218,7 +218,10 @@ int main(int argc, char *argv[])
 
     // Set loglevel from environment, e.g., export SPDLOG_LEVEL=info
     spdlog::cfg::load_env_levels();
-    logger->set_pattern(">>> %H:%M:%S.%e [%^%l%$] %v");
+    if (!getenv("DEMOS_PLAIN_LOG"))
+        logger->set_pattern(">>> %H:%M:%S.%e [%^%l%$] %v");
+    else
+        logger->set_pattern(">>> [%l] %v");
 
     auto start_time = chrono::steady_clock::now();
 
