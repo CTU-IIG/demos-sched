@@ -96,13 +96,28 @@ void create_toplevel_cgroups(Cgroup &unified,
     assert(!freezer_path.empty());
     assert(!cpuset_path.empty());
 
+    struct Child {
+        const pid_t pid;
+        Child() : pid(CHECK(fork())) {
+            if (pid == 0) {
+                // Dummy child for cgroup permission testing
+                pause(); // wait for signal
+                exit(0);
+            }
+        }
+        ~Child() { kill(pid, SIGTERM); } // kill the process when going out of scope
+    } child;
+
+    // TODO: Verify that commands added to the commands variable still
+    // make sense (after changing a bit cgroup structure).
+
     try {
         unified = Cgroup(unified_path, true);
     } catch (system_error &e) {
         handle_cgroup_exc(commands, mount_cmds, e, unified_path);
     }
     try {
-        unified.add_process(getpid());
+        unified.add_process(child.pid);
     } catch (system_error &) {
         commands << "sudo chown -R " << getuid() << " " << unified_path << endl;
 
@@ -117,7 +132,7 @@ void create_toplevel_cgroups(Cgroup &unified,
     }
 
     try {
-        freezer.add_process(getpid());
+        freezer.add_process(child.pid);
     } catch (system_error &) {
         commands << "sudo chown -R " << getuid() << " " << freezer_path << endl;
     }
@@ -131,7 +146,7 @@ void create_toplevel_cgroups(Cgroup &unified,
         handle_cgroup_exc(commands, mount_cmds, e, cpuset_path);
     }
     try {
-        cpuset.add_process(getpid());
+        cpuset.add_process(child.pid);
     } catch (system_error &e) {
         commands << "sudo chown -R " << getuid() << " " << cpuset_path << endl;
     }
