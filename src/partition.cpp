@@ -12,7 +12,7 @@ Partition::Partition(Cgroup &freezer_parent,
     : cgf(freezer_parent, name)
     , cgc(cpuset_parent, name)
     , cge(events_parent, name)
-    , current(nullptr)
+    , current_proc(nullptr)
     , name(name)
 {
 #ifdef VERBOSE
@@ -23,7 +23,7 @@ Partition::Partition(Cgroup &freezer_parent,
 
 Process &Partition::get_current_proc()
 {
-    return *current;
+    return *current_proc;
 }
 
 void Partition::freeze()
@@ -59,9 +59,9 @@ void Partition::add_process(ev::loop_ref loop,
     processes.emplace_back(
       loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
     proc_count++;
-    current = --processes.end();
-    current->exec();
-    cgc.add_process(current->get_pid());
+    current_proc = --processes.end();
+    current_proc->exec();
+    cgc.add_process(current_proc->get_pid());
     empty = false;
 }
 
@@ -72,7 +72,7 @@ void Partition::set_cpus(const cpu_set cpus)
 
 void Partition::move_to_first_proc()
 {
-    current = processes.begin();
+    current_proc = processes.begin();
 }
 
 // return false if there is none
@@ -80,7 +80,7 @@ bool Partition::move_to_next_unfinished_proc()
 {
     for (size_t i = 0; i < processes.size(); i++) {
         move_to_next_proc();
-        if (!current->is_completed())
+        if (!current_proc->is_completed())
             return true;
     }
     completed = true;
@@ -128,8 +128,8 @@ string Partition::get_name() const
 // cyclic queue
 void Partition::move_to_next_proc()
 {
-    if (++current == processes.end())
-        current = processes.begin();
+    if (++current_proc == processes.end())
+        current_proc = processes.begin();
 }
 
 void Partition::proc_exit_cb(Process &proc)

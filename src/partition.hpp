@@ -57,7 +57,7 @@ public:
 
 private:
     Processes processes = {};
-    Processes::iterator current;
+    Processes::iterator current_proc;
     std::string name;
     size_t proc_count = 0;
 
