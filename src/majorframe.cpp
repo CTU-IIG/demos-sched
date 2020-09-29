@@ -7,7 +7,7 @@ MajorFrame::MajorFrame(ev::loop_ref loop,
                        Windows &&windows)
     : loop(loop)
     , windows(std::move(windows))
-    , current(this->windows.begin())
+    , current_win(this->windows.begin())
     , timeout(start_time)
 {
     timer.set(bind(&MajorFrame::timeout_cb, this));
@@ -22,27 +22,27 @@ MajorFrame::MajorFrame(ev::loop_ref loop,
 
 void MajorFrame::move_to_next_window()
 {
-    if (++current == windows.end())
-        current = windows.begin();
+    if (++current_win == windows.end())
+        current_win = windows.begin();
 }
 
 Window &MajorFrame::get_current_window()
 {
-    return *(current->get());
+    return *(current_win->get());
 }
 
 void MajorFrame::start()
 {
-    current->get()->update_timeout(timeout);
-    current->get()->start();
-    timeout += current->get()->length;
+    current_win->get()->update_timeout(timeout);
+    current_win->get()->start();
+    timeout += current_win->get()->length;
     timer.start(timeout);
 }
 
 void MajorFrame::stop()
 {
     timer.stop();
-    current->get()->stop();
+    current_win->get()->stop();
 }
 
 void MajorFrame::timeout_cb()
@@ -51,11 +51,11 @@ void MajorFrame::timeout_cb()
     cerr << __PRETTY_FUNCTION__ << endl;
 #endif
 
-    current->get()->stop();
+    current_win->get()->stop();
     move_to_next_window();
-    current->get()->update_timeout(timeout);
-    current->get()->start();
-    timeout += current->get()->length;
+    current_win->get()->update_timeout(timeout);
+    current_win->get()->start();
+    timeout += current_win->get()->length;
     timer.start(timeout);
 }
 

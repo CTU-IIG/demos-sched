@@ -25,7 +25,7 @@ private:
     // std::chrono::nanoseconds length; // do we need this?
     ev::loop_ref loop;
     Windows windows;
-    Windows::iterator current;
+    Windows::iterator current_win;
     ev::timerfd timer{ loop };
     ev::sig sigint{ loop };
     ev::sig sigterm{ loop };
