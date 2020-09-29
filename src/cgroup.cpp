@@ -1,6 +1,7 @@
 #include "cgroup.hpp"
 #include <err.h>
 #include <fstream>
+#include "log.hpp"
 
 #include "demossched.hpp"
 
@@ -9,9 +10,7 @@ using namespace std;
 Cgroup::Cgroup(string path, bool may_exist)
     : path(path)
 {
-#ifdef VERBOSE
-    cerr << __PRETTY_FUNCTION__ << path << endl;
-#endif
+    logger->debug("Creating cgroup {}", path);
     try {
         CHECK_MSG(mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), "mkdir " + path);
     } catch (system_error &e) {
@@ -38,16 +37,18 @@ Cgroup::~Cgroup()
 {
     if (path.empty() || !remove)
         return;
+
+    logger->debug("Removing cgroup {}", path);
+
     int ret = rmdir(path.c_str());
-    if (ret == -1)
-        warn("rmdir %s", path.c_str());
+    if (ret == -1) {
+        logger->error("rmdir {}: {}", path, strerror(errno));
+    }
 }
 
 void Cgroup::add_process(pid_t pid)
 {
-#ifdef VERBOSE
-    cerr << __PRETTY_FUNCTION__ << path + "/cgroup.procs" << pid << endl;
-#endif
+    logger->debug("Adding PID {} to cgroup {}", pid, path);
 
     // ofstream( path + "/cgroup.procs" ) << pid; // WHY THIS DOESNT THROW?
     int fd = CHECK(open((path + "/cgroup.procs").c_str(), O_NONBLOCK | O_RDWR));
@@ -61,9 +62,7 @@ void Cgroup::kill_all()
     ifstream procs(path + "/cgroup.procs");
     pid_t pid;
     while (procs >> pid) {
-#ifdef VERBOSE
-        std::cerr << "killing process " << pid << std::endl;
-#endif
+        logger->debug("Killing process {} in {}", pid, path);
         CHECK(kill(pid, SIGKILL));
     }
 }

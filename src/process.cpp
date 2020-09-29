@@ -6,6 +6,7 @@
 #include <system_error>
 #include <sys/eventfd.h>
 #include <sys/wait.h>
+#include "log.hpp"
 
 using namespace std::placeholders;
 using namespace std;
@@ -59,9 +60,7 @@ void Process::exec()
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-#ifdef VERBOSE
-        std::cerr << __PRETTY_FUNCTION__ << " " << argv << " pid: " << pid << std::endl;
-#endif
+        logger->debug("Running '{}' as PID {}", argv, pid);
         child_w.start(pid, 0);
         // add process to cgroup (echo PID > cgroup.procs)
         cge.add_process(pid);
@@ -128,6 +127,7 @@ pid_t Process::get_pid() const
 void Process::populated_cb(bool populated)
 {
     if (!populated) {
+        logger->debug("Cgroup of process '{}' not populated", argv);
         running = false;
         part.proc_exit_cb(*this);
     }
@@ -137,7 +137,8 @@ void Process::populated_cb(bool populated)
 // by calling demos_completed().
 void Process::completed_cb()
 {
-    //cout<<__PRETTY_FUNCTION__<<endl;
+    logger->trace("Process '{}' completed", argv);
+
     // switch to next process
     completed = true;
     demos_completed = true;
@@ -149,8 +150,8 @@ void Process::child_terminated_cb(ev::child &w, int revents)
     w.stop();
     int wstatus = w.rstatus;
     if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != 0) {
-        cerr << "Process '" << argv << "' exited with status " << WEXITSTATUS(wstatus) << endl;
+        logger->warn("Process '{}' exited with status {}", argv, WEXITSTATUS(wstatus));
     } else if (WIFSIGNALED(wstatus)) {
-        cerr << "Process '" << argv << "' terminated by signal " << WTERMSIG(wstatus) << endl;
+        logger->warn("Process '{}' terminated by signal {}", argv, WTERMSIG(wstatus));
     }
 }

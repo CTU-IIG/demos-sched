@@ -24,6 +24,7 @@ src/cpuset.c
 src/infinite_proc.cpp
 src/io.cpp
 src/io.hpp
+src/log.cpp
 src/majorframe.cpp
 src/majorframe_test.cpp
 src/meson.build

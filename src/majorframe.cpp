@@ -1,4 +1,5 @@
 #include "majorframe.hpp"
+#include "log.hpp"
 
 using namespace std;
 
@@ -47,9 +48,7 @@ void MajorFrame::stop()
 
 void MajorFrame::timeout_cb()
 {
-#ifdef VERBOSE
-    cerr << __PRETTY_FUNCTION__ << endl;
-#endif
+    logger->trace(__PRETTY_FUNCTION__);
 
     current_win->get()->stop();
     move_to_next_window();
@@ -80,8 +79,7 @@ void MajorFrame::empty_cb()
     for (auto &w : windows)
         if (!w->is_empty())
             return;
-#ifdef VERBOSE
-    cerr << __PRETTY_FUNCTION__ << endl;
-#endif
+
+    logger->debug("All processes exited");
     loop.break_loop(ev::ALL);
 }

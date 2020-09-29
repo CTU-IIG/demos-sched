@@ -1,6 +1,7 @@
 #include "partition.hpp"
 #include <algorithm>
 #include <string.h>
+#include "log.hpp"
 
 using namespace std::placeholders;
 using namespace std;
@@ -134,9 +135,7 @@ void Partition::move_to_next_proc()
 
 void Partition::proc_exit_cb(Process &proc)
 {
-#ifdef VERBOSE
-    cerr << __PRETTY_FUNCTION__ << " partition: " << name << " pid: " << proc.get_pid() << endl;
-#endif
+    logger->debug("{} partition: {}, pid: {}", __FUNCTION__, name, proc.get_pid());
 
     // check if there is no running processes in this partition
     for (auto &p : processes) {

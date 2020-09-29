@@ -8,7 +8,7 @@ executable('demos-sched',
            ['demos-sched.cpp','process.cpp','partition.cpp',
             'slice.cpp','window.cpp','majorframe.cpp',
             'cgroup.cpp', 'timerfd.cpp', 'evfd.cpp',
-            'config.cpp', 'cpuset.c'
+            'config.cpp', 'cpuset.c', 'log.cpp'
 	   ],
 	   cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']) +
 		      [ '-DHAVE_DECL_CPU_ALLOC' ], # See cpuset.h

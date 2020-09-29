@@ -15,6 +15,9 @@
 #include <cassert>
 #include <cstring>
 
+#include "log.hpp"
+#include "spdlog/cfg/env.h"
+
 using namespace std;
 using namespace std::chrono_literals;
 
@@ -213,6 +216,10 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    // Set loglevel from environment, e.g., export SPDLOG_LEVEL=info
+    spdlog::cfg::load_env_levels();
+    logger->set_pattern(">>> %H:%M:%S.%e [%^%l%$] %v");
+
     auto start_time = chrono::steady_clock::now();
 
     ev::default_loop loop;
@@ -249,7 +256,7 @@ int main(int argc, char *argv[])
 
         config.create_demos_objects(cc, windows, partitions);
 
-        cerr << "Parsed " << pluralize(partitions.size(), "partition") << " and " << pluralize(windows.size(), "window") << endl;
+        logger->info("Parsed " + pluralize(partitions.size(), "partition") + " and " + pluralize(windows.size(), "window"));
 
         if (partitions.size() == 0 || windows.size() == 0)
             errx(1, "Need at least one partition in one window");
@@ -260,15 +267,15 @@ int main(int argc, char *argv[])
         // configure linux scheduler
         struct sched_param sp = { .sched_priority = 99 };
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1)
-            cerr << "Warning: running demos without rt priority, consider running as root" << endl;
+            logger->warn("Running demos without rt priority, consider running as root");
 
         loop.run();
 
     } catch (const exception &e) {
-        cerr << e.what() << endl;
+        logger->error("Exception: {}", e.what());
         return 1;
     } catch (...) {
-        cerr << "Unknown exception" << endl;
+        logger->critical("Unknown exception");
         return 1;
     }
 
