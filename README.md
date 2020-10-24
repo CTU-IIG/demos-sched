@@ -23,6 +23,8 @@ Then build everything by running:
 
     make
 
+Output binary will be created in `./build/src/demos-sched` for native build.
+
 ### Cross compilation
 
 DEmOS scheduler can be easily cross compiled thanks to [Meson cross
@@ -30,7 +32,7 @@ compilation support][cross]. We support cross compilation for 64bit
 ARM out of the box:
 
     sudo apt install g++-aarch64-linux-gnu
-	make aarch64
+    make aarch64
 
 The resulting binary `build-aarch64/src/demos-sched` can be copied to
 the target ARM system.
