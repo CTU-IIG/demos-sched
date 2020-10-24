@@ -36,5 +36,6 @@ if meson.version().version_compare('>=0.52')
   yaml_cpp_dep = yaml_cpp_dep.as_system()
 endif
 
+subdir('lib')
 subdir('src')
 subdir('test')

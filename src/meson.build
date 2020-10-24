@@ -60,13 +60,6 @@ executable('yaml-demo',
            ['yaml_demo.cpp'],
            dependencies : yaml_cpp_dep)
 
-incdir = include_directories('../include')
-libdemos_sch = library('demos-sch', [ 'demos-sch.c' ],
-		       include_directories : incdir)
-libdemos_sch_dep = declare_dependency(
-  link_with : libdemos_sch,
-  include_directories : incdir,
-)
 
 executable('api-test', ['api_test.c'],
            dependencies : [ libdemos_sch_dep ])
