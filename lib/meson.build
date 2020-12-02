@@ -6,3 +6,6 @@ libdemos_sch_dep = declare_dependency(
   link_with : libdemos_sch,
   include_directories : incdir,
 )
+
+pkg = import('pkgconfig')
+pkg.generate(libdemos_sch)
