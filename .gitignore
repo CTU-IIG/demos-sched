@@ -5,3 +5,6 @@ src/a.out
 tags
 Session.vim
 demos-sched.creator.user
+
+/.idea/
+/.vscode/
