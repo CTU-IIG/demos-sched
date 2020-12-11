@@ -18,8 +18,9 @@ void Window::set_empty_cb(std::function<void()> new_empty_cb)
 
 void Window::start()
 {
-    for (auto &s : slices)
+    for (auto &s : slices) {
         s->start();
+    }
 }
 
 void Window::stop()
@@ -42,8 +43,7 @@ bool Window::is_empty()
 void Window::empty_slice_cb()
 {
     for (auto &s : slices)
-        if (!s->is_empty())
-            return;
+        if (!s->is_empty()) return;
 #ifdef VERBOSE
     cerr << __PRETTY_FUNCTION__ << endl;
 #endif

@@ -42,8 +42,9 @@ ev::timerfd::~timerfd()
 
 void ev::timerfd::ev_callback(ev::io &w, int revents)
 {
-    if (EV_ERROR & revents)
+    if (EV_ERROR & revents) {
         err(1, "ev cb: got invalid event");
+    }
 
     // std::cout << "timeout " << std::endl;
     // read to have empty fd

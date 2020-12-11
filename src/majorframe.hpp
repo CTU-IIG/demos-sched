@@ -9,6 +9,11 @@
 
 typedef std::vector<std::unique_ptr<Window>> Windows;
 
+/**
+ * Container for all time windows.
+ *
+ * Switches between windows in a cycle (in order, starting from the first one).
+ */
 class MajorFrame
 {
 public:

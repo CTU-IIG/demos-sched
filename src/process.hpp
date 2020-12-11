@@ -9,11 +9,19 @@
 
 #include "cgroup.hpp"
 #include "demossched.hpp"
-#include "timerfd.hpp"
 #include "evfd.hpp"
+#include "timerfd.hpp"
 
 class Partition;
 
+/**
+ * Represents a single system process (started as a shell command), with a fixed time budget.
+ * Process budget is per window cycle - in each window cycle, given process can
+ * only run that long before it is suspended and the next process from the parent
+ * partition is ran (if such process exists).
+ *
+ * Starts in frozen state.
+ */
 class Process
 {
 public:
@@ -23,7 +31,7 @@ public:
             std::string argv,
             std::chrono::nanoseconds budget,
             std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
-            bool contionuous = false);
+            bool continuous = false);
 
     // bool is_completed();
     void exec();
@@ -58,7 +66,7 @@ private:
     void completed_cb();
     void child_terminated_cb(ev::child &w, int revents);
 
-    //        std::string partition_cgrp_name;
+    // std::string partition_cgrp_name;
     std::string argv;
     std::chrono::nanoseconds budget;
     std::chrono::nanoseconds budget_jitter;
@@ -68,7 +76,7 @@ private:
     bool continuous;
     bool running = false;
     pid_t pid = -1;
-    //        Cgroup cgroup;
+    // Cgroup cgroup;
 };
 
 #endif

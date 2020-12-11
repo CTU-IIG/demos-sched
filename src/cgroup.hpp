@@ -21,8 +21,8 @@
 #include <sys/types.h>
 #include <vector>
 
-#include "cpu_set.hpp"
 #include "config.h"
+#include "cpu_set.hpp"
 
 // cpu usage mask
 typedef std::bitset<MAX_CPUS> Cpu;
@@ -79,7 +79,7 @@ public:
 
 private:
     int fd_cpus = -1;
-    cpu_set current_cpus = {0};
+    cpu_set current_cpus = { 0 };
 };
 
 // Monitors cgroup.events (Cgroups v2) for changes and on every change

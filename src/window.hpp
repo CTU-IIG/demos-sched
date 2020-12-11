@@ -9,6 +9,10 @@
 
 typedef std::vector<std::unique_ptr<Slice>> Slices;
 
+/**
+ * Represents a time interval when given slices are running on the CPU. Has a
+ * defined duration (window length). Each window can contain multiple slices.
+ */
 class Window
 {
 public:

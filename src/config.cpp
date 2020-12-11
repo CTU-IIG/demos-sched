@@ -1,9 +1,9 @@
 #include "config.hpp"
-#include <exception>
-#include "window.hpp"
-#include "partition.hpp"
 #include "cpu_set.hpp"
+#include "partition.hpp"
+#include "window.hpp"
 #include <cmath>
+#include <exception>
 
 using namespace std;
 using namespace YAML;
@@ -28,8 +28,7 @@ void Config::loadStr(string cfg)
     }
 }
 
-Node Config::normalize_process(const Node &proc,
-                               float default_budget)
+Node Config::normalize_process(const Node &proc, float default_budget)
 {
     Node norm_proc;
     if (proc.IsScalar()) {
@@ -37,18 +36,20 @@ Node Config::normalize_process(const Node &proc,
     } else {
         for (auto key : proc) {
             string k = key.first.as<string>();
-            if (k == "cmd")
+            if (k == "cmd") {
                 norm_proc[k] = proc[k].as<string>();
-            else if (k == "budget")
+            } else if (k == "budget") {
                 norm_proc[k] = proc[k].as<int>();
-            else
+            } else {
                 throw runtime_error("Unexpected key: " + k);
+            }
         }
     }
 
     if (!norm_proc["budget"]) {
-        if (isnan(default_budget))
-                throw runtime_error("Missing budget");
+        if (isnan(default_budget)) {
+            throw runtime_error("Missing budget");
+        }
         norm_proc["budget"] = default_budget;
     }
 
@@ -59,8 +60,9 @@ Node Config::normalize_processes(const Node &processes, float total_budget)
 {
     Node norm_processes;
     if (processes.IsSequence()) {
-        for (const auto &proc : processes)
+        for (const auto &proc : processes) {
             norm_processes.push_back(normalize_process(proc, total_budget / processes.size()));
+        }
     } else {
         norm_processes.push_back(normalize_process(processes, total_budget));
     }
@@ -68,8 +70,7 @@ Node Config::normalize_processes(const Node &processes, float total_budget)
 }
 
 Node Config::normalize_partition(const Node &part,
-                                 float total_budget // can be NAN to enforce budget
-                                 )
+                                 float total_budget) // can be NAN to enforce budget
 {
     Node norm_part, processes;
 
@@ -111,25 +112,23 @@ Node Config::normalize_partition(const Node &part,
     return norm_part;
 }
 
-string Config::process_xx_partition_and_get_name(
-        const Node &part,
-        float total_budget,
-        Node &partitions // out: partitions defind here
-        )
+string Config::process_xx_partition_and_get_name(const Node &part,
+                                                 float total_budget,
+                                                 Node &partitions) // out: partitions defind here
 {
-    if (part.IsScalar()) // string in canonical configuration
+    if (part.IsScalar()) {
+        // string in canonical configuration
         return part.as<string>();
+    }
 
     Node norm_part = normalize_partition(part, total_budget);
     partitions.push_back(norm_part);
     return norm_part["name"].as<string>();
 }
 
-string Config::process_xx_processes_and_get_name(
-        const Node &processes,
-        float total_budget,
-        Node &partitions // out: partitions defind here
-        )
+string Config::process_xx_processes_and_get_name(const Node &processes,
+                                                 float total_budget,
+                                                 Node &partitions) // out: partitions defind here
 {
     Node part;
     part["processes"] = processes;
@@ -140,8 +139,7 @@ string Config::process_xx_processes_and_get_name(
 
 Node Config::normalize_slice(const Node &slice,
                              float win_length,
-                             Node &partitions // out: partitions defined in the slice
-                             )
+                             Node &partitions) // out: partitions defined in the slice
 {
     Node norm_slice;
 
@@ -150,33 +148,36 @@ Node Config::normalize_slice(const Node &slice,
         if (k == "cpu")
             norm_slice[k] = slice[k].as<string>();
         else if (k == "sc_partition")
-            norm_slice[k] = process_xx_partition_and_get_name(slice[k], win_length * 0.6, partitions);
+            // if process budget is not set, 0.6 * window length is used as a default for SC
+            // partition otherwise, SC partition would use up the whole budget, not leaving any
+            // space for BE partition
+            norm_slice[k] =
+              process_xx_partition_and_get_name(slice[k], win_length * 0.6, partitions);
         else if (k == "be_partition")
-            norm_slice[k] = process_xx_partition_and_get_name(slice[k], win_length * 1.0, partitions);
+            norm_slice[k] =
+              process_xx_partition_and_get_name(slice[k], win_length * 1.0, partitions);
         else if (k == "sc_processes")
-            norm_slice["sc_partition"] = process_xx_processes_and_get_name(slice[k], win_length * 0.6, partitions);
+            norm_slice["sc_partition"] =
+              process_xx_processes_and_get_name(slice[k], win_length * 0.6, partitions);
         else if (k == "be_processes")
-            norm_slice["be_partition"] = process_xx_processes_and_get_name(slice[k], win_length * 1.0, partitions);
+            norm_slice["be_partition"] =
+              process_xx_processes_and_get_name(slice[k], win_length * 1.0, partitions);
         else
             throw runtime_error("Unexpected key: " + k);
     }
     return norm_slice;
 }
 
-Node Config::normalize_window(
-        const Node &win, // in: window to normalize
-        Node &partitions // out: partitions defined in windows
-        )
+Node Config::normalize_window(const Node &win,  // in: window to normalize
+                              Node &partitions) // out: partitions defined in windows
 {
     Node norm_win;
     int win_length = win["length"].as<int>();
 
-    if (win["slices"] &&
-        (win["sc_partition"] || win["be_partition"]))
-            throw runtime_error("Cannot have both 'slices' and '*_partition' in windows definition.");
-    if (win["slices"] &&
-        (win["sc_processes"] || win["be_processes"]))
-            throw runtime_error("Cannot have both 'slices' and '*_processes' in windows definition.");
+    if (win["slices"] && (win["sc_partition"] || win["be_partition"]))
+        throw runtime_error("Cannot have both 'slices' and '*_partition' in windows definition.");
+    if (win["slices"] && (win["sc_processes"] || win["be_processes"]))
+        throw runtime_error("Cannot have both 'slices' and '*_processes' in windows definition.");
     if ((win["sc_partition"] && win["sc_processes"]) ||
         (win["be_partition"] && win["be_processes"]))
         throw runtime_error("Cannot have both '*_partition' and '*_processes' in the same window.");
@@ -190,8 +191,7 @@ Node Config::normalize_window(
             for (const auto &slice : win[k])
                 slices.push_back(normalize_slice(slice, win_length, partitions));
             norm_win[k] = slices;
-        }
-        else if (k == "sc_partition")
+        } else if (k == "sc_partition")
             ;
         else if (k == "be_partition")
             ;
@@ -206,9 +206,9 @@ Node Config::normalize_window(
     if (!norm_win["slices"]) {
         Node slice;
         slice["cpu"] = "0-" + to_string(MAX_CPUS - 1);
-        for (const string &key : { "sc_partition", "be_partition", "sc_processes", "be_processes" }) {
-            if (win[key])
-                slice[key] = win[key];
+        for (const string &key :
+             { "sc_partition", "be_partition", "sc_processes", "be_processes" }) {
+            if (win[key]) slice[key] = win[key];
         }
         norm_win["slices"].push_back(normalize_slice(slice, win_length, partitions));
     }
@@ -218,17 +218,20 @@ Node Config::normalize_window(
 void Config::normalize()
 {
     Node norm_partitions;
-    for (const auto &part : config["partitions"])
+    for (const auto &part : config["partitions"]) {
         norm_partitions.push_back(normalize_partition(part, NAN));
+    }
     config.remove("partitions");
 
     Node norm_windows;
-    for (const auto &win : config["windows"])
+    for (const auto &win : config["windows"]) {
         norm_windows.push_back(normalize_window(win, norm_partitions));
+    }
     config.remove("windows");
 
-    for (const auto &node : config)
+    for (const auto &node : config) {
         throw runtime_error("Unexpected key: " + node.first.as<string>());
+    }
 
     Node norm_config;
     norm_config["partitions"] = norm_partitions;
@@ -239,16 +242,14 @@ void Config::normalize()
 
 static Partition *find_partition(const string name, Partitions &partitions)
 {
-    for (auto &p : partitions)
-        if (p.get_name() == name)
-            return &p;
+    for (auto &p : partitions) {
+        if (p.get_name() == name) return &p;
+    }
     throw runtime_error("Could not find partition: " + name);
 }
 
 // TODO: Move this out of Config to new DemosSched class
-void Config::create_demos_objects(const CgroupConfig &c,
-                                  Windows &windows,
-                                  Partitions &partitions)
+void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions)
 {
     for (auto ypart : config["partitions"]) {
         partitions.emplace_back(
@@ -262,7 +263,6 @@ void Config::create_demos_objects(const CgroupConfig &c,
     // Read current CPU affinity mask.
     cpu_set allowed_cpus;
     sched_getaffinity(0, allowed_cpus.size(), allowed_cpus.ptr());
-
 
     for (auto ywindow : config["windows"]) {
         int length = ywindow["length"].as<int>();
@@ -279,7 +279,8 @@ void Config::create_demos_objects(const CgroupConfig &c,
 
             cpu_set cpus(yslice["cpu"].as<string>());
             if ((cpus & allowed_cpus) != cpus) {
-                cerr << "Warning: Running on CPUs " << (cpus & allowed_cpus).as_list() << " instead of " << cpus.as_list() << endl;
+                cerr << "Warning: Running on CPUs " << (cpus & allowed_cpus).as_list()
+                     << " instead of " << cpus.as_list() << endl;
                 cpus &= allowed_cpus;
             }
             slices.push_back(

@@ -14,5 +14,4 @@ typedef struct
     std::chrono::steady_clock::time_point &start_time;
 } CgroupConfig;
 
-
 #endif // CONFIG_PARSING_HPP

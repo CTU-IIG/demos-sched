@@ -1,16 +1,26 @@
 #ifndef SLICE_HPP
 #define SLICE_HPP
 
+#include "cpu_set.hpp"
 #include "demossched.hpp"
 #include "partition.hpp"
 #include "timerfd.hpp"
 #include <chrono>
 #include <ev++.h>
 #include <functional>
-#include "cpu_set.hpp"
 
 typedef std::list<Partition> Partitions;
 
+/**
+ * Associates partitions/processes with a given CPU core set. Always scheduled as part of a Window.
+ *
+ * In each slice, there are potentially 2 partitions:
+ * - `sc_partition` = safety-critical partition
+ * - `be_partition` = best-effort partittion
+ *
+ * First, safety-critical partition is ran; after it finishes (either its time
+ * budget is exhausted, or it completes), best-effort partition is started.
+ */
 class Slice
 {
 public:
@@ -20,8 +30,8 @@ public:
           Partition *be,
           cpu_set cpus = cpu_set(0x1));
 
-    Slice(const Slice&) = delete;
-    const Slice& operator=(const Slice&) = delete;
+    Slice(const Slice &) = delete;
+    const Slice &operator=(const Slice &) = delete;
 
     void set_empty_cb(std::function<void()>);
 

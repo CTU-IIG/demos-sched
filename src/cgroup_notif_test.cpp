@@ -18,8 +18,9 @@ void io_cb(ev::io &w, int revents)
     int ret = CHECK(pread(w.fd, buf, sizeof(buf) - 1, 0));
     buf[ret] = 0;
     cout << "read " << ret << " bytes:" << endl << buf << endl;
-    if (string(buf).find("populated 0") != string::npos)
+    if (string(buf).find("populated 0") != string::npos) {
         w.loop.break_loop();
+    }
 }
 
 int main(int argc, char *argv[])

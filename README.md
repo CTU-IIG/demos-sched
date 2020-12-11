@@ -49,7 +49,97 @@ the target ARM system.
       -h                 print this message
 
 
-Format of configuration files is documented in the next section.
+Format of configuration files is documented in the next 2 sections.
+
+## Configuration terminology
+
+### Process
+Single system process (currently started as a shell command, might change in
+the future), with a fixed time budget. In each window, each process from the
+scheduled partition can run until it exhausts its time budget for the given
+window, signals completion using the scheduler API, or the window ends.
+
+Example config:
+```yaml
+- cmd: ./app1 args...
+  budget: 300
+```
+
+### Partition
+Container for a group of processes that are scheduled as a single unit. Only
+a single process from each partition can run at a time - processes are ran
+sequentially, starting from the first one (but see below).
+
+There are 2 types of partitions (see slice definition below).
+In safety-critical partitions, execution in each window restarts from the first
+process, even if not all processes had chance to run in the last window;
+in best-effort partitions, execution is continued from last unfinished process.
+
+Example config:
+```yaml
+partitions:
+  - name: partition1
+    processes:
+      - cmd: ./app1 args...
+        budget: 300
+      - cmd: ./app2 args...
+        budget: 500
+  - name: partition2
+    processes:
+      # any shell command can be used
+      - cmd: yes > /dev/null
+        budget: 200
+...
+```
+
+### Window
+"In these 3 seconds, run these slices (partitions on these cores)."
+
+Represents a time interval when given slices are running on the CPU. Has a
+defined duration (window length), then the next window is scheduled. Each
+window can contain multiple slices.
+
+Example config:
+```yaml
+...
+windows:
+  - length: 500
+    slices:
+      - cpu: 1
+        sc_partition: SC1
+        be_partition: BE1
+      - cpu: 2,5-7
+        be_partition: BE2
+```
+
+#### Major frame
+Container for all defined windows (used internally).
+
+### Slice
+"Run this partition on these CPU cores."
+
+Associates partitions/processes with a given CPU core set. Always nested
+inside a window. 
+
+In each slice, there are potentially 2 partitions:
+- `sc_partition` = safety-critical partition
+- `be_partition` = best-effort partittion
+
+First, safety-critical partition is ran; after it finishes (either its time
+budget is exhausted, or it completes), best-effort partition is started.
+
+Example configs:
+```yaml
+...
+- cpu: 1
+  sc_partition: SC1
+  be_partition: BE1
+```
+```yaml
+...
+- cpu: 2,5-7
+  be_partition: BE2
+```
 
 ## Guide for writing configurations
 
@@ -104,9 +194,9 @@ windows:
     slices:
       - cpu: 1
         sc_partition: SC1
-        be_partitions: BE1
+        be_partition: BE1
       - cpu: 2,5-7
-        be_partitions: BE2
+        be_partition: BE2
 ```
 
 ### Simplified form of configuration file
@@ -156,8 +246,12 @@ windows:
           sc_partition: anonymous_0
   ```
 
-- If process `budget` is not set, then the default budget `0.6 * length` of window is set for `sc_partition` processes and `length` of window is set for `be_partition` processes.
-- You can use `xx_processes` keyword for definition of partition by the list of commands.
+- If process `budget` is not set, then the default budget `0.6 * length` of
+  window is set for `sc_partition` processes and `length` of window is set for
+  `be_partition` processes.
+
+- You can use `xx_processes` keyword for definition of partition by the list
+  of commands:
 
   ``` yaml
   windows: [ {length: 500, sc_processes: [proc1, proc2]} ]

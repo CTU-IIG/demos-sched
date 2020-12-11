@@ -17,8 +17,9 @@ Slice::Slice(ev::loop_ref loop,
         sc->set_empty_cb(bind(&Slice::empty_partition_cb, this));
         sc->set_complete_cb(bind(&Slice::schedule_next, this));
     }
-    if (be)
+    if (be) {
         be->set_empty_cb(bind(&Slice::empty_partition_cb, this));
+    }
     timer.set(bind(&Slice::schedule_next, this));
 }
 
@@ -29,8 +30,7 @@ void Slice::set_empty_cb(function<void()> new_empty_cb)
 
 void Slice::move_proc_and_start_timer(Partition *p)
 {
-    if (!p)
-        return;
+    if (!p) return;
     p->move_to_next_unfinished_proc();
     timeout += p->get_current_proc().get_actual_budget();
     timer.start(timeout);
@@ -38,13 +38,12 @@ void Slice::move_proc_and_start_timer(Partition *p)
 
 void Slice::empty_partition_cb()
 {
-    if ( (!sc || sc->is_empty()) && (!be || be->is_empty())) {
+    if ((!sc || sc->is_empty()) && (!be || be->is_empty())) {
 #ifdef VERBOSE
         cerr << __PRETTY_FUNCTION__ << endl;
 #endif
         empty = true;
-        if (empty_cb)
-            empty_cb();
+        if (empty_cb) empty_cb();
     }
 }
 
@@ -74,8 +73,9 @@ void Slice::start()
 
 void Slice::stop()
 {
-    if (current_proc)
+    if (current_proc) {
         current_proc->freeze();
+    }
     timer.stop();
 }
 
@@ -100,9 +100,9 @@ void Slice::schedule_next()
     current_proc->freeze();
     current_proc->mark_completed();
 
-    if (sc && (!sc->is_empty() && !sc->is_completed() && sc->move_to_next_unfinished_proc()))
+    if (sc && !sc->is_empty() && !sc->is_completed() && sc->move_to_next_unfinished_proc())
         current_proc = &sc->get_current_proc();
-    else if (be && (!be->is_empty() && !be->is_completed() && be->move_to_next_unfinished_proc()))
+    else if (be && !be->is_empty() && !be->is_completed() && be->move_to_next_unfinished_proc())
         current_proc = &be->get_current_proc();
     else
         return;

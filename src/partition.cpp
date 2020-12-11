@@ -1,7 +1,7 @@
 #include "partition.hpp"
+#include "log.hpp"
 #include <algorithm>
 #include <string.h>
-#include "log.hpp"
 
 using namespace std::placeholders;
 using namespace std;
@@ -10,8 +10,8 @@ Partition::Partition(Cgroup &freezer_parent,
                      Cgroup &cpuset_parent,
                      Cgroup &events_parent,
                      std::string name)
-    : cgf(freezer_parent, name)
-    , cgc(cpuset_parent, name)
+    : cgc(cpuset_parent, name)
+    , cgf(freezer_parent, name)
     , cge(events_parent, name)
     , current_proc(nullptr)
     , name(name)
@@ -29,14 +29,16 @@ Process &Partition::get_current_proc()
 
 void Partition::freeze()
 {
-    for (Process &p : processes)
+    for (auto &p : processes) {
         p.freeze();
+    }
 }
 
 void Partition::unfreeze()
 {
-    for (Process &p : processes)
+    for (auto &p : processes) {
         p.unfreeze();
+    }
 }
 
 void Partition::add_process(ev::loop_ref loop,
@@ -57,8 +59,7 @@ void Partition::add_process(ev::loop_ref loop,
 
     // cerr<< cmd_name <<endl;
 
-    processes.emplace_back(
-      loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
+    processes.emplace_back(loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
     proc_count++;
     current_proc = processes.begin();
     empty = false;
@@ -66,7 +67,7 @@ void Partition::add_process(ev::loop_ref loop,
 
 void Partition::exec_processes()
 {
-    for (auto& p : processes) {
+    for (auto &p : processes) {
         p.exec();
         cgc.add_process(p.get_pid());
     }
@@ -87,8 +88,9 @@ bool Partition::move_to_next_unfinished_proc()
 {
     for (size_t i = 0; i < processes.size(); i++) {
         move_to_next_proc();
-        if (!current_proc->is_completed())
+        if (!current_proc->is_completed()) {
             return true;
+        }
     }
     completed = true;
     return false;
@@ -102,8 +104,9 @@ bool Partition::is_completed()
 void Partition::clear_completed_flag()
 {
     completed = false;
-    for (Process &p : processes)
+    for (auto &p : processes) {
         p.mark_uncompleted();
+    }
 }
 
 bool Partition::is_empty()
@@ -113,7 +116,7 @@ bool Partition::is_empty()
 
 void Partition::kill_all()
 {
-    for (Process &p : processes) {
+    for (auto &p : processes) {
         p.kill();
     }
 }
@@ -136,22 +139,25 @@ string Partition::get_name() const
 // cyclic queue
 void Partition::move_to_next_proc()
 {
-    if (++current_proc == processes.end())
-        current_proc = processes.begin();
+    if (++current_proc == processes.end()) {
+        move_to_first_proc();
+    }
 }
 
 void Partition::proc_exit_cb(Process &proc)
 {
-    logger->debug("{} partition: {}, pid: {}", __FUNCTION__, name, proc.get_pid());
+    logger->debug("Process '{}' exited (partition '{}')", proc.get_pid(), name);
 
     // check if there is no running processes in this partition
     for (auto &p : processes) {
-        if (p.is_running())
+        if (p.is_running()) {
             return;
+        }
     }
 
     empty = true;
-    // notify all slices which owns this partition that there is no running process
-    for (auto &cb : empty_cbs)
+    // notify all slices which own this partition that there is no running process
+    for (auto &cb : empty_cbs) {
         cb();
+    }
 }

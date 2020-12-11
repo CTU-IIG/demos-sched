@@ -1,7 +1,7 @@
 #include "cgroup.hpp"
+#include "log.hpp"
 #include <err.h>
 #include <fstream>
-#include "log.hpp"
 
 #include "demossched.hpp"
 
@@ -10,14 +10,13 @@ using namespace std;
 Cgroup::Cgroup(string path, bool may_exist)
     : path(path)
 {
-    logger->debug("Creating cgroup {}", path);
+    logger->trace("Creating cgroup {}", path);
     try {
         CHECK_MSG(mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), "mkdir " + path);
     } catch (system_error &e) {
         switch (e.code().value()) {
             case EEXIST:
-                if (may_exist)
-                    remove = false;
+                if (may_exist) remove = false;
                 break;
             default:
                 throw;
@@ -35,10 +34,11 @@ Cgroup::Cgroup(Cgroup &parent, string name)
 
 Cgroup::~Cgroup()
 {
-    if (path.empty() || !remove)
+    if (path.empty() || !remove) {
         return;
+    }
 
-    logger->debug("Removing cgroup {}", path);
+    logger->trace("Removing cgroup {}", path);
 
     int ret = rmdir(path.c_str());
     if (ret == -1) {
@@ -48,7 +48,7 @@ Cgroup::~Cgroup()
 
 void Cgroup::add_process(pid_t pid)
 {
-    logger->debug("Adding PID {} to cgroup {}", pid, path);
+    logger->trace("Adding PID {} to cgroup {}", pid, path);
 
     // ofstream( path + "/cgroup.procs" ) << pid; // WHY THIS DOESNT THROW?
     int fd = CHECK(open((path + "/cgroup.procs").c_str(), O_NONBLOCK | O_RDWR));

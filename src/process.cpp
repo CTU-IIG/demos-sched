@@ -1,12 +1,12 @@
 #include "process.hpp"
+#include "log.hpp"
 #include "partition.hpp"
 #include <functional>
 #include <stdio.h>
 #include <stdlib.h>
-#include <system_error>
 #include <sys/eventfd.h>
 #include <sys/wait.h>
-#include "log.hpp"
+#include <system_error>
 
 using namespace std::placeholders;
 using namespace std;
@@ -17,7 +17,7 @@ Process::Process(ev::loop_ref loop,
                  string argv,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter,
-                 bool contionuous)
+                 bool continuous)
     : loop(loop)
     , completed_w(loop)
     , child_w(loop)
@@ -29,7 +29,7 @@ Process::Process(ev::loop_ref loop,
     , budget(budget)
     , budget_jitter(budget_jitter)
     , actual_budget(budget)
-    , continuous(contionuous)
+    , continuous(continuous)
 //, cgroup(loop, true, argv[0], partition_cgrp_name)
 // TODO regex to cut argv[0] at "/"
 //, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
@@ -54,6 +54,7 @@ void Process::exec()
     if (pid == 0) {
         // CHILD PROCESS
         char val[100];
+        // passed descriptor is used for communication with demos process library
         sprintf(val, "%d,%d", completed_w.get_fd(), efd_continue);
         CHECK(setenv("DEMOS_FDS", val, 1));
         CHECK(execl("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr));
@@ -105,8 +106,7 @@ bool Process::is_completed() const
 
 void Process::mark_completed()
 {
-    if (!continuous)
-        completed = true;
+    if (!continuous) completed = true;
 }
 
 void Process::mark_uncompleted()

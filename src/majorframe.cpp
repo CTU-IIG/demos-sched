@@ -23,8 +23,9 @@ MajorFrame::MajorFrame(ev::loop_ref loop,
 
 void MajorFrame::move_to_next_window()
 {
-    if (++current_win == windows.end())
+    if (++current_win == windows.end()) {
         current_win = windows.begin();
+    }
 }
 
 Window &MajorFrame::get_current_window()
@@ -48,7 +49,7 @@ void MajorFrame::stop()
 
 void MajorFrame::timeout_cb()
 {
-    logger->trace(__PRETTY_FUNCTION__);
+    logger->trace("Window ended, starting next one");
 
     current_win->get()->stop();
     move_to_next_window();
@@ -76,9 +77,9 @@ void MajorFrame::sigint_cb(ev::sig &w, int revents)
 
 void MajorFrame::empty_cb()
 {
-    for (auto &w : windows)
-        if (!w->is_empty())
-            return;
+    for (auto &w : windows) {
+        if (!w->is_empty()) return;
+    }
 
     logger->debug("All processes exited");
     loop.break_loop(ev::ALL);

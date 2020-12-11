@@ -19,8 +19,9 @@
 #define CHECK_MSG(expr, message)                                                                   \
     ({                                                                                             \
         auto ret = (expr);                                                                         \
-        if (ret == -1)                                                                             \
+        if (ret == -1) {                                                                           \
             throw std::system_error(errno, std::generic_category(), message);                      \
+        }                                                                                          \
         ret;                                                                                       \
     })
 

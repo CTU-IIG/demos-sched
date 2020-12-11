@@ -2,17 +2,27 @@
 #define PARTITION_HPP
 
 #include "cgroup.hpp"
+#include "cpu_set.hpp"
 #include "demossched.hpp"
 #include "process.hpp"
 #include <chrono>
 #include <functional>
 #include <list>
-#include "cpu_set.hpp"
 
 using namespace std::placeholders;
 
 typedef std::list<Process> Processes;
 
+/**
+ * Container for a group of processes that are scheduled as a single unit. Only
+ * a single process from each partition can run at a time - processes are ran
+ * sequentially, starting from the first one (but see below).
+ *
+ * There are 2 types of partitions (depending on slice configuration):
+ * In safety-critical partitions, execution in each window restarts from the first
+ * process, even if not all processes had chance to run in the last window;
+ * in best-effort partitions, execution is continued from last unfinished process.
+ */
 class Partition
 {
 public:
@@ -45,14 +55,15 @@ public:
     bool is_empty();
     void kill_all();
 
-    void set_complete_cb(std::function<void ()> new_complete_cb);
+    void set_complete_cb(std::function<void()> new_complete_cb);
     void set_empty_cb(std::function<void()> new_empty_cb);
 
     std::string get_name() const;
 
     // protected:
-    CgroupFreezer cgf;
     CgroupCpuset cgc;
+    // cgf and cge are read by Process constructor in process.cpp
+    CgroupFreezer cgf;
     Cgroup cge;
     void proc_exit_cb(Process &proc);
     std::function<void()> completed_cb = nullptr;

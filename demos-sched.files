@@ -13,7 +13,7 @@ meson.build
 src/cgroup.cpp
 src/cgroup_notif_test.cpp
 src/cgroup_test.cpp
-src/cgrp.cpp
+src/cgroup_test2.cpp
 src/config.cpp
 src/config.hpp
 src/cpu_set.hpp

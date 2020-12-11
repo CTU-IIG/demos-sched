@@ -7,13 +7,13 @@
 #include <list>
 
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
+#include <cstring>
 #include <sched.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <cassert>
-#include <cstring>
 
 #include "log.hpp"
 #include "spdlog/cfg/env.h"
@@ -26,13 +26,18 @@ string opt_demos_cg_name = "demos";
 
 void print_help()
 {
+    // clang-format off
     cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
             "  -c <CONFIG_FILE>   path to configuration file\n"
             "  -C <CONFIG>        in-line configuration in YAML format\n"
             "  -g <CGROUP_NAME>   name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
             "  -s                 rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
             "  -d                 dump config file without execution\n"
-            "  -h                 print this message\n";
+            "  -h                 print this message\n"
+            "To control logger output, use the following environment variables:\n"
+            "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
+            "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)";
+    // clang-format on
 }
 
 void handle_cgroup_exc(stringstream &commands,
@@ -45,25 +50,34 @@ void handle_cgroup_exc(stringstream &commands,
         case EPERM:
             commands << "sudo mkdir " << sys_fs_cg_path << endl;
             break;
+
         case EROFS:
         case ENOENT:
-            if (sys_fs_cg_path.find("/sys/fs/cgroup/") != 0)
+            if (sys_fs_cg_path.find("/sys/fs/cgroup/") != 0) {
                 throw "Unexpected cgroup path " + sys_fs_cg_path;
-            if (sys_fs_cg_path.find("freezer/", 15) != string::npos) mount_cmds << "mount -t cgroup -o freezer none /sys/fs/cgroup/freezer";
-            if (sys_fs_cg_path.find("cpuset/",  15) != string::npos) mount_cmds << "mount -t cgroup -o cpuset none /sys/fs/cgroup/cpuset";
-            if (sys_fs_cg_path.find("unified/", 15) != string::npos) mount_cmds << "mount -t cgroup2 none /sys/fs/cgroup/unified";
-            else throw "Unexpected cgroup controller path" + sys_fs_cg_path;
+            }
+
+            if (sys_fs_cg_path.find("freezer/", 15) != string::npos) {
+                mount_cmds << "mount -t cgroup -o freezer none /sys/fs/cgroup/freezer";
+            } else if (sys_fs_cg_path.find("cpuset/", 15) != string::npos) {
+                mount_cmds << "mount -t cgroup -o cpuset none /sys/fs/cgroup/cpuset";
+            } else if (sys_fs_cg_path.find("unified/", 15) != string::npos) {
+                mount_cmds << "mount -t cgroup2 none /sys/fs/cgroup/unified";
+            } else {
+                throw "Unexpected cgroup controller path" + sys_fs_cg_path;
+            }
             mount_cmds << endl;
             break;
+
         default:
             throw;
     }
 }
 
 void create_toplevel_cgroups(Cgroup &unified,
-                       Cgroup &freezer,
-                       Cgroup &cpuset,
-                       const std::string demos_cg_name)
+                             Cgroup &freezer,
+                             Cgroup &cpuset,
+                             const std::string demos_cg_name)
 {
     string unified_path, freezer_path, cpuset_path;
     string cpus, mems;
@@ -75,13 +89,15 @@ void create_toplevel_cgroups(Cgroup &unified,
         ifstream cgroup_f("/proc/" + to_string(getpid()) + "/cgroup");
 
         while (cgroup_f >> num >> path) {
-            if (num == 0)
+            if (num == 0) {
                 unified_path = "/sys/fs/cgroup/unified" + path.substr(2) + "/" + demos_cg_name;
-            if (path.find(":freezer:") == 0)
+            }
+            if (path.find(":freezer:") == 0) {
                 freezer_path = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
+            }
             if (path.find(":cpuset:") == 0) {
                 cpuset_path = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
-                // Read settings from currect cpuset cgroup
+                // Read settings from correct cpuset cgroup
                 string cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
                 ifstream(cpuset_parent + "/cpuset.cpus") >> cpus;
                 ifstream(cpuset_parent + "/cpuset.mems") >> mems;
@@ -89,16 +105,20 @@ void create_toplevel_cgroups(Cgroup &unified,
         }
     }
 
-    // check access rights
-    stringstream commands, mount_cmds;
-
     assert(!unified_path.empty());
     assert(!freezer_path.empty());
     assert(!cpuset_path.empty());
 
-    struct Child {
+    logger->debug("Checking cgroup access permissions...");
+
+    stringstream commands, mount_cmds;
+
+    struct Child
+    {
         const pid_t pid;
-        Child() : pid(CHECK(fork())) {
+        Child()
+            : pid(CHECK(fork()))
+        {
             if (pid == 0) {
                 // Dummy child for cgroup permission testing
                 pause(); // wait for signal
@@ -109,7 +129,7 @@ void create_toplevel_cgroups(Cgroup &unified,
     } child;
 
     // TODO: Verify that commands added to the commands variable still
-    // make sense (after changing a bit cgroup structure).
+    //  make sense (after changing a bit cgroup structure).
 
     try {
         unified = Cgroup(unified_path, true);
@@ -120,7 +140,6 @@ void create_toplevel_cgroups(Cgroup &unified,
         unified.add_process(child.pid);
     } catch (system_error &) {
         commands << "sudo chown -R " << getuid() << " " << unified_path << endl;
-
         // MS: Why is the below command needed for unified and not other controllers?
         commands << "sudo echo " << getppid() << " > " << unified_path + "/cgroup.procs" << endl;
     }
@@ -130,7 +149,6 @@ void create_toplevel_cgroups(Cgroup &unified,
     } catch (system_error &e) {
         handle_cgroup_exc(commands, mount_cmds, e, freezer_path);
     }
-
     try {
         freezer.add_process(child.pid);
     } catch (system_error &) {
@@ -166,6 +184,8 @@ void create_toplevel_cgroups(Cgroup &unified,
              << commands.str();
         exit(1);
     }
+
+    logger->debug("Cgroup permission check passed");
 }
 
 string pluralize(int count, string noun)
@@ -173,25 +193,26 @@ string pluralize(int count, string noun)
     return to_string(count) + " " + noun + (count != 1 ? "s" : "");
 }
 
-void reexec_via_systemd_run(int argc, char *argv[], const Config &config)
+void reexec_via_systemd_run(int argc, char *argv[])
 {
-    vector<const char*> args({
-        "systemd-run", "--scope", "-p",  "Delegate=yes", "--user"
-    });
+    vector<const char *> args({ "systemd-run", "--scope", "-p", "Delegate=yes", "--user" });
 
-    for (int i = 0; i < argc; i++)
-        if (i == 0 || strcmp(argv[i], "-s") != 0)
+    for (int i = 0; i < argc; i++) {
+        if (i == 0 || strcmp(argv[i], "-s") != 0) {
             args.push_back(argv[i]);
+        }
+    }
     args.push_back(nullptr);
 
     for (const auto arg : args) {
-        if (arg)
+        if (arg) {
             cerr << arg << " ";
-        else
+        } else {
             cerr << endl;
+        }
     }
 
-    CHECK(execvp(args[0], const_cast<char**>(args.data())));
+    CHECK(execvp(args[0], const_cast<char **>(args.data())));
 }
 
 int main(int argc, char *argv[])
@@ -203,19 +224,19 @@ int main(int argc, char *argv[])
 
     while ((opt = getopt(argc, argv, "dhg:c:C:s")) != -1) {
         switch (opt) {
-            case 'g':
+            case 'g': // custom root cgroup name
                 opt_demos_cg_name = optarg;
                 break;
-            case 'c':
+            case 'c': // config file path
                 config_file = optarg;
                 break;
-            case 'C':
+            case 'C': // inline YAML config string
                 config_str = optarg;
                 break;
-            case 'd':
+            case 'd': // dump config file without execution
                 dump_config = true;
                 break;
-            case 's':
+            case 's': // rerun itself via systemd-run
                 systemd_run = true;
                 break;
             case 'h':
@@ -226,43 +247,51 @@ int main(int argc, char *argv[])
                 exit(1);
         }
     }
-    if (config_file.empty() && config_str.empty()) {
-        print_help();
-        exit(1);
+
+    // don't reexec when only dumping config
+    if (!dump_config && systemd_run) {
+        reexec_via_systemd_run(argc, argv);
     }
 
     // Set loglevel from environment, e.g., export SPDLOG_LEVEL=info
     spdlog::cfg::load_env_levels();
-    if (!getenv("DEMOS_PLAIN_LOG"))
+    if (!getenv("DEMOS_PLAIN_LOG")) {
         logger->set_pattern(">>> %H:%M:%S.%e [%^%l%$] %v");
-    else
+    } else {
         logger->set_pattern(">>> [%l] %v");
+    }
 
     auto start_time = chrono::steady_clock::now();
 
+    // demos is running in an event loop
     ev::default_loop loop;
 
     Config config;
 
     try {
+        // load config
         if (!config_file.empty()) {
             config.loadFile(config_file);
         } else if (!config_str.empty()) {
             config.loadStr(config_str);
+        } else {
+            // no config was passed
+            print_help();
+            exit(1);
         }
 
         config.normalize();
 
         if (dump_config) {
             cout << config.get() << endl;
-            return 0;
+            exit(0);
         }
 
-        if (systemd_run)
-            reexec_via_systemd_run(argc, argv, config);
-
+        // set up demos container cgroups
         Cgroup unified_root, freezer_root, cpuset_root;
         create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
+
+        logger->debug("Top level cgroups created");
 
         CgroupConfig cc = { .unified_cg = unified_root,
                             .cpuset_cg = cpuset_root,
@@ -274,33 +303,45 @@ int main(int argc, char *argv[])
 
         config.create_demos_objects(cc, windows, partitions);
 
-        logger->info("Parsed " + pluralize(partitions.size(), "partition") + " and " + pluralize(windows.size(), "window"));
+        logger->info("Parsed " + pluralize(partitions.size(), "partition") + " and " +
+                     pluralize(windows.size(), "window"));
 
-        if (partitions.size() == 0 || windows.size() == 0)
+        if (partitions.size() == 0 || windows.size() == 0) {
             errx(1, "Need at least one partition in one window");
+        }
 
-        for (auto &p : partitions)
+        // set up all processes (in frozen state)
+        for (auto &p : partitions) {
             p.exec_processes();
+        }
 
         MajorFrame mf(loop, start_time, move(windows));
         mf.start();
 
-        // configure linux scheduler
+        // configure linux scheduler - set highest possible priority for demos
         struct sched_param sp = { .sched_priority = 99 };
-        if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1)
+        if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
             logger->warn("Running demos without rt priority, consider running as root");
+        }
 
+        // everything is set up now, start the event loop
+        // the event loop terminates either on SIGTERM,
+        // SIGINT (Ctrl-c), or when all scheduled processes exit
+        logger->debug("Starting event loop");
         loop.run();
+        logger->debug("Event loop stopped");
 
-        for (auto &p : partitions)
+        // clean up processes
+        for (auto &p : partitions) {
             p.kill_all();
+        }
 
     } catch (const exception &e) {
         logger->error("Exception: {}", e.what());
-        return 1;
+        exit(1);
     } catch (...) {
         logger->critical("Unknown exception");
-        return 1;
+        exit(1);
     }
 
     return 0;

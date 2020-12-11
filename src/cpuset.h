@@ -1,3 +1,4 @@
+// clang-format off
 /*
  * This file may be redistributed under the terms of the
  * GNU Lesser General Public License.
@@ -97,3 +98,4 @@ extern char *cpumask_create(char *str, size_t len, cpu_set_t *set, size_t setsiz
 extern int cpumask_parse(const char *str, cpu_set_t *set, size_t setsize);
 
 #endif /* UTIL_LINUX_CPUSET_H */
+// clang-format on
