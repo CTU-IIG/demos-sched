@@ -60,14 +60,16 @@ void Partition::add_process(ev::loop_ref loop,
     processes.emplace_back(
       loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
     proc_count++;
-    current_proc = --processes.end();
+    current_proc = processes.begin();
     empty = false;
 }
 
 void Partition::exec_processes()
 {
-    current_proc->exec();
-    cgc.add_process(current_proc->get_pid());
+    for (auto& p : processes) {
+        p.exec();
+        cgc.add_process(p.get_pid());
+    }
 }
 
 void Partition::set_cpus(const cpu_set cpus)
