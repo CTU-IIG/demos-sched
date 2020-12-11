@@ -44,7 +44,7 @@ void Partition::unfreeze()
 void Partition::add_process(ev::loop_ref loop,
                             string argv,
                             chrono::nanoseconds budget,
-                            chrono::nanoseconds budget_jitter)
+                            bool has_initialization)
 {
     // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
 
@@ -59,7 +59,7 @@ void Partition::add_process(ev::loop_ref loop,
 
     // cerr<< cmd_name <<endl;
 
-    processes.emplace_back(loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
+    processes.emplace_back(loop, "proc" + to_string(proc_count), *this, argv, budget);
     proc_count++;
     current_proc = processes.begin();
     empty = false;

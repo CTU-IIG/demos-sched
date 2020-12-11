@@ -40,7 +40,7 @@ public:
     void add_process(ev::loop_ref loop,
                      std::string argv,
                      std::chrono::nanoseconds budget,
-                     std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
+                     bool has_initialization);
 
     void exec_processes();
 
