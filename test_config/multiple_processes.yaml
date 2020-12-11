@@ -1,0 +1,17 @@
+# runs multiple processes in a single partition
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: echo proc0 started; echo proc0 ended
+        budget: 100
+      - cmd: echo proc1 started; while true; do sleep 0.1; echo proc1; done
+        budget: 200
+      - cmd: echo proc2 started; while true; do sleep 0.1; echo proc2; done
+        budget: 300
+
+windows:
+  - length: 2000
+    slices:
+      - cpu: 0-1
+        sc_partition: SC1
