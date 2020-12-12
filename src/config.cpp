@@ -242,7 +242,7 @@ static Partition *find_partition(const string name, Partitions &partitions)
     for (auto &p : partitions)
         if (p.get_name() == name)
             return &p;
-    return nullptr;
+    throw runtime_error("Could not find partition: " + name);
 }
 
 // TODO: Move this out of Config to new DemosSched class
