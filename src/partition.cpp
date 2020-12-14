@@ -38,6 +38,13 @@ void Partition::unfreeze()
     }
 }
 
+void Partition::kill_all()
+{
+    for (auto &p : processes) {
+        p.kill();
+    }
+}
+
 void Partition::add_process(ev::loop_ref loop,
                             string argv,
                             chrono::nanoseconds budget,
@@ -118,13 +125,6 @@ string Partition::get_name() const
 bool Partition::is_empty() const
 {
     return empty;
-}
-
-void Partition::kill_all()
-{
-    for (auto &p : processes) {
-        p.kill();
-    }
 }
 
 void Partition::add_empty_cb(std::function<void()> new_empty_cb)

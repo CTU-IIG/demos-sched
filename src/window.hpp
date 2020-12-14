@@ -7,7 +7,7 @@
 #include <ev++.h>
 #include <list>
 
-typedef std::vector<std::unique_ptr<Slice>> Slices;
+using Slices = std::vector<std::unique_ptr<Slice>>;
 
 /**
  * Represents a time interval when given slices are running on the CPU. Has a

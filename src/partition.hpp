@@ -10,8 +10,7 @@
 #include <list>
 
 using namespace std::placeholders;
-
-typedef std::list<Process> Processes;
+using Processes = std::list<Process>;
 
 /**
  * Container for a group of processes that are scheduled as a single unit. Only
