@@ -1,0 +1,17 @@
+# one process with API support switched between two cpus
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: build/src/api-test
+        budget: 2000
+
+windows:
+  - length: 2000
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+  - length: 2000
+    slices:
+      - cpu: 1
+        sc_partition: SC1

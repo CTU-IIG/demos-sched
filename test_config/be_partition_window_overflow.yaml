@@ -1,0 +1,17 @@
+# BE partition longer than window size
+# currently, BE partition state is not reset between
+#  window switches, so it continues from last unfinished process
+
+windows:
+  - length: 1000
+    slices:
+      - cpu: 0
+        be_partition: BE1
+
+partitions:
+  - name: BE1
+    processes:
+      - cmd: echo proc0 started; while true; do sleep 0.1; echo proc0; done
+        budget: 900
+      - cmd: echo proc1 started; while true; do sleep 0.1; echo proc1; done
+        budget: 900
