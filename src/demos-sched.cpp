@@ -20,7 +20,6 @@
 #include "spdlog/cfg/env.h"
 
 using namespace std;
-using namespace std::chrono_literals;
 
 string opt_demos_cg_name = "demos";
 // size_t anonyme_partition_counter = 0;
@@ -262,11 +261,8 @@ int main(int argc, char *argv[])
         logger->set_pattern(">>> [%l] %v");
     }
 
-    auto start_time = chrono::steady_clock::now();
-
-    // demos is running in an event loop
+    // demos is running in a libev event loop
     ev::default_loop loop;
-
     Config config;
 
     try {
@@ -316,23 +312,26 @@ int main(int argc, char *argv[])
         }
 
         // configure linux scheduler - set highest possible priority for demos
+        // should be called after child process creation, we don't want children to inherit RT priority
         struct sched_param sp = { .sched_priority = 99 };
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
             logger->warn("Running demos without rt priority, consider running as root");
         }
 
         MajorFrame mf(loop, move(windows));
-        DemosScheduler sched(loop, mf);
+        DemosScheduler sched(loop, partitions, mf);
 
         // everything is set up now, start the event loop
         // the event loop terminates either on SIGTERM,
         //  SIGINT (Ctrl-c), or when all scheduled processes exit
-        sched.run([&] { mf.start(start_time); });
+        sched.run();
 
         // clean up processes
         for (auto &p : partitions) {
             p.kill_all();
         }
+
+        // TODO: there is still some quite rare race condition in the process and cgroup cleanup
 
     } catch (const exception &e) {
         logger->error("Exception: {}", e.what());

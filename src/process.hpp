@@ -31,9 +31,25 @@ public:
             std::string argv,
             std::chrono::nanoseconds budget,
             std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
-            bool continuous = false);
+            bool continuous = false,
+            bool has_initialization = false);
 
-    // bool is_completed();
+    Process(ev::loop_ref loop,
+            std::string name,
+            Partition &partition,
+            std::string argv,
+            std::chrono::nanoseconds budget,
+            bool has_initialization)
+        : Process(loop,
+                  name,
+                  partition,
+                  argv,
+                  budget,
+                  std::chrono::nanoseconds(0),
+                  false,
+                  has_initialization)
+    {}
+
     void exec();
     void kill();
 
@@ -41,11 +57,13 @@ public:
     void unfreeze();
     std::chrono::nanoseconds get_actual_budget();
 
+    pid_t get_pid() const;
+    bool needs_initialization() const;
+    bool is_running() const;
     bool is_completed() const;
+
     void mark_completed();
     void mark_uncompleted();
-    bool is_running() const;
-    pid_t get_pid() const;
 
     // delete copy constructor
     //        Process(const Process&) = delete;
@@ -72,6 +90,7 @@ private:
     bool completed = false;
     bool demos_completed = false;
     bool continuous;
+    bool has_initialization;
     pid_t pid = -1;
     // Cgroup cgroup;
 };
