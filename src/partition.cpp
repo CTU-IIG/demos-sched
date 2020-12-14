@@ -43,7 +43,8 @@ void Partition::add_process(ev::loop_ref loop,
                             chrono::nanoseconds budget,
                             bool has_initialization)
 {
-    processes.emplace_back(loop, "proc" + to_string(proc_count), *this, argv, budget);
+    processes.emplace_back(
+      loop, "proc" + to_string(proc_count), *this, argv, budget, has_initialization);
     proc_count++;
     current_proc = processes.begin();
     empty = false;
@@ -64,7 +65,7 @@ void Partition::reset(bool move_to_first_proc,
     clear_completed_flag();
     cgc.set_cpus(cpus);
     // if passed callback is empty (nullptr), set default callback
-    completed_cb = process_completion_cb ? process_completion_cb : default_completed_cb;
+    _completed_cb = process_completion_cb ? process_completion_cb : default_completed_cb;
     // for BE partition, we don't want to reset to first process
     if (move_to_first_proc) {
         current_proc = processes.begin();
@@ -73,7 +74,11 @@ void Partition::reset(bool move_to_first_proc,
 
 void Partition::disconnect()
 {
-    completed_cb = default_completed_cb;
+    _completed_cb = default_completed_cb;
+}
+
+void Partition::completed_cb() {
+    _completed_cb();
 }
 
 // cyclic queue
@@ -110,7 +115,7 @@ string Partition::get_name() const
     return name;
 }
 
-bool Partition::is_empty()
+bool Partition::is_empty() const
 {
     return empty;
 }

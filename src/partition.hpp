@@ -34,8 +34,12 @@ public:
 
     Process &get_current_proc();
 
-    void freeze();
+    /** Resumes all processes in this partition. Idempotent. */
     void unfreeze();
+    /** Freezes all processes in this partition. Idempotent. */
+    void freeze();
+    /** Kills all system processes from this partition. */
+    void kill_all();
 
     /**
      * Adds a new process to the partition,
@@ -76,11 +80,11 @@ public:
      */
     Process *find_unfinished_process();
 
-    bool is_empty();
-    void kill_all();
-
+    /** Registers a callback that is called when the partition is emptied (all processes ended). */
     void add_empty_cb(std::function<void()> new_empty_cb);
 
+    /** Returns true if there are no running processes inside this partition. */
+    bool is_empty() const;
     std::string get_name() const;
 
     // protected:
@@ -89,9 +93,7 @@ public:
     CgroupFreezer cgf;
     Cgroup cge;
     void proc_exit_cb(Process &proc);
-    // cached so that we don't recreate new std::function each time
-    std::function<void()> default_completed_cb = [] {};
-    std::function<void()> completed_cb = default_completed_cb;
+    void completed_cb();
 
 private:
     Processes processes = {};
@@ -106,6 +108,11 @@ private:
     void move_to_next_proc();
     void clear_completed_flag();
 
+    // cached so that we don't recreate new std::function each time
+    std::function<void()> default_completed_cb = [] {};
+    std::function<void()> _completed_cb = default_completed_cb;
+
+    // callbacks invoked when partition is empty (no running processes)
     std::vector<std::function<void()>> empty_cbs = {};
 };
 

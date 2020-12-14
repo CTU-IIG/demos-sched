@@ -17,7 +17,8 @@ Process::Process(ev::loop_ref loop,
                  string argv,
                  std::chrono::nanoseconds budget,
                  std::chrono::nanoseconds budget_jitter,
-                 bool continuous)
+                 bool continuous,
+                 bool has_initialization)
     : loop(loop)
     , completed_w(loop)
     , child_w(loop)
@@ -30,6 +31,7 @@ Process::Process(ev::loop_ref loop,
     , budget_jitter(budget_jitter)
     , actual_budget(budget)
     , continuous(continuous)
+    , has_initialization(has_initialization)
 //, cgroup(loop, true, argv[0], partition_cgrp_name)
 // TODO regex to cut argv[0] at "/"
 //, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
@@ -100,6 +102,10 @@ void Process::unfreeze()
 std::chrono::nanoseconds Process::get_actual_budget()
 {
     return actual_budget;
+}
+
+bool Process::needs_initialization() const {
+    return has_initialization;
 }
 
 bool Process::is_completed() const
