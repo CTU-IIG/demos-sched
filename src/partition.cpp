@@ -43,19 +43,6 @@ void Partition::add_process(ev::loop_ref loop,
                             chrono::nanoseconds budget,
                             bool has_initialization)
 {
-    // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
-
-    // get process name, after the last / in argv[0]
-    //    char *token, *cmd_name, *saveptr;
-    //    for ( char* cmd = argv[0];; cmd = nullptr) {
-    //        token = strtok_r(cmd,"/",&saveptr);
-    //        if( token == nullptr )
-    //            break;
-    //        cmd_name = token;
-    //    }
-
-    // cerr<< cmd_name <<endl;
-
     processes.emplace_back(loop, "proc" + to_string(proc_count), *this, argv, budget);
     proc_count++;
     current_proc = processes.begin();
