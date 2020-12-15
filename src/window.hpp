@@ -31,8 +31,7 @@ private:
     void empty_slice_cb();
     bool empty = true;
 
-    void default_empty_cb() {}
-    std::function<void()> empty_cb = std::bind(&Window::default_empty_cb, this);
+    std::function<void()> empty_cb = [] {};
 };
 
 #endif // WINDOW_HPP
