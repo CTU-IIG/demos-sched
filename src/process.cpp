@@ -27,10 +27,6 @@ Process::Process(ev::loop_ref loop,
     , budget(budget)
     , actual_budget(budget)
     , has_initialization(has_initialization)
-//, cgroup(loop, true, argv[0], partition_cgrp_name)
-// TODO regex to cut argv[0] at "/"
-//, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
-//, cge(loop, part.cgroup, name, std::bind(&Process::populated_cb, this, _1))
 {
     freeze();
     completed_w.set(std::bind(&Process::completed_cb, this));
@@ -45,6 +41,8 @@ void Process::exec()
     // create new process
     pid = CHECK(fork());
     running = true;
+    original_process_running = true;
+    killed = false;
 
     // launch new process
     if (pid == 0) {
@@ -68,11 +66,11 @@ void Process::exec()
 
 void Process::kill()
 {
-    if (is_running()) {
-        cgf.freeze();
-        cgf.kill_all();
-        cgf.unfreeze();
-    }
+    if (!is_running()) return;
+    cgf.freeze();
+    cgf.kill_all();
+    cgf.unfreeze();
+    killed = true;
 }
 
 void Process::freeze()
@@ -130,6 +128,13 @@ pid_t Process::get_pid() const
     return pid;
 }
 
+/** Called when the cgroup is empty and we want to signal it to partition. */
+void Process::handle_end()
+{
+    running = false;
+    part.proc_exit_cb();
+}
+
 /**
  * Called when the population of cgroup changes
  * (either it is now empty, or new process was added).
@@ -139,11 +144,17 @@ pid_t Process::get_pid() const
 void Process::populated_cb(bool populated)
 {
     if (populated) return;
-    // since the process was spawned before event loop started,
-    //  empty cgroup means that the process exited
-    logger->debug("Process '{}' exited (partition '{}', cmd: '{}')", pid, part.get_name(), argv);
-    running = false;
-    part.proc_exit_cb();
+    if (original_process_running) {
+        /* child_terminated_cb was not called yet; given that the
+           cgroup is now empty, it means that the termination event
+           should be pending; the callback will have more information
+           about how the process ended, so we'll not call proc_exit_cb
+           yet and leave that to the termination callback */
+        return;
+    }
+
+    logger->trace("Cgroup for process '{}' is empty", pid);
+    handle_end();
 }
 
 /**
@@ -163,19 +174,32 @@ void Process::completed_cb()
     part.completed_cb();
 }
 
-/**
- * Called when the child process terminates.
- * Seems to be always called later than `populated_cb(false)`.
- */
+/** Called when our spawned child process terminates. */
 void Process::child_terminated_cb(ev::child &w, int revents)
 {
     w.stop();
     int wstatus = w.rstatus;
+    // clang-format off
     if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != 0) {
-        logger->warn(
-          "Process '{}' exited with status {} (cmd: '{}')", pid, WEXITSTATUS(wstatus), argv);
-    } else if (WIFSIGNALED(wstatus)) {
-        logger->warn(
-          "Process '{}' terminated by signal {} (cmd: '{}')", pid, WTERMSIG(wstatus), argv);
+        logger->warn("Process '{}' exited with status {} (partition: '{}', cmd: '{}')",
+                     pid, WEXITSTATUS(wstatus), part.get_name(), argv);
+    } else if (WIFSIGNALED(wstatus) && !killed) { // don't warn if killed by scheduler
+        logger->warn("Process '{}' terminated by signal {} (partition: '{}', cmd: '{}')",
+                     pid, WTERMSIG(wstatus), part.get_name(), argv);
+    } else {
+        logger->debug("Process '{}' exited (partition '{}', cmd: '{}')",
+                      pid, part.get_name(), argv);
+    }
+    // clang-format on
+
+    original_process_running = false;
+
+    if (cge.read_populated_status()) {
+        // direct child exited, but the cgroup is not empty
+        // most probably, the child process left behind an orphaned child
+        logger->trace("Original process '{}' ended, but it has orphaned children", pid);
+        // we'll let `populated_cb` call `handle_end()` when the cgroup is emptied
+    } else {
+        handle_end(); // cgroup is empty
     }
 }

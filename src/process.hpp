@@ -35,7 +35,12 @@ public:
     /** Spawns the underlying system process. */
     void exec();
 
-    /** Kills the process, and all children in its cgroup. */
+    /**
+     * Kills the process, and all children in its cgroup.
+     *
+     * Does not wait for exit, you should wait for the exit of all processes
+     * on the parent partition using `set_empty_cb`.
+     */
     void kill();
 
     /** Freezes all processes in the cgroup of this process. */
@@ -71,9 +76,15 @@ private:
     // cannot be replaced by `pid >= 0`, as we want
     //  to keep pid even after process exits, to be
     //  able to correctly handle some delayed events
+    /** Indicates if the process or any of its (possibly detached) children are running. */
     bool running = false;
+    /** Indicates if the explicitly spawned process is running */
+    bool original_process_running = false;
+    /** Indicates if the process was killed using `Process::kill()`. */
+    bool killed = false;
     pid_t pid = -1;
 
+    void handle_end();
     void populated_cb(bool populated);
     void completed_cb();
     void child_terminated_cb(ev::child &w, int revents);
