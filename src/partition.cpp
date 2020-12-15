@@ -49,7 +49,7 @@ void Partition::add_process(ev::loop_ref loop,
     empty = false;
 }
 
-void Partition::exec_processes()
+void Partition::create_processes()
 {
     for (auto &p : processes) {
         p.exec();

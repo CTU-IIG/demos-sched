@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
 
         // set up all processes (in frozen state)
         for (auto &p : partitions) {
-            p.exec_processes();
+            p.create_processes();
         }
 
         // configure linux scheduler - set highest possible priority for demos
