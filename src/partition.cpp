@@ -16,9 +16,6 @@ Partition::Partition(Cgroup &freezer_parent,
     , current_proc(nullptr)
     , name(name)
 {
-#ifdef VERBOSE
-    std::cerr << __PRETTY_FUNCTION__ << " " << name << std::endl;
-#endif
     freeze();
 }
 
@@ -146,7 +143,7 @@ void Partition::move_to_next_proc()
 
 void Partition::proc_exit_cb(Process &proc)
 {
-    logger->debug("Process '{}' exited (partition '{}')", proc.get_pid(), name);
+    logger->debug("Process {} exited (partition '{}')", proc.get_pid(), name);
 
     // check if there is no running processes in this partition
     for (auto &p : processes) {
