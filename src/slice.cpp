@@ -16,22 +16,7 @@ Slice::Slice(ev::loop_ref loop, Partition *sc, Partition *be, cpu_set cpus)
     , cpus(cpus)
     , timer(loop)
 {
-    if (sc) sc->add_empty_cb(bind(&Slice::empty_partition_cb, this));
-    if (be) be->add_empty_cb(bind(&Slice::empty_partition_cb, this));
     timer.set(bind(&Slice::schedule_next, this));
-}
-
-void Slice::set_empty_cb(function<void()> new_empty_cb)
-{
-    empty_cb = new_empty_cb;
-}
-
-void Slice::empty_partition_cb()
-{
-    if ((!sc || sc->is_empty()) && (!be || be->is_empty())) {
-        empty = true;
-        empty_cb();
-    }
 }
 
 /**
@@ -88,11 +73,6 @@ void Slice::stop()
     if (sc) sc->disconnect();
     if (be) be->disconnect();
     timer.stop();
-}
-
-bool Slice::is_empty()
-{
-    return empty;
 }
 
 // Called as a response to timeout or process completion.

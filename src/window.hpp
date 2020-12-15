@@ -17,7 +17,6 @@ class Window
 {
 public:
     Window(Slices &&slices, std::chrono::nanoseconds length);
-    void set_empty_cb(std::function<void()> new_empty_cb);
 
     std::chrono::nanoseconds length;
     Slices slices;
@@ -25,13 +24,7 @@ public:
     void start(std::chrono::steady_clock::time_point current_time);
     void stop();
 
-    bool is_empty();
-
 private:
-    void empty_slice_cb();
-    bool empty = true;
-
-    std::function<void()> empty_cb = [] {};
 };
 
 #endif // WINDOW_HPP

@@ -80,7 +80,7 @@ public:
     Process *find_unfinished_process();
 
     /** Registers a callback that is called when the partition is emptied (all processes ended). */
-    void add_empty_cb(std::function<void()> new_empty_cb);
+    void set_empty_cb(std::function<void()> new_empty_cb);
 
     /** Returns true if there are no running processes inside this partition. */
     bool is_empty() const;
@@ -110,9 +110,8 @@ private:
     // cached so that we don't recreate new std::function each time
     std::function<void()> default_completed_cb = [] {};
     std::function<void()> _completed_cb = default_completed_cb;
-
-    // callbacks invoked when partition is empty (no running processes)
-    std::vector<std::function<void()>> empty_cbs = {};
+    // invoked when partition is empty (no running processes)
+    std::function<void()> empty_cb = [] {};
 };
 
 #endif // PARTITION_HPP
