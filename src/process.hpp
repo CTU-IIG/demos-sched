@@ -44,9 +44,7 @@ public:
     bool is_completed() const;
     void mark_completed();
     void mark_uncompleted();
-
-    bool is_running();
-
+    bool is_running() const;
     pid_t get_pid() const;
 
     // delete copy constructor
@@ -74,7 +72,6 @@ private:
     bool completed = false;
     bool demos_completed = false;
     bool continuous;
-    bool running = false;
     pid_t pid = -1;
     // Cgroup cgroup;
 };
