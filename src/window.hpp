@@ -22,9 +22,8 @@ public:
     std::chrono::nanoseconds length;
     Slices slices;
 
-    void start();
+    void start(std::chrono::steady_clock::time_point current_time);
     void stop();
-    void update_timeout(std::chrono::steady_clock::time_point actual_time);
 
     bool is_empty();
 

@@ -17,10 +17,10 @@ void Window::set_empty_cb(std::function<void()> new_empty_cb)
     empty_cb = new_empty_cb;
 }
 
-void Window::start()
+void Window::start(std::chrono::steady_clock::time_point current_time)
 {
     for (auto &s : slices) {
-        s->start();
+        s->start(current_time);
     }
 }
 
@@ -29,12 +29,6 @@ void Window::stop()
     for (auto &s : slices) {
         s->stop();
     }
-}
-
-void Window::update_timeout(std::chrono::steady_clock::time_point actual_time)
-{
-    for (auto &s : slices)
-        s->update_timeout(actual_time);
 }
 
 bool Window::is_empty()

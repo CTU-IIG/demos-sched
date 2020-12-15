@@ -7,7 +7,8 @@
 #include <ev++.h>
 #include <list>
 
-typedef std::vector<std::unique_ptr<Window>> Windows;
+using Windows = std::vector<std::unique_ptr<Window>>;
+using time_point = std::chrono::steady_clock::time_point;
 
 /**
  * Container for all time windows.
@@ -17,31 +18,24 @@ typedef std::vector<std::unique_ptr<Window>> Windows;
 class MajorFrame
 {
 public:
-    MajorFrame(ev::loop_ref loop,
-               std::chrono::steady_clock::time_point start_time,
-               Windows &&windows);
+    MajorFrame(ev::loop_ref loop, Windows &&windows);
 
-    Window &get_current_window();
-
-    void start();
+    void start(time_point start_time);
     void stop();
 
+    void set_completed_cb(std::function<void()> new_completed_cb);
+
 private:
-    // std::chrono::nanoseconds length; // do we need this?
-    ev::loop_ref loop;
+    ev::timerfd timer;
     Windows windows;
     Windows::iterator current_win;
-    ev::timerfd timer{ loop };
-    ev::sig sigint{ loop };
-    ev::sig sigterm{ loop };
+    // will be overwritten in start(...), value is not important
+    time_point timeout = time_point::min();
+    std::function<void()> completed_cb = []{};
 
     void move_to_next_window();
     void timeout_cb();
-    void sigint_cb(ev::sig &w, int revents);
     void empty_cb();
-    std::chrono::steady_clock::time_point timeout;
-
-    void kill_all();
 };
 
 #endif // MAJORFRAME_HPP

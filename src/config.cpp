@@ -297,7 +297,7 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
                 cpus &= allowed_cpus;
             }
             slices.push_back(
-              make_unique<Slice>(c.loop, c.start_time, sc_part_ptr, be_part_ptr, cpus));
+              make_unique<Slice>(c.loop, sc_part_ptr, be_part_ptr, cpus));
         }
 
         auto budget = chrono::milliseconds(length);

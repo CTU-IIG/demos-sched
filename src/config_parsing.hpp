@@ -11,7 +11,6 @@ typedef struct
     Cgroup &cpuset_cg;
     Cgroup &freezer_cg;
     ev::default_loop &loop;
-    std::chrono::steady_clock::time_point &start_time;
 } CgroupConfig;
 
 #endif // CONFIG_PARSING_HPP
