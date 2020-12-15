@@ -82,31 +82,41 @@ private:
     cpu_set current_cpus = { 0 };
 };
 
+class CgroupUnified : public Cgroup
+{
+public:
+    CgroupUnified(std::string parent_path, std::string name);
+    CgroupUnified(Cgroup &parent, std::string name);
+    ~CgroupUnified();
+
+    bool read_populated_status();
+
+protected:
+    int fd_events = -1;
+};
+
 // Monitors cgroup.events (Cgroups v2) for changes and on every change
 // calls populated_cb callback with information whether the cgroup is
 // populated or not.
-class CgroupEvents : public Cgroup
+class CgroupEvents : public CgroupUnified
 {
 public:
     CgroupEvents(ev::loop_ref loop,
                  std::string parent_path,
                  std::string name,
                  std::function<void(bool)> populated_cb);
-    CgroupEvents(ev::loop_ref loop,
-                 CgroupEvents &parent,
-                 std::string name,
-                 std::function<void(bool)> populated_cb);
+
     CgroupEvents(ev::loop_ref loop,
                  Cgroup &parent,
                  std::string name,
                  std::function<void(bool)> populated_cb);
+
     ~CgroupEvents();
 
 private:
-    int fd_events = -1;
     ev::io events_w;
     std::function<void(bool)> populated_cb;
-    void event_cb(ev::io &w, int revents);
+    void event_cb();
 };
 
 #endif // CGROUP_HPP
