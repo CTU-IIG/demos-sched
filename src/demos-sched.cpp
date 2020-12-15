@@ -215,6 +215,61 @@ void reexec_via_systemd_run(int argc, char *argv[])
     CHECK(execvp(args[0], const_cast<char **>(args.data())));
 }
 
+// TODO: after we figure out what else should this class contain,
+//  it should probably be moved to separate file
+class DemosScheduler
+{
+public:
+    DemosScheduler(ev::loop_ref loop, MajorFrame &mf)
+        : loop(loop)
+        , mf(mf)
+    {
+        mf.set_completed_cb([&] { loop.break_loop(ev::ALL); });
+
+        // setup signal handlers
+        sigint.set<DemosScheduler, &DemosScheduler::signal_cb>(this);
+        sigterm.set<DemosScheduler, &DemosScheduler::signal_cb>(this);
+        sigint.start(SIGINT);
+        sigterm.start(SIGTERM);
+    }
+
+    void run(std::function<void()> start_fn)
+    {
+        this->start_fn = start_fn;
+
+        // we create a zero-length timer and run start_fn in it
+        // that way, the function runs "inside" the event loop
+        // and there isn't a special case for the first function (start_fn)
+        // (otherwise, the first process was started before the event loop began)
+        ev::timer immediate{ loop };
+        immediate.set<DemosScheduler, &DemosScheduler::immediate_cb>(this);
+        immediate.set(0., 0.);
+        immediate.start();
+
+        logger->debug("Starting event loop");
+        loop.run();
+        logger->debug("Event loop stopped");
+    }
+
+private:
+    ev::loop_ref loop;
+    MajorFrame &mf;
+    ev::sig sigint{ loop };
+    ev::sig sigterm{ loop };
+    std::function<void()> start_fn = []{};
+
+    void immediate_cb() {
+        start_fn();
+    }
+
+    void signal_cb()
+    {
+        logger->info("Received stop signal (SIGTERM or SIGINT), stopping");
+        mf.stop();
+        loop.break_loop(ev::ALL);
+    }
+};
+
 int main(int argc, char *argv[])
 {
     int opt;
@@ -296,8 +351,7 @@ int main(int argc, char *argv[])
         CgroupConfig cc = { .unified_cg = unified_root,
                             .cpuset_cg = cpuset_root,
                             .freezer_cg = freezer_root,
-                            .loop = loop,
-                            .start_time = start_time };
+                            .loop = loop };
         Partitions partitions;
         Windows windows;
 
@@ -315,21 +369,19 @@ int main(int argc, char *argv[])
             p.exec_processes();
         }
 
-        MajorFrame mf(loop, start_time, move(windows));
-        mf.start();
-
         // configure linux scheduler - set highest possible priority for demos
         struct sched_param sp = { .sched_priority = 99 };
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
             logger->warn("Running demos without rt priority, consider running as root");
         }
 
+        MajorFrame mf(loop, move(windows));
+        DemosScheduler sched(loop, mf);
+
         // everything is set up now, start the event loop
         // the event loop terminates either on SIGTERM,
-        // SIGINT (Ctrl-c), or when all scheduled processes exit
-        logger->debug("Starting event loop");
-        loop.run();
-        logger->debug("Event loop stopped");
+        //  SIGINT (Ctrl-c), or when all scheduled processes exit
+        sched.run([&] { mf.start(start_time); });
 
         // clean up processes
         for (auto &p : partitions) {

@@ -3,14 +3,12 @@
 using namespace std;
 
 Slice::Slice(ev::loop_ref loop,
-             chrono::steady_clock::time_point start_time,
              Partition *sc,
              Partition *be,
              cpu_set cpus)
     : sc(sc)
     , be(be)
     , cpus(cpus)
-    , timeout(start_time)
     , timer(loop)
 {
     if (sc) {
@@ -44,7 +42,7 @@ void Slice::empty_partition_cb()
     }
 }
 
-void Slice::start()
+void Slice::start(std::chrono::steady_clock::time_point current_time)
 {
     if (sc) {
         sc->clear_completed_flag();
@@ -64,7 +62,7 @@ void Slice::start()
         return;
     }
     current_proc->unfreeze();
-    timeout += current_proc->get_actual_budget();
+    timeout = current_time + current_proc->get_actual_budget();
     timer.start(timeout);
 }
 
@@ -79,11 +77,6 @@ void Slice::stop()
 bool Slice::is_empty()
 {
     return empty;
-}
-
-void Slice::update_timeout(chrono::steady_clock::time_point actual_time)
-{
-    timeout = actual_time;
 }
 
 // Called as a response to timeout or process completion.

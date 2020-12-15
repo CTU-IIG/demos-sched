@@ -9,7 +9,8 @@
 #include <ev++.h>
 #include <functional>
 
-typedef std::list<Partition> Partitions;
+using Partitions = std::list<Partition>;
+using time_point = std::chrono::steady_clock::time_point;
 
 /**
  * Associates partitions/processes with a given CPU core set. Always scheduled as part of a Window.
@@ -25,7 +26,6 @@ class Slice
 {
 public:
     Slice(ev::loop_ref loop,
-          std::chrono::steady_clock::time_point start_time,
           Partition *sc,
           Partition *be,
           cpu_set cpus = cpu_set(0x1));
@@ -33,26 +33,26 @@ public:
     Slice(const Slice &) = delete;
     const Slice &operator=(const Slice &) = delete;
 
-    void set_empty_cb(std::function<void()>);
-
     Partition *sc;
     Partition *be;
     const cpu_set cpus;
-    void start();
+
+    void start(time_point current_time);
     void stop();
     bool is_empty();
-    void update_timeout(std::chrono::steady_clock::time_point actual_time);
+    void set_empty_cb(std::function<void()>);
 
 private:
     Process *current_proc = nullptr;
-    std::chrono::steady_clock::time_point timeout;
+    // will be overwritten in start(...), value is not important
+    time_point timeout = time_point::min();
     ev::timerfd timer;
+    bool empty = false;
+    std::function<void()> empty_cb = nullptr;
+
     void schedule_next();
     void move_proc_and_start_timer(Partition *p);
     void empty_partition_cb();
-    bool empty = false;
-
-    std::function<void()> empty_cb = nullptr;
 };
 
 #endif // SLICE_HPP
