@@ -25,14 +25,13 @@ using time_point = std::chrono::steady_clock::time_point;
 class Slice
 {
 public:
-    Slice(ev::loop_ref loop,
-          Partition *sc,
-          Partition *be,
-          cpu_set cpus = cpu_set(0x1));
+    Slice(ev::loop_ref loop, Partition *sc, Partition *be, cpu_set cpus = cpu_set(0x1));
 
     Slice(const Slice &) = delete;
     const Slice &operator=(const Slice &) = delete;
 
+    // these should really be std::optional, but since C++
+    //  is a half-assed, optional references are not a thing
     Partition *sc;
     Partition *be;
     const cpu_set cpus;
@@ -48,10 +47,13 @@ private:
     time_point timeout = time_point::min();
     ev::timerfd timer;
     bool empty = false;
-    std::function<void()> empty_cb = nullptr;
+    std::function<void()> empty_cb = [] {};
+    // cached, so that we don't create new std::function each time we set the callback
+    std::function<void()> completion_cb_cached = std::bind(&Slice::schedule_next, this);
 
+    bool load_next_process();
+    void start_current_process();
     void schedule_next();
-    void move_proc_and_start_timer(Partition *p);
     void empty_partition_cb();
 };
 

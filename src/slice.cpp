@@ -2,22 +2,22 @@
 
 using namespace std;
 
-Slice::Slice(ev::loop_ref loop,
-             Partition *sc,
-             Partition *be,
-             cpu_set cpus)
+/*
+TODO: I think there is a subtle race condition here, where
+ the window or process timeout could fire and before the process
+ is frozen, it signals completion, which will be handled by the event loop
+ after new window is started, and the completion signal from the previous
+ window will arrive to the new window, and the process will be immediately
+ blocked and not run at all during next window.
+ */
+Slice::Slice(ev::loop_ref loop, Partition *sc, Partition *be, cpu_set cpus)
     : sc(sc)
     , be(be)
     , cpus(cpus)
     , timer(loop)
 {
-    if (sc) {
-        sc->set_empty_cb(bind(&Slice::empty_partition_cb, this));
-        sc->set_complete_cb(bind(&Slice::schedule_next, this));
-    }
-    if (be) {
-        be->set_empty_cb(bind(&Slice::empty_partition_cb, this));
-    }
+    if (sc) sc->add_empty_cb(bind(&Slice::empty_partition_cb, this));
+    if (be) be->add_empty_cb(bind(&Slice::empty_partition_cb, this));
     timer.set(bind(&Slice::schedule_next, this));
 }
 
@@ -26,51 +26,67 @@ void Slice::set_empty_cb(function<void()> new_empty_cb)
     empty_cb = new_empty_cb;
 }
 
-void Slice::move_proc_and_start_timer(Partition *p)
-{
-    if (!p) return;
-    p->move_to_next_unfinished_proc();
-    timeout += p->get_current_proc().get_actual_budget();
-    timer.start(timeout);
-}
-
 void Slice::empty_partition_cb()
 {
     if ((!sc || sc->is_empty()) && (!be || be->is_empty())) {
         empty = true;
-        if (empty_cb) empty_cb();
+        empty_cb();
     }
 }
 
-void Slice::start(std::chrono::steady_clock::time_point current_time)
+/**
+ * Finds next unfinished process and stores it in `current_proc`.
+ * @return true if found, false if no runnable process is available
+ */
+bool Slice::load_next_process()
 {
-    if (sc) {
-        sc->clear_completed_flag();
-        sc->set_cpus(cpus);
-    }
-    if (be) {
-        be->clear_completed_flag();
-        be->set_cpus(cpus);
-    }
+    Process *proc = nullptr;
+    if (sc) proc = sc->find_unfinished_process();
+    if (!proc && be) proc = be->find_unfinished_process();
+    // nothing to run
+    if (!proc) return false;
 
-    if (sc && !sc->is_empty()) {
-        sc->move_to_first_proc();
-        current_proc = &sc->get_current_proc();
-    } else if (be && !be->is_empty()) {
-        current_proc = &be->get_current_proc();
-    } else {
-        return;
-    }
+    current_proc = proc;
+    return true;
+}
+
+void Slice::start_current_process()
+{
     current_proc->unfreeze();
-    timeout = current_time + current_proc->get_actual_budget();
+    timeout += current_proc->get_actual_budget();
     timer.start(timeout);
 }
 
+void Slice::start(time_point current_time)
+{
+    if (sc) sc->reset(true, cpus, completion_cb_cached);
+    // don't move to first process, we want to continue from the last one for BE,
+    //  as there aren't strict deadlines for BE processes, and it's better if each BE process gets
+    //  to run occasionally than if the first one would run all the time and the rest never
+    // also, we don't need the callback for BE
+    if (be) be->reset(false, cpus, nullptr);
+
+    if (!load_next_process()) {
+        return; // nothing to run
+    }
+    timeout = current_time;
+    start_current_process();
+}
+
+/*
+TODO: When BE partition process is interrupted by window end,
+ store how much if its budget it used up, and next time it runs
+ in a window, restart the process with lowered budget.
+ Otherwise, single long BE process could block all other
+ processes in the same partition from executing.
+*/
 void Slice::stop()
 {
     if (current_proc) {
         current_proc->freeze();
     }
+    if (sc) sc->disconnect();
+    if (be) be->disconnect();
     timer.stop();
 }
 
@@ -86,14 +102,8 @@ void Slice::schedule_next()
     current_proc->freeze();
     current_proc->mark_completed();
 
-    if (sc && !sc->is_empty() && !sc->is_completed() && sc->move_to_next_unfinished_proc())
-        current_proc = &sc->get_current_proc();
-    else if (be && !be->is_empty() && !be->is_completed() && be->move_to_next_unfinished_proc())
-        current_proc = &be->get_current_proc();
-    else
-        return;
-
-    current_proc->unfreeze();
-    timeout += current_proc->get_actual_budget();
-    timer.start(timeout);
+    if (!load_next_process()) {
+        return; // nothing to run
+    }
+    start_current_process();
 }

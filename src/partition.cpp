@@ -57,32 +57,44 @@ void Partition::create_processes()
     }
 }
 
-void Partition::set_cpus(const cpu_set cpus)
+void Partition::reset(bool move_to_first_proc,
+                      const cpu_set cpus,
+                      std::function<void()> process_completion_cb)
 {
+    clear_completed_flag();
     cgc.set_cpus(cpus);
+    // if passed callback is empty (nullptr), set default callback
+    completed_cb = process_completion_cb ? process_completion_cb : default_completed_cb;
+    // for BE partition, we don't want to reset to first process
+    if (move_to_first_proc) {
+        current_proc = processes.begin();
+    }
 }
 
-void Partition::move_to_first_proc()
+void Partition::disconnect()
 {
-    current_proc = processes.begin();
+    completed_cb = default_completed_cb;
 }
 
-// return false if there is none
-bool Partition::move_to_next_unfinished_proc()
+// cyclic queue
+void Partition::move_to_next_proc()
 {
+    if (++current_proc == processes.end()) {
+        current_proc = processes.begin();
+    }
+}
+
+Process *Partition::find_unfinished_process()
+{
+    if (completed || empty) {
+        return nullptr;
+    }
     for (size_t i = 0; i < processes.size(); i++) {
+        if (!current_proc->is_completed()) return &*current_proc;
         move_to_next_proc();
-        if (!current_proc->is_completed()) {
-            return true;
-        }
     }
     completed = true;
-    return false;
-}
-
-bool Partition::is_completed()
-{
-    return completed;
+    return nullptr;
 }
 
 void Partition::clear_completed_flag()
@@ -91,6 +103,11 @@ void Partition::clear_completed_flag()
     for (auto &p : processes) {
         p.mark_uncompleted();
     }
+}
+
+string Partition::get_name() const
+{
+    return name;
 }
 
 bool Partition::is_empty()
@@ -105,42 +122,22 @@ void Partition::kill_all()
     }
 }
 
-void Partition::set_empty_cb(std::function<void()> new_empty_cb)
+void Partition::add_empty_cb(std::function<void()> new_empty_cb)
 {
     empty_cbs.push_back(new_empty_cb);
-}
-
-void Partition::set_complete_cb(std::function<void()> new_complete_cb)
-{
-    completed_cb = new_complete_cb;
-}
-
-string Partition::get_name() const
-{
-    return name;
-}
-
-// cyclic queue
-void Partition::move_to_next_proc()
-{
-    if (++current_proc == processes.end()) {
-        move_to_first_proc();
-    }
 }
 
 void Partition::proc_exit_cb(Process &proc)
 {
     logger->debug("Process {} exited (partition '{}')", proc.get_pid(), name);
 
-    // check if there is no running processes in this partition
+    // check if there are any running processes in this partition
     for (auto &p : processes) {
-        if (p.is_running()) {
-            return;
-        }
+        if (p.is_running()) return;
     }
 
     empty = true;
-    // notify all slices which own this partition that there is no running process
+    // notify all slices which own this partition that there are no running processes
     for (auto &cb : empty_cbs) {
         cb();
     }

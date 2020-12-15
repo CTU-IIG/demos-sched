@@ -37,6 +37,12 @@ public:
     void freeze();
     void unfreeze();
 
+    /**
+     * Adds a new process to the partition,
+     * but doesn't spawn a matching system process.
+     *
+     * `create_processes()` must be explicitly called after all processes are added.
+     */
     void add_process(ev::loop_ref loop,
                      std::string argv,
                      std::chrono::nanoseconds budget,
@@ -47,19 +53,33 @@ public:
      */
     void create_processes();
 
-    void set_cpus(const cpu_set cpus);
+    /**
+     * Prepare partition for running under new slice.
+     * After this is called, slice may start scheduling processes from this partition.
+     *
+     * TODO: not really sure about the naming, but `reset` and `disconnect` seem the best;
+     *  before, it was `bind_to_slice` and `unbind`, but these are not only used by slices,
+     *  but also during init; if you have anything better, feel free to change these
+     */
+    void reset(bool move_to_first_proc,
+               const cpu_set cpus,
+               std::function<void()> process_completion_cb);
 
-    void move_to_first_proc();
-    // return false if there is none
-    bool move_to_next_unfinished_proc();
+    /**
+     * Clears process completion callback set in `bind_to_slice(...)`.
+     */
+    void disconnect();
 
-    bool is_completed();
-    void clear_completed_flag();
+    /**
+     * Returns pointer to next unfinished process,
+     * if there is one, otherwise returns nullptr.
+     */
+    Process *find_unfinished_process();
+
     bool is_empty();
     void kill_all();
 
-    void set_complete_cb(std::function<void()> new_complete_cb);
-    void set_empty_cb(std::function<void()> new_empty_cb);
+    void add_empty_cb(std::function<void()> new_empty_cb);
 
     std::string get_name() const;
 
@@ -69,7 +89,9 @@ public:
     CgroupFreezer cgf;
     Cgroup cge;
     void proc_exit_cb(Process &proc);
-    std::function<void()> completed_cb = nullptr;
+    // cached so that we don't recreate new std::function each time
+    std::function<void()> default_completed_cb = [] {};
+    std::function<void()> completed_cb = default_completed_cb;
 
 private:
     Processes processes = {};
@@ -82,6 +104,7 @@ private:
 
     // cyclic queue
     void move_to_next_proc();
+    void clear_completed_flag();
 
     std::vector<std::function<void()>> empty_cbs = {};
 };
