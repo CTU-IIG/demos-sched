@@ -91,7 +91,7 @@ public:
     // cgf and cge are read by Process constructor in process.cpp
     CgroupFreezer cgf;
     Cgroup cge;
-    void proc_exit_cb(Process &proc);
+    void proc_exit_cb();
     void completed_cb();
 
 private:

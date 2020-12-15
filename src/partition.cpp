@@ -132,10 +132,8 @@ void Partition::add_empty_cb(std::function<void()> new_empty_cb)
     empty_cbs.push_back(new_empty_cb);
 }
 
-void Partition::proc_exit_cb(Process &proc)
+void Partition::proc_exit_cb()
 {
-    logger->debug("Process {} exited (partition '{}')", proc.get_pid(), name);
-
     // check if there are any running processes in this partition
     for (auto &p : processes) {
         if (p.is_running()) return;

@@ -1,6 +1,7 @@
 #include "process.hpp"
 #include "log.hpp"
 #include "partition.hpp"
+#include <cassert>
 #include <functional>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,28 +17,21 @@ Process::Process(ev::loop_ref loop,
                  Partition &part,
                  string argv,
                  std::chrono::nanoseconds budget,
-                 std::chrono::nanoseconds budget_jitter,
-                 bool continuous,
                  bool has_initialization)
     : loop(loop)
-    , completed_w(loop)
-    , child_w(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
     , part(part)
     , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
     , cgf(part.cgf, name)
     , argv(argv)
     , budget(budget)
-    , budget_jitter(budget_jitter)
     , actual_budget(budget)
-    , continuous(continuous)
     , has_initialization(has_initialization)
 //, cgroup(loop, true, argv[0], partition_cgrp_name)
 // TODO regex to cut argv[0] at "/"
 //, cgroup(loop, true, "test", fd_cpuset_procs, partition_cgrp_name)
 //, cge(loop, part.cgroup, name, std::bind(&Process::populated_cb, this, _1))
 {
-    // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
     freeze();
     completed_w.set(std::bind(&Process::completed_cb, this));
     completed_w.start();
@@ -50,6 +44,7 @@ void Process::exec()
 
     // create new process
     pid = CHECK(fork());
+    running = true;
 
     // launch new process
     if (pid == 0) {
@@ -90,6 +85,7 @@ void Process::freeze()
 
 void Process::unfreeze()
 {
+    assert(is_running());
     logger->trace("Resuming process '{}'", pid);
     uint64_t buf = 1;
     if (demos_completed) {
@@ -104,7 +100,8 @@ std::chrono::nanoseconds Process::get_actual_budget()
     return actual_budget;
 }
 
-bool Process::needs_initialization() const {
+bool Process::needs_initialization() const
+{
     return has_initialization;
 }
 
@@ -115,7 +112,7 @@ bool Process::is_completed() const
 
 void Process::mark_completed()
 {
-    if (!continuous) completed = true;
+    completed = true;
 }
 
 void Process::mark_uncompleted()
@@ -125,7 +122,7 @@ void Process::mark_uncompleted()
 
 bool Process::is_running() const
 {
-    return pid >= 0;
+    return running;
 }
 
 pid_t Process::get_pid() const
@@ -133,13 +130,20 @@ pid_t Process::get_pid() const
     return pid;
 }
 
+/**
+ * Called when the population of cgroup changes
+ * (either it is now empty, or new process was added).
+ *
+ * @param populated - true if the cgroup currently contains any processes
+ */
 void Process::populated_cb(bool populated)
 {
-    if (!populated) {
-        logger->debug("Cgroup of process '{}' not populated (cmd: '{}')", pid, argv);
-        pid = -1;
-        part.proc_exit_cb(*this);
-    }
+    if (populated) return;
+    // since the process was spawned before event loop started,
+    //  empty cgroup means that the process exited
+    logger->debug("Process '{}' exited (partition '{}', cmd: '{}')", pid, part.get_name(), argv);
+    running = false;
+    part.proc_exit_cb();
 }
 
 /**
@@ -159,6 +163,10 @@ void Process::completed_cb()
     part.completed_cb();
 }
 
+/**
+ * Called when the child process terminates.
+ * Seems to be always called later than `populated_cb(false)`.
+ */
 void Process::child_terminated_cb(ev::child &w, int revents)
 {
     w.stop();

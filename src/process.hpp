@@ -30,33 +30,20 @@ public:
             Partition &partition,
             std::string argv,
             std::chrono::nanoseconds budget,
-            std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
-            bool continuous = false,
             bool has_initialization = false);
 
-    Process(ev::loop_ref loop,
-            std::string name,
-            Partition &partition,
-            std::string argv,
-            std::chrono::nanoseconds budget,
-            bool has_initialization)
-        : Process(loop,
-                  name,
-                  partition,
-                  argv,
-                  budget,
-                  std::chrono::nanoseconds(0),
-                  false,
-                  has_initialization)
-    {}
-
+    /** Spawns the underlying system process. */
     void exec();
+
+    /** Kills the process, and all children in its cgroup. */
     void kill();
 
+    /** Freezes all processes in the cgroup of this process. */
     void freeze();
+    /** Resumes all processes in the cgroup of this process. */
     void unfreeze();
-    std::chrono::nanoseconds get_actual_budget();
 
+    std::chrono::nanoseconds get_actual_budget();
     pid_t get_pid() const;
     bool needs_initialization() const;
     bool is_running() const;
@@ -65,34 +52,31 @@ public:
     void mark_completed();
     void mark_uncompleted();
 
-    // delete copy constructor
-    //        Process(const Process&) = delete;
-    //        Process& operator=(const Process&) = delete;
 private:
     ev::loop_ref loop;
-    ev::evfd completed_w;
-    ev::child child_w;
+    ev::evfd completed_w{ loop };
+    ev::child child_w{ loop };
     int efd_continue; // new period eventfd
 
     Partition &part;
     CgroupEvents cge;
     CgroupFreezer cgf;
 
+    std::string argv;
+    std::chrono::nanoseconds budget;
+    std::chrono::nanoseconds actual_budget;
+    bool has_initialization;
+    bool completed = false;
+    bool demos_completed = false;
+    // cannot be replaced by `pid >= 0`, as we want
+    //  to keep pid even after process exits, to be
+    //  able to correctly handle some delayed events
+    bool running = false;
+    pid_t pid = -1;
+
     void populated_cb(bool populated);
     void completed_cb();
     void child_terminated_cb(ev::child &w, int revents);
-
-    // std::string partition_cgrp_name;
-    std::string argv;
-    std::chrono::nanoseconds budget;
-    std::chrono::nanoseconds budget_jitter;
-    std::chrono::nanoseconds actual_budget;
-    bool completed = false;
-    bool demos_completed = false;
-    bool continuous;
-    bool has_initialization;
-    pid_t pid = -1;
-    // Cgroup cgroup;
 };
 
 #endif
