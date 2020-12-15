@@ -48,7 +48,6 @@ void Process::exec()
 
     // create new process
     pid = CHECK(fork());
-    running = true;
 
     // launch new process
     if (pid == 0) {
@@ -72,7 +71,7 @@ void Process::exec()
 
 void Process::kill()
 {
-    if (running) {
+    if (is_running()) {
         cgf.freeze();
         cgf.kill_all();
         cgf.unfreeze();
@@ -120,7 +119,7 @@ void Process::mark_uncompleted()
 
 bool Process::is_running()
 {
-    return running;
+    return pid >= 0;
 }
 
 pid_t Process::get_pid() const
@@ -132,7 +131,7 @@ void Process::populated_cb(bool populated)
 {
     if (!populated) {
         logger->debug("Cgroup of process '{}' not populated (cmd: '{}')", pid, argv);
-        running = false;
+        pid = -1;
         part.proc_exit_cb(*this);
     }
 }
