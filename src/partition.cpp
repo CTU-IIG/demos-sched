@@ -84,7 +84,8 @@ void Partition::disconnect()
     _completed_cb = default_completed_cb;
 }
 
-void Partition::completed_cb() {
+void Partition::completed_cb()
+{
     _completed_cb();
 }
 
@@ -127,21 +128,17 @@ bool Partition::is_empty() const
     return empty;
 }
 
-void Partition::add_empty_cb(std::function<void()> new_empty_cb)
+void Partition::set_empty_cb(std::function<void()> new_empty_cb)
 {
-    empty_cbs.push_back(new_empty_cb);
+    empty_cb = new_empty_cb;
 }
 
 void Partition::proc_exit_cb()
 {
-    // check if there are any running processes in this partition
     for (auto &p : processes) {
         if (p.is_running()) return;
     }
-
     empty = true;
-    // notify all slices which own this partition that there are no running processes
-    for (auto &cb : empty_cbs) {
-        cb();
-    }
+    // notify that there are no running processes in this partition
+    empty_cb();
 }

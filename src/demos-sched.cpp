@@ -326,13 +326,6 @@ int main(int argc, char *argv[])
         //  SIGINT (Ctrl-c), or when all scheduled processes exit
         sched.run();
 
-        // clean up processes
-        for (auto &p : partitions) {
-            p.kill_all();
-        }
-
-        // TODO: there is still some quite rare race condition in the process and cgroup cleanup
-
     } catch (const exception &e) {
         logger->error("Exception: {}", e.what());
         exit(1);

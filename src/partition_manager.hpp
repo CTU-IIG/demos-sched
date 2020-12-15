@@ -1,35 +1,68 @@
 #include "log.hpp"
 #include "slice.hpp"
 
-class ProcessInitializer
+class PartitionManager
 {
 public:
-    ProcessInitializer(Partitions &partitions)
+    PartitionManager(Partitions &partitions)
         : partitions(partitions)
-    {}
+    {
+        auto part_cb = std::bind(&PartitionManager::empty_partition_cb, this);
+        for (auto &p : partitions) {
+            p.set_empty_cb(part_cb);
+        }
+    }
 
     // delete move and copy constructors, as we have a pointer data member
-    ProcessInitializer(const ProcessInitializer &) = delete;
-    const ProcessInitializer &operator=(const ProcessInitializer &) = delete;
+    PartitionManager(const PartitionManager &) = delete;
+    const PartitionManager &operator=(const PartitionManager &) = delete;
 
     /** Initializes all processes. */
-    void run_process_init(std::function<void()> cb)
+    void run_process_init(std::function<void()> init_cb)
     {
         logger->debug("Process initialization started");
-        this->cb = cb;
+        this->init_cb = init_cb;
         cpu_set cpus{};
-        auto part_cb = std::bind(&ProcessInitializer::init_completion_cb, this);
+        auto part_cb = std::bind(&PartitionManager::process_init_completion_cb, this);
         for (auto &p : partitions) {
             p.reset(true, cpus, part_cb);
         }
         init_next_process();
     }
 
+    /** Stops all processes. Processes might not terminate immediately. */
+    void kill_all()
+    {
+        for (auto &p : partitions) {
+            p.kill_all();
+        }
+    }
+
+    /**
+     * Sets callback that is called when all partitions
+     * are empty (so there are no processes to schedule).
+     */
+    void set_completion_cb(std::function<void()> completion_cb)
+    {
+        this->completion_cb = completion_cb;
+    }
+
 private:
     Partitions &partitions;
     Partitions::iterator init_iter = partitions.begin();
     Process *initialized_proc = nullptr;
-    std::function<void()> cb = nullptr;
+    std::function<void()> completion_cb = [] {};
+    // initialized in `run_process_init`
+    std::function<void()> init_cb = nullptr;
+
+    /** Called when partition is emptied. */
+    void empty_partition_cb()
+    {
+        for (auto &p : partitions) {
+            if (!p.is_empty()) return;
+        }
+        completion_cb();
+    }
 
     Process *find_next_uninitialized_process()
     {
@@ -48,7 +81,7 @@ private:
             p.disconnect();
         }
         logger->debug("Process initialization finished");
-        cb();
+        init_cb();
     }
 
     /** Initiates single process. Completion is handled by init_next_process(). */
@@ -67,7 +100,7 @@ private:
     }
 
     /** Called as a completion callback from process. */
-    void init_completion_cb()
+    void process_init_completion_cb()
     {
         initialized_proc->freeze();
         initialized_proc->mark_completed();

@@ -23,19 +23,15 @@ public:
     void start(time_point start_time);
     void stop();
 
-    void set_completed_cb(std::function<void()> new_completed_cb);
-
 private:
     ev::timerfd timer;
     Windows windows;
     Windows::iterator current_win;
     // will be overwritten in start(...), value is not important
     time_point timeout = time_point::min();
-    std::function<void()> completed_cb = []{};
 
     void move_to_next_window();
     void timeout_cb();
-    void empty_cb();
 };
 
 #endif // MAJORFRAME_HPP

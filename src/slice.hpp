@@ -38,23 +38,17 @@ public:
 
     void start(time_point current_time);
     void stop();
-    bool is_empty();
-    void set_empty_cb(std::function<void()>);
-
 private:
     Process *current_proc = nullptr;
     // will be overwritten in start(...), value is not important
     time_point timeout = time_point::min();
     ev::timerfd timer;
-    bool empty = false;
-    std::function<void()> empty_cb = [] {};
     // cached, so that we don't create new std::function each time we set the callback
     std::function<void()> completion_cb_cached = std::bind(&Slice::schedule_next, this);
 
     bool load_next_process();
     void start_current_process();
     void schedule_next();
-    void empty_partition_cb();
 };
 
 #endif // SLICE_HPP
