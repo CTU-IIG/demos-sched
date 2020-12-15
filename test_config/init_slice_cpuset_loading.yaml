@@ -1,0 +1,26 @@
+# partition contained in multiple slices, to test finding largest cpu_set for init
+
+windows:
+  - length: 100
+    slices:
+      - cpu: 0-4
+        sc_partition: SC1
+  - length: 100
+    slices:
+      - cpu: 1
+        sc_partition: SC1
+  - length: 100
+    slices:
+      - cpu: 0-6 # this is the one init should run in
+        sc_partition: SC1
+  - length: 100
+    slices:
+      - cpu: 4-7
+        sc_partition: SC1
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: build/src/api-init-test
+        budget: 1500
+        init: yes

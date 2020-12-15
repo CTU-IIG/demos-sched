@@ -21,10 +21,7 @@ public:
     }
 
     /** Sets up scheduler for running. Currently only spawns system processes. */
-    void setup()
-    {
-        partition_manager.create_processes();
-    }
+    void setup() { partition_manager.create_processes(); }
 
     /**
      * Run demos scheduler in the event loop passed in constructor.
@@ -62,7 +59,7 @@ private:
 
     void startup_fn()
     {
-        partition_manager.run_process_init(std::bind(&DemosScheduler::start_scheduler, this));
+        partition_manager.run_process_init(mf, std::bind(&DemosScheduler::start_scheduler, this));
     }
 
     void start_scheduler()

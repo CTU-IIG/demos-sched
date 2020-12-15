@@ -1,4 +1,5 @@
 #include "log.hpp"
+#include "majorframe.hpp"
 #include "slice.hpp"
 
 class PartitionManager
@@ -18,14 +19,21 @@ public:
     const PartitionManager &operator=(const PartitionManager &) = delete;
 
     /** Initializes all processes. */
-    void run_process_init(std::function<void()> init_cb)
+    void run_process_init(MajorFrame &mf, std::function<void()> init_cb)
     {
         logger->debug("Process initialization started");
         this->init_cb = init_cb;
-        cpu_set cpus{};
+
+        // used when partition is not contained in any slice, not really important
+        const cpu_set default_cpu_set{};
+        const cpu_set *cpus_ptr;
         auto part_cb = std::bind(&PartitionManager::process_init_completion_cb, this);
         for (auto &p : partitions) {
-            p.reset(true, cpus, part_cb);
+            // we want to run init for each partition in the widest
+            //  cpu_set it will ever run in; otherwise, multi-threaded
+            //  program would initialize to run with lower number of threads
+            cpus_ptr = mf.find_widest_cpu_set(p);
+            p.reset(true, cpus_ptr ? *cpus_ptr : default_cpu_set, part_cb);
         }
         init_next_process();
     }

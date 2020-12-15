@@ -40,3 +40,18 @@ void MajorFrame::timeout_cb()
     move_to_next_window();
     start(timeout);
 }
+
+const cpu_set *MajorFrame::find_widest_cpu_set(Partition &partition) {
+    Partition *p = &partition;
+    const cpu_set *best_found = nullptr;
+    for (auto &w : windows) {
+        for (auto &s : w->slices) {
+            if (s->sc != p && s->be != p) continue; // not our partition
+            // if we haven't found any cpuset yet, or the compared cpuset has more cores, store it
+            if (!best_found || s->cpus.count() > best_found->count()) {
+                best_found = &s->cpus;
+            }
+        }
+    }
+    return best_found;
+}

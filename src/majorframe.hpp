@@ -23,6 +23,12 @@ public:
     void start(time_point start_time);
     void stop();
 
+    /**
+     * Compares cpu_sets of all slices containing given partition
+     * and returns pointer to the largest one, or nullptr if no such slice exists.
+     */
+    const cpu_set *find_widest_cpu_set(Partition &partition);
+
 private:
     ev::timerfd timer;
     Windows windows;
