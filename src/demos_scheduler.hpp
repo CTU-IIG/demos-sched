@@ -20,6 +20,12 @@ public:
         sigterm.set<DemosScheduler, &DemosScheduler::signal_cb>(this);
     }
 
+    /** Sets up scheduler for running. Currently only spawns system processes. */
+    void setup()
+    {
+        partition_manager.create_processes();
+    }
+
     /**
      * Run demos scheduler in the event loop passed in constructor.
      * Returns either after all processes exit, or SIGTERM/SIGINT is received.
