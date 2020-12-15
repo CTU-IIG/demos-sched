@@ -85,18 +85,12 @@ CgroupFreezer::CgroupFreezer(Cgroup &parent, string name)
 
 void CgroupFreezer::freeze()
 {
-#ifdef VERBOSE
-    std::cerr << __PRETTY_FUNCTION__ << " " + path << std::endl;
-#endif
     const char buf[] = "FROZEN";
     CHECK(write(fd_state, buf, strlen(buf)));
 }
 
 void CgroupFreezer::unfreeze()
 {
-#ifdef VERBOSE
-    std::cerr << __PRETTY_FUNCTION__ << " " + path << std::endl;
-#endif
     const char buf[] = "THAWED";
     CHECK(write(fd_state, buf, strlen(buf)));
 }

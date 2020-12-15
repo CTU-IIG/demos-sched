@@ -39,9 +39,6 @@ void Slice::move_proc_and_start_timer(Partition *p)
 void Slice::empty_partition_cb()
 {
     if ((!sc || sc->is_empty()) && (!be || be->is_empty())) {
-#ifdef VERBOSE
-        cerr << __PRETTY_FUNCTION__ << endl;
-#endif
         empty = true;
         if (empty_cb) empty_cb();
     }
@@ -92,10 +89,6 @@ void Slice::update_timeout(chrono::steady_clock::time_point actual_time)
 // Called as a response to timeout or process completion.
 void Slice::schedule_next()
 {
-#ifdef VERBOSE
-    cerr << __PRETTY_FUNCTION__ << endl;
-#endif
-
     timer.stop();
     current_proc->freeze();
     current_proc->mark_completed();

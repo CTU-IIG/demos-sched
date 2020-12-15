@@ -82,10 +82,14 @@ void Process::kill()
 void Process::freeze()
 {
     cgf.freeze();
+    if (is_running()) {
+        logger->trace("Frozen process '{}'", pid);
+    }
 }
 
 void Process::unfreeze()
 {
+    logger->trace("Resuming process '{}'", pid);
     uint64_t buf = 1;
     if (demos_completed) {
         CHECK(write(efd_continue, &buf, sizeof(buf)));
@@ -127,7 +131,7 @@ pid_t Process::get_pid() const
 void Process::populated_cb(bool populated)
 {
     if (!populated) {
-        logger->debug("Cgroup of process '{}' not populated", argv);
+        logger->debug("Cgroup of process '{}' not populated (cmd: '{}')", pid, argv);
         running = false;
         part.proc_exit_cb(*this);
     }
@@ -137,7 +141,7 @@ void Process::populated_cb(bool populated)
 // by calling demos_completed().
 void Process::completed_cb()
 {
-    logger->trace("Process '{}' completed", argv);
+    logger->trace("Process '{}' completed (cmd: '{}')", pid, argv);
 
     // switch to next process
     completed = true;
@@ -150,8 +154,8 @@ void Process::child_terminated_cb(ev::child &w, int revents)
     w.stop();
     int wstatus = w.rstatus;
     if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != 0) {
-        logger->warn("Process '{}' exited with status {}", argv, WEXITSTATUS(wstatus));
+        logger->warn("Process '{}' exited with status {} (cmd: '{}')", pid, WEXITSTATUS(wstatus), argv);
     } else if (WIFSIGNALED(wstatus)) {
-        logger->warn("Process '{}' terminated by signal {}", argv, WTERMSIG(wstatus));
+        logger->warn("Process '{}' terminated by signal {} (cmd: '{}')", pid, WTERMSIG(wstatus), argv);
     }
 }
