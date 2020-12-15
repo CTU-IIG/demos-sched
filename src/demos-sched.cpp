@@ -306,20 +306,19 @@ int main(int argc, char *argv[])
             errx(1, "Need at least one partition in one window");
         }
 
-        // set up all processes (in frozen state)
-        for (auto &p : partitions) {
-            p.create_processes();
-        }
+        MajorFrame mf(loop, move(windows));
+        DemosScheduler sched(loop, partitions, mf);
+
+        // this spawns the underlying system processes
+        sched.setup();
 
         // configure linux scheduler - set highest possible priority for demos
-        // should be called after child process creation, we don't want children to inherit RT priority
+        // should be called after child process creation (in `sched.setup()`),
+        //  as we don't want children to inherit RT priority
         struct sched_param sp = { .sched_priority = 99 };
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
             logger->warn("Running demos without rt priority, consider running as root");
         }
-
-        MajorFrame mf(loop, move(windows));
-        DemosScheduler sched(loop, partitions, mf);
 
         // everything is set up now, start the event loop
         // the event loop terminates either on SIGTERM,

@@ -30,6 +30,14 @@ public:
         init_next_process();
     }
 
+    /** Spawns frozen processes from all partitions. */
+    void create_processes()
+    {
+        for (auto &p : partitions) {
+            p.create_processes();
+        }
+    }
+
     /** Stops all processes. Processes might not terminate immediately. */
     void kill_all()
     {
