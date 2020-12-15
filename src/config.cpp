@@ -52,15 +52,16 @@ Node Config::normalize_process(const Node &proc, float default_budget)
         }
     }
 
-    if (!norm_proc["init"]) {
-        norm_proc["init"] = false;
-    }
-
     if (!norm_proc["budget"]) {
         if (isnan(default_budget)) {
             throw runtime_error("Missing budget");
         }
         norm_proc["budget"] = default_budget;
+    }
+
+    // after "budget" to keep typical key ordering in case neither is specified
+    if (!norm_proc["init"]) {
+        norm_proc["init"] = false;
     }
 
     return norm_proc;
