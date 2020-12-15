@@ -25,6 +25,7 @@ test_normalization "missing slice definition" \
     processes:
       - cmd: echo
         budget: 100
+        init: false
 windows:
   - length: 500
     slices:
@@ -41,6 +42,7 @@ test_normalization "partition definition in window" \
     processes:
       - cmd: proc1
         budget: 500
+        init: false
 windows:
   - length: 500
     slices:
@@ -56,6 +58,7 @@ test_normalization "default budget" \
     processes:
       - cmd: proc1
         budget: 300
+        init: false
 windows:
   - length: 500
     slices:
@@ -73,6 +76,7 @@ test_normalization "process as string" \
     processes:
       - cmd: proc
         budget: 300
+        init: false
 windows:
   - length: 500
     slices:
@@ -88,8 +92,10 @@ test_normalization "Processes as string" \
     processes:
       - cmd: proc1
         budget: 150
+        init: false
       - cmd: proc2
         budget: 150
+        init: false
 windows:
   - length: 500
     slices:
