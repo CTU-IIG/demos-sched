@@ -42,7 +42,10 @@ public:
                      std::chrono::nanoseconds budget,
                      bool has_initialization);
 
-    void exec_processes();
+    /**
+     * Spawns system processes for added Process instances.
+     */
+    void create_processes();
 
     void set_cpus(const cpu_set cpus);
 
