@@ -115,26 +115,42 @@ void CgroupCpuset::set_cpus(cpu_set cpus)
     }
 }
 
+/////////////////////
+CgroupUnified::CgroupUnified(std::string parent_path, std::string name)
+    : Cgroup(parent_path, name)
+{
+    fd_events = CHECK(open((path + "/cgroup.events").c_str(), O_RDONLY | O_NONBLOCK));
+}
+
+CgroupUnified::CgroupUnified(Cgroup &parent, std::string name)
+    : CgroupUnified(parent.get_path(), name)
+{}
+
+CgroupUnified::~CgroupUnified()
+{
+    close(fd_events);
+}
+
+bool CgroupUnified::read_populated_status()
+{
+    char buf[100];
+    ssize_t size = CHECK(pread(fd_events, buf, sizeof(buf) - 1, 0));
+    return (std::string(buf, size).find("populated 1") != std::string::npos);
+}
+
+/////////////////////
 CgroupEvents::CgroupEvents(ev::loop_ref loop,
                            string parent_path,
                            string name,
                            std::function<void(bool)> populated_cb)
-    : Cgroup(parent_path, name)
+    : CgroupUnified(parent_path, name)
     , events_w(loop)
     , populated_cb(populated_cb)
 {
-    fd_events = CHECK(open((path + "/cgroup.events").c_str(), O_RDONLY | O_NONBLOCK));
-
+    if (!populated_cb) throw bad_function_call();
     events_w.set<CgroupEvents, &CgroupEvents::event_cb>(this);
-    events_w.start(fd_events, ev::EXCEPTION);
+    events_w.start(this->fd_events, ev::EXCEPTION);
 }
-
-CgroupEvents::CgroupEvents(ev::loop_ref loop,
-                           CgroupEvents &parent,
-                           string name,
-                           std::function<void(bool)> populated_cb)
-    : CgroupEvents(loop, parent.path, name, populated_cb)
-{}
 
 CgroupEvents::CgroupEvents(ev::loop_ref loop,
                            Cgroup &parent,
@@ -148,10 +164,7 @@ CgroupEvents::~CgroupEvents()
     events_w.stop();
 }
 
-void CgroupEvents::event_cb(ev::io &w, int revents)
+void CgroupEvents::event_cb()
 {
-    char buf[100];
-    ssize_t size = CHECK(pread(w.fd, buf, sizeof(buf) - 1, 0));
-    bool populated = (std::string(buf, size).find("populated 1") != std::string::npos);
-    populated_cb(populated);
+    populated_cb(read_populated_status());
 }
