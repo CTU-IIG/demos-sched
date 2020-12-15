@@ -104,7 +104,7 @@ std::chrono::nanoseconds Process::get_actual_budget()
 
 bool Process::is_completed() const
 {
-    return completed;
+    return !is_running() || completed;
 }
 
 void Process::mark_completed()
@@ -117,7 +117,7 @@ void Process::mark_uncompleted()
     completed = false;
 }
 
-bool Process::is_running()
+bool Process::is_running() const
 {
     return pid >= 0;
 }
@@ -136,8 +136,13 @@ void Process::populated_cb(bool populated)
     }
 }
 
-// Called when the process signalizes completion in the current window
-// by calling demos_completed().
+/**
+ * Called when the process signalizes completion in the current window
+ * by calling demos_completed().
+ *
+ * This either means that initialization finished (if 'init' param in config was set to true),
+ * or that the work for current window is done.
+ */
 void Process::completed_cb()
 {
     logger->trace("Process '{}' completed (cmd: '{}')", pid, argv);
@@ -153,8 +158,10 @@ void Process::child_terminated_cb(ev::child &w, int revents)
     w.stop();
     int wstatus = w.rstatus;
     if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != 0) {
-        logger->warn("Process '{}' exited with status {} (cmd: '{}')", pid, WEXITSTATUS(wstatus), argv);
+        logger->warn(
+          "Process '{}' exited with status {} (cmd: '{}')", pid, WEXITSTATUS(wstatus), argv);
     } else if (WIFSIGNALED(wstatus)) {
-        logger->warn("Process '{}' terminated by signal {} (cmd: '{}')", pid, WTERMSIG(wstatus), argv);
+        logger->warn(
+          "Process '{}' terminated by signal {} (cmd: '{}')", pid, WTERMSIG(wstatus), argv);
     }
 }
