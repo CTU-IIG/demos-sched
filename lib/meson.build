@@ -1,6 +1,9 @@
 incdir = include_directories('./')
 
-libdemos_sch = library('demos-sch', [ 'demos-sch.c' ])
+libdemos_sch = library(
+  'demos-sch', [ 'demos-sch.c' ],
+  c_args: (get_option('lib_verbose') ? ['-DDEMOS_LIB_VERBOSE'] : []),
+)
 
 libdemos_sch_dep = declare_dependency(
   link_with : libdemos_sch,
