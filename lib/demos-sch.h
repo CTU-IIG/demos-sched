@@ -12,6 +12,14 @@
 int demos_init();
 
 /**
+ * Signalizes to the scheduler that initialization is completed
+ * and that process may now be scheduled according to configuration.
+ *
+ * @return 0 if successful, -1 otherwise and errno is set appropriately
+ */
+int demos_initialization_completed();
+
+/**
  * Signalizes to the scheduler that all work for the current window is completed (see spec.)
  * Blocks until the process is scheduled again by demos-sched.
  *

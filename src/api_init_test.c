@@ -32,9 +32,13 @@ int main(int argc, char *argv[])
     }
 
     printf("starting initialization (5 second wait)\n");
+    // this shouldn't do anything, as we haven't finished init yet
+    if (demos_completed() == -1) {
+        err(1, "demos_completed");
+    }
     csleep(5);
     printf("initialization finished, signalling...\n");
-    if (demos_completed() == -1) {
+    if (demos_initialization_completed() == -1) {
         err(1, "demos_completed");
     }
 

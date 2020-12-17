@@ -48,9 +48,12 @@ void Process::exec()
     if (pid == 0) {
         // CHILD PROCESS
         char val[100];
-        // passed descriptor is used for communication with demos process library
-        sprintf(val, "%d,%d", completed_w.get_fd(), efd_continue);
-        CHECK(setenv("DEMOS_FDS", val, 1));
+        // pass configuration to the process library
+        // passed descriptors are used for communication with the library:
+        //  - completed_fd is used to read completion messages from process
+        //  - efd_continue is used to signal continuation to process
+        sprintf(val, "%d,%d,%d", completed_w.get_fd(), efd_continue, has_initialization);
+        CHECK(setenv("DEMOS_PARAMETERS", val, 1));
         CHECK(execl("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr));
         // END CHILD PROCESS
     } else {
