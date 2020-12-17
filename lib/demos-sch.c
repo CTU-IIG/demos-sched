@@ -1,5 +1,6 @@
 #include "demos-sch.h"
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,9 +20,14 @@
 #endif
 
 static int fd_completed, fd_new_period;
+// indicates if demos_init_ran was already called
+static bool demos_init_ran = false;
 
 int demos_init()
 {
+    // save that we already ran `demos_init()`
+    demos_init_ran = true;
+
     char *str = getenv("DEMOS_FDS");
     if (!str) {
         LOG("Error: Environment variable DEMOS_FDS is missing");
@@ -41,6 +47,15 @@ int demos_init()
 
 int demos_completed()
 {
+    // to make the library usage as easy as possible, we check
+    //  if `demos_init()` was already ran and if not, we run
+    //  it ourselves in this first call to `demos_completed()`
+    if (!demos_init_ran) {
+        LOG("Calling `demos_init()` in first run of `demos_completed()`");
+        int s = demos_init();
+        if (s != 0) return s;
+    }
+
     LOG("Notifying scheduler of completion and suspending process...");
 
     uint64_t buf = 1;
