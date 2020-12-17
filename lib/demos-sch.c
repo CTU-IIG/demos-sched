@@ -60,12 +60,14 @@ int demos_completed()
 
     uint64_t buf = 1;
     // notify demos
-    if (write(fd_completed, &buf, sizeof(buf)) == -1)
+    if (write(fd_completed, &buf, sizeof(buf)) == -1) {
         return -1;
+    }
 
     // block until become readable
-    if (read(fd_new_period, &buf, sizeof(buf)) == -1)
+    if (read(fd_new_period, &buf, sizeof(buf)) == -1) {
         return -1;
+    }
 
     LOG("Process resumed");
     return 0;
