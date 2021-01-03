@@ -53,6 +53,8 @@ Format of configuration files is documented in the next 2 sections.
 
 ## Configuration terminology
 
+This section reviews the terminology used in later parts of this README.
+
 ### Process
 Single system process (currently started as a shell command, might change in
 the future), with a fixed time budget. In each window, each process from the
@@ -125,8 +127,9 @@ In each slice, there are potentially 2 partitions:
 - `sc_partition` = safety-critical partition
 - `be_partition` = best-effort partittion
 
-First, safety-critical partition is ran; after it finishes (either its time
-budget is exhausted, or it completes), best-effort partition is started.
+First, safety-critical partition is ran; after it finishes (either
+time budget of its processes is exhausted, or the processes complete),
+best-effort partition is started.
 
 Example configs:
 ```yaml
