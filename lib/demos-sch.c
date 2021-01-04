@@ -48,7 +48,7 @@ int demos_init()
     LOG_DEBUG("Process %s an initialization window",
               initialization_pending ? "has" : "does not have");
 
-    LOG_DEBUG("Process library set up.");
+    LOG_DEBUG("Process library set up");
     return 0;
 }
 
@@ -99,6 +99,6 @@ int demos_initialization_completed()
     }
 
     initialization_pending = false;
-    LOG_DEBUG("Initialization completed.");
+    LOG_DEBUG("Initialization completed");
     return demos_completed();
 }
