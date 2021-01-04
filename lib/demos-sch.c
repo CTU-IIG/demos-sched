@@ -7,14 +7,14 @@
 #include <unistd.h>
 
 #ifdef DEMOS_LIB_VERBOSE
-#define LOG(...)                                                                                   \
+#define LOG_DEBUG(...)                                                                             \
     do {                                                                                           \
         fprintf(stderr, "[DEMOS] ");                                                               \
         fprintf(stderr, __VA_ARGS__);                                                              \
         fprintf(stderr, "\n");                                                                     \
     } while (0)
 #else
-#define LOG(...)                                                                                   \
+#define LOG_DEBUG(...)                                                                             \
     do {                                                                                           \
     } while (0)
 #endif
@@ -31,7 +31,7 @@ int demos_init()
 
     char *str = getenv("DEMOS_PARAMETERS");
     if (!str) {
-        LOG("Error: Environment variable DEMOS_PARAMETERS is missing");
+        LOG_DEBUG("Error: Environment variable DEMOS_PARAMETERS is missing");
         errno = ENOKEY;
         return -1;
     }
@@ -39,15 +39,16 @@ int demos_init()
     // need to use tmp int, scanf doesn't know boolean
     int tmp_init_flag;
     if (sscanf(str, "%d,%d,%d", &fd_completed, &fd_new_period, &tmp_init_flag) != 3) {
-        LOG("Error: Failed to load configuration from DEMOS_PARAMETERS environment variable");
+        LOG_DEBUG("Error: Failed to load configuration from DEMOS_PARAMETERS environment variable");
         errno = EBADMSG;
         return -1;
     }
 
     initialization_pending = (bool)tmp_init_flag;
-    LOG("Process %s an initialization window", initialization_pending ? "has" : "does not have");
+    LOG_DEBUG("Process %s an initialization window",
+              initialization_pending ? "has" : "does not have");
 
-    LOG("Process library set up.");
+    LOG_DEBUG("Process library set up.");
     return 0;
 }
 
@@ -57,17 +58,17 @@ int demos_completed()
     //  if `demos_init()` was already ran and if not, we run
     //  it ourselves in this first call to `demos_completed()`
     if (!demos_init_ran) {
-        LOG("Calling `demos_init()` in first run of `demos_completed()`");
+        LOG_DEBUG("Calling `demos_init()` in first run of `demos_completed()`");
         int s = demos_init();
         if (s != 0) return s;
     }
 
     if (initialization_pending) {
-        LOG("Ignoring call to `demos_completed()` during initialization window");
+        LOG_DEBUG("Ignoring call to `demos_completed()` during initialization window");
         return 0;
     }
 
-    LOG("Notifying scheduler of completion and suspending process...");
+    LOG_DEBUG("Notifying scheduler of completion and suspending process...");
 
     uint64_t buf = 1;
     // notify demos
@@ -80,23 +81,24 @@ int demos_completed()
         return -1;
     }
 
-    LOG("Process resumed");
+    LOG_DEBUG("Process resumed");
     return 0;
 }
 
 int demos_initialization_completed()
 {
     if (!demos_init_ran) {
-        LOG("Calling `demos_init()` from `demos_initialization_completed()`");
+        LOG_DEBUG("Calling `demos_init()` from `demos_initialization_completed()`");
         int s = demos_init();
         if (s != 0) return s;
     }
 
     if (!initialization_pending) {
-        LOG("Warning: Called `demos_initialization_completed()` without pending initialization");
+        LOG_DEBUG(
+          "Warning: Called `demos_initialization_completed()` without pending initialization");
     }
 
     initialization_pending = false;
-    LOG("Initialization completed.");
+    LOG_DEBUG("Initialization completed.");
     return demos_completed();
 }
