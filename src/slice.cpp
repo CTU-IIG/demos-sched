@@ -60,7 +60,7 @@ void Slice::start(time_point current_time)
 
 /*
 TODO: When BE partition process is interrupted by window end,
- store how much if its budget it used up, and next time it runs
+ store how much of its budget it used up, and next time it runs
  in a window, restart the process with lowered budget.
  Otherwise, single long BE process could block all other
  processes in the same partition from executing.
