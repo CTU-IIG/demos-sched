@@ -69,10 +69,12 @@ void Partition::reset(bool move_to_first_proc,
                       const cpu_set cpus,
                       std::function<void()> process_completion_cb)
 {
+    // must be non-null
+    assert(process_completion_cb);
+
     clear_completed_flag();
     cgc.set_cpus(cpus);
-    // if passed callback is empty (nullptr), set default callback
-    _completed_cb = process_completion_cb ? process_completion_cb : default_completed_cb;
+    _completed_cb = process_completion_cb;
     // for BE partition, we don't want to reset to first process
     if (move_to_first_proc) {
         current_proc = processes.begin();

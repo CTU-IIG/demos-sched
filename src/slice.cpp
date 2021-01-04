@@ -48,8 +48,9 @@ void Slice::start(time_point current_time)
     // don't move to first process, we want to continue from the last one for BE,
     //  as there aren't strict deadlines for BE processes, and it's better if each BE process gets
     //  to run occasionally than if the first one would run all the time and the rest never
-    // also, we don't need the callback for BE
-    if (be) be->reset(false, cpus, nullptr);
+    // we still need to set completion callback, otherwise BE processes
+    //  could not yield to the next BE process
+    if (be) be->reset(false, cpus, completion_cb_cached);
 
     if (!load_next_process()) {
         return; // nothing to run
