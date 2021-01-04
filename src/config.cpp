@@ -109,7 +109,7 @@ Node Config::normalize_partition(const Node &part,
     // Matej Kafka: imo, this shouldn't be supported;
     //  it's needless duplication which saves 1 line in config file
     if (!norm_part["processes"]) {
-        if (!processes) {
+        if (processes.IsNull()) {
             Node process;
             for (const string &key : { "cmd", "budget", "init" }) {
                 if (part[key]) {

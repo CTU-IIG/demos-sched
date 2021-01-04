@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 8
+plan_tests 9
 
 test_normalization() {
     local test_name=$1
@@ -36,6 +36,22 @@ windows:
 test_normalization "partition definition in window" \
 "{
     windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
+}" \
+"partitions:
+  - name: anonymous_0
+    processes:
+      - cmd: proc1
+        budget: 500
+        init: false
+windows:
+  - length: 500
+    slices:
+      - cpu: 0-63
+        sc_partition: anonymous_0"
+
+test_normalization "partition definition in window with one process" \
+"{
+    windows: [ {length: 500, sc_partition: {cmd: proc1, budget: 500} } ]
 }" \
 "partitions:
   - name: anonymous_0
