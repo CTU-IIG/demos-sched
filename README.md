@@ -49,9 +49,9 @@ the target ARM system.
       -h                 print this message
 
 
-Format of configuration files is documented in the next 2 sections.
+Format of configuration files is documented in the section [Guide for writing configurations](#Guide for writing configurations).
 
-## Configuration terminology
+## Project terminology
 
 This section reviews the terminology used in later parts of this README.
 
@@ -61,10 +61,21 @@ the future), with a fixed time budget. In each window, each process from the
 scheduled partition can run until it exhausts its time budget for the given
 window, signals completion using the scheduler API, or the window ends.
 
+If the process has DEmOS support, and needs some time to initialize before
+starting the scheduler, it can set the optional boolean switch `init: yes`
+in the configuration file - the process will then be started outside the
+scheduling windows and allowed to run until it calls `demos_completed();`
+to signal completion. The scheduler will start after all processes are
+initialized.
+
+**Note:** if the process does not call `demos_completed();` and `init: yes`
+is set, the scheduler deadlocks.
+
 Example config:
 ```yaml
 - cmd: ./app1 args...
   budget: 300
+  init: yes
 ```
 
 ### Partition
@@ -86,6 +97,7 @@ partitions:
         budget: 300
       - cmd: ./app2 args...
         budget: 500
+        init: yes
   - name: partition2
     processes:
       # any shell command can be used
@@ -129,7 +141,10 @@ In each slice, there are potentially 2 partitions:
 
 First, safety-critical partition is ran; after it finishes (either
 time budget of its processes is exhausted, or the processes complete),
-best-effort partition is started.
+best-effort partition is started. SC partition is ran from the first
+process in each window. BE partition is not restarted, and continues
+from the last unfinished process, so that all processes get a chance
+to run.
 
 Example configs:
 ```yaml
@@ -144,6 +159,13 @@ Example configs:
   be_partition: BE2
 ```
 
+## DEmOS process library
+Scheduled processes can cooperate with the DEmOS scheduler by using the
+`demos-sch` user library (`libdemos_sch_dep` dependency in meson in `./lib/`).
+
+See `./lib/demos-sch.h` for documentation of the API.
+
+
 ## Guide for writing configurations
 
 Configuration files are written in the YAML format. They can have
@@ -154,25 +176,27 @@ by using the simplified form. Both forms are described bellow.
 
 ### Canonical form of configuration file
 
-- Configuration file is a mapping with the following keys:
-  `partitions` and `windows`.
+Configuration file is a mapping with the following keys:
+`partitions` and `windows`.
 - `partitions` is an array of partition definitions.
-- *Partition definition* is a mapping with `name` and `processes` keys.
-- `processes` is an array of process definitions.
-- *Process definition* is mapping with `cmd` and `budget` keys.
-- `cmd` is a string with a command to be executed (passed to `/bin/sh -c`).
-- `budget` specifies process budget in milliseconds.
+  - *Partition definition* is a mapping with `name` and `processes` keys.
+  - `processes` is an array of process definitions.
+  - *Process definition* is mapping with `cmd`, `budget` and `init` keys.
+    - `cmd` is a string with a command to be executed (passed to `/bin/sh -c`).
+    - `budget` specifies process budget in milliseconds.
+    - `init` (optional, default: false) is a boolean specifying if process
+      should be allowed to initialize before scheduler starts
 - `windows` is an array of window definitions.
-- *Window definition* is a mapping with `length` and `slices` keys.
-- `length` defined length of the window in milliseconds.
-- `slices` is an array of slice definitions.
-- *Slice definition* is a mapping with the `cpu` key and optional
-  `sc_partition` and `be_partition` keys.
-- `cpu` is a string defining scheduling CPU constraints. The value can
-  specify a single CPU by its zero-based number (e.g. `cpu: 1`), or a
-  range of CPUs (`cpu: 0-2`), or combination of both (`cpu: 0,2,5-7`).
-- `sc_partition` and `be_partition` are strings referring to
-  partition definitions by their `name`s.
+  - *Window definition* is a mapping with `length` and `slices` keys.
+    - `length` defined length of the window in milliseconds.
+    - `slices` is an array of slice definitions.
+  - *Slice definition* is a mapping with the `cpu` key and optional
+    `sc_partition` and `be_partition` keys.
+    - `cpu` is a string defining scheduling CPU constraints. The value can
+      specify a single CPU by its zero-based number (e.g. `cpu: 1`), or a
+      range of CPUs (`cpu: 0-2`), or combination of both (`cpu: 0,2,5-7`).
+    - `sc_partition` and `be_partition` are strings referring to
+      partition definitions by their `name`s.
 
 Example canonical configuration can look like this:
 ``` yaml
@@ -181,6 +205,7 @@ partitions:
     processes:
       - cmd: ./safety_critical_application
         budget: 300
+        init: yes
   - name: BE1
     processes:
       - cmd: ./best_effort_application1

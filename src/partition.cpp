@@ -16,9 +16,6 @@ Partition::Partition(Cgroup &freezer_parent,
     , current_proc(nullptr)
     , name(name)
 {
-#ifdef VERBOSE
-    std::cerr << __PRETTY_FUNCTION__ << " " << name << std::endl;
-#endif
     freeze();
 }
 
@@ -41,31 +38,26 @@ void Partition::unfreeze()
     }
 }
 
+void Partition::kill_all()
+{
+    for (auto &p : processes) {
+        p.kill();
+    }
+}
+
 void Partition::add_process(ev::loop_ref loop,
                             string argv,
                             chrono::nanoseconds budget,
-                            chrono::nanoseconds budget_jitter)
+                            bool has_initialization)
 {
-    // std::cerr<<__PRETTY_FUNCTION__<<" "<<name<<std::endl;
-
-    // get process name, after the last / in argv[0]
-    //    char *token, *cmd_name, *saveptr;
-    //    for ( char* cmd = argv[0];; cmd = nullptr) {
-    //        token = strtok_r(cmd,"/",&saveptr);
-    //        if( token == nullptr )
-    //            break;
-    //        cmd_name = token;
-    //    }
-
-    // cerr<< cmd_name <<endl;
-
-    processes.emplace_back(loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter);
+    processes.emplace_back(
+      loop, "proc" + to_string(proc_count), *this, argv, budget, has_initialization);
     proc_count++;
     current_proc = processes.begin();
     empty = false;
 }
 
-void Partition::exec_processes()
+void Partition::create_processes()
 {
     for (auto &p : processes) {
         p.exec();
@@ -73,32 +65,49 @@ void Partition::exec_processes()
     }
 }
 
-void Partition::set_cpus(const cpu_set cpus)
+void Partition::reset(bool move_to_first_proc,
+                      const cpu_set cpus,
+                      std::function<void()> process_completion_cb)
 {
+    clear_completed_flag();
     cgc.set_cpus(cpus);
+    // if passed callback is empty (nullptr), set default callback
+    _completed_cb = process_completion_cb ? process_completion_cb : default_completed_cb;
+    // for BE partition, we don't want to reset to first process
+    if (move_to_first_proc) {
+        current_proc = processes.begin();
+    }
 }
 
-void Partition::move_to_first_proc()
+void Partition::disconnect()
 {
-    current_proc = processes.begin();
+    _completed_cb = default_completed_cb;
 }
 
-// return false if there is none
-bool Partition::move_to_next_unfinished_proc()
+void Partition::completed_cb()
 {
+    _completed_cb();
+}
+
+// cyclic queue
+void Partition::move_to_next_proc()
+{
+    if (++current_proc == processes.end()) {
+        current_proc = processes.begin();
+    }
+}
+
+Process *Partition::find_unfinished_process()
+{
+    if (completed || empty) {
+        return nullptr;
+    }
     for (size_t i = 0; i < processes.size(); i++) {
+        if (!current_proc->is_completed()) return &*current_proc;
         move_to_next_proc();
-        if (!current_proc->is_completed()) {
-            return true;
-        }
     }
     completed = true;
-    return false;
-}
-
-bool Partition::is_completed()
-{
-    return completed;
+    return nullptr;
 }
 
 void Partition::clear_completed_flag()
@@ -109,55 +118,27 @@ void Partition::clear_completed_flag()
     }
 }
 
-bool Partition::is_empty()
-{
-    return empty;
-}
-
-void Partition::kill_all()
-{
-    for (auto &p : processes) {
-        p.kill();
-    }
-}
-
-void Partition::set_empty_cb(std::function<void()> new_empty_cb)
-{
-    empty_cbs.push_back(new_empty_cb);
-}
-
-void Partition::set_complete_cb(std::function<void()> new_complete_cb)
-{
-    completed_cb = new_complete_cb;
-}
-
 string Partition::get_name() const
 {
     return name;
 }
 
-// cyclic queue
-void Partition::move_to_next_proc()
+bool Partition::is_empty() const
 {
-    if (++current_proc == processes.end()) {
-        move_to_first_proc();
-    }
+    return empty;
 }
 
-void Partition::proc_exit_cb(Process &proc)
+void Partition::set_empty_cb(std::function<void()> new_empty_cb)
 {
-    logger->debug("Process '{}' exited (partition '{}')", proc.get_pid(), name);
+    empty_cb = new_empty_cb;
+}
 
-    // check if there is no running processes in this partition
+void Partition::proc_exit_cb()
+{
     for (auto &p : processes) {
-        if (p.is_running()) {
-            return;
-        }
+        if (p.is_running()) return;
     }
-
     empty = true;
-    // notify all slices which own this partition that there is no running process
-    for (auto &cb : empty_cbs) {
-        cb();
-    }
+    // notify that there are no running processes in this partition
+    empty_cb();
 }

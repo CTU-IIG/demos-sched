@@ -1,5 +1,6 @@
 #include "config.hpp"
 #include "config_parsing.hpp"
+#include "demos_scheduler.hpp"
 #include "demossched.hpp"
 #include "majorframe.hpp"
 #include <fstream>
@@ -19,7 +20,6 @@
 #include "spdlog/cfg/env.h"
 
 using namespace std;
-using namespace std::chrono_literals;
 
 string opt_demos_cg_name = "demos";
 // size_t anonyme_partition_counter = 0;
@@ -261,11 +261,8 @@ int main(int argc, char *argv[])
         logger->set_pattern(">>> [%l] %v");
     }
 
-    auto start_time = chrono::steady_clock::now();
-
-    // demos is running in an event loop
+    // demos is running in a libev event loop
     ev::default_loop loop;
-
     Config config;
 
     try {
@@ -296,8 +293,7 @@ int main(int argc, char *argv[])
         CgroupConfig cc = { .unified_cg = unified_root,
                             .cpuset_cg = cpuset_root,
                             .freezer_cg = freezer_root,
-                            .loop = loop,
-                            .start_time = start_time };
+                            .loop = loop };
         Partitions partitions;
         Windows windows;
 
@@ -310,15 +306,15 @@ int main(int argc, char *argv[])
             errx(1, "Need at least one partition in one window");
         }
 
-        // set up all processes (in frozen state)
-        for (auto &p : partitions) {
-            p.exec_processes();
-        }
+        MajorFrame mf(loop, move(windows));
+        DemosScheduler sched(loop, partitions, mf);
 
-        MajorFrame mf(loop, start_time, move(windows));
-        mf.start();
+        // this spawns the underlying system processes
+        sched.setup();
 
         // configure linux scheduler - set highest possible priority for demos
+        // should be called after child process creation (in `sched.setup()`),
+        //  as we don't want children to inherit RT priority
         struct sched_param sp = { .sched_priority = 99 };
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
             logger->warn("Running demos without rt priority, consider running as root");
@@ -326,15 +322,8 @@ int main(int argc, char *argv[])
 
         // everything is set up now, start the event loop
         // the event loop terminates either on SIGTERM,
-        // SIGINT (Ctrl-c), or when all scheduled processes exit
-        logger->debug("Starting event loop");
-        loop.run();
-        logger->debug("Event loop stopped");
-
-        // clean up processes
-        for (auto &p : partitions) {
-            p.kill_all();
-        }
+        //  SIGINT (Ctrl-c), or when all scheduled processes exit
+        sched.run();
 
     } catch (const exception &e) {
         logger->error("Exception: {}", e.what());

@@ -10,8 +10,7 @@
 #include <list>
 
 using namespace std::placeholders;
-
-typedef std::list<Process> Processes;
+using Processes = std::list<Process>;
 
 /**
  * Container for a group of processes that are scheduled as a single unit. Only
@@ -34,30 +33,57 @@ public:
 
     Process &get_current_proc();
 
-    void freeze();
+    /** Resumes all processes in this partition. Idempotent. */
     void unfreeze();
+    /** Freezes all processes in this partition. Idempotent. */
+    void freeze();
+    /** Kills all system processes from this partition. */
+    void kill_all();
 
+    /**
+     * Adds a new process to the partition,
+     * but doesn't spawn a matching system process.
+     *
+     * `create_processes()` must be explicitly called after all processes are added.
+     */
     void add_process(ev::loop_ref loop,
                      std::string argv,
                      std::chrono::nanoseconds budget,
-                     std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0));
+                     bool has_initialization);
 
-    void exec_processes();
+    /**
+     * Spawns system processes for added Process instances.
+     */
+    void create_processes();
 
-    void set_cpus(const cpu_set cpus);
+    /**
+     * Prepare partition for running under new slice.
+     * After this is called, slice may start scheduling processes from this partition.
+     *
+     * TODO: not really sure about the naming, but `reset` and `disconnect` seem the best;
+     *  before, it was `bind_to_slice` and `unbind`, but these are not only used by slices,
+     *  but also during init; if you have anything better, feel free to change these
+     */
+    void reset(bool move_to_first_proc,
+               const cpu_set cpus,
+               std::function<void()> process_completion_cb);
 
-    void move_to_first_proc();
-    // return false if there is none
-    bool move_to_next_unfinished_proc();
+    /**
+     * Clears process completion callback set in `bind_to_slice(...)`.
+     */
+    void disconnect();
 
-    bool is_completed();
-    void clear_completed_flag();
-    bool is_empty();
-    void kill_all();
+    /**
+     * Returns pointer to next unfinished process,
+     * if there is one, otherwise returns nullptr.
+     */
+    Process *find_unfinished_process();
 
-    void set_complete_cb(std::function<void()> new_complete_cb);
+    /** Registers a callback that is called when the partition is emptied (all processes ended). */
     void set_empty_cb(std::function<void()> new_empty_cb);
 
+    /** Returns true if there are no running processes inside this partition. */
+    bool is_empty() const;
     std::string get_name() const;
 
     // protected:
@@ -65,8 +91,8 @@ public:
     // cgf and cge are read by Process constructor in process.cpp
     CgroupFreezer cgf;
     Cgroup cge;
-    void proc_exit_cb(Process &proc);
-    std::function<void()> completed_cb = nullptr;
+    void proc_exit_cb();
+    void completed_cb();
 
 private:
     Processes processes = {};
@@ -79,8 +105,13 @@ private:
 
     // cyclic queue
     void move_to_next_proc();
+    void clear_completed_flag();
 
-    std::vector<std::function<void()>> empty_cbs = {};
+    // cached so that we don't recreate new std::function each time
+    std::function<void()> default_completed_cb = [] {};
+    std::function<void()> _completed_cb = default_completed_cb;
+    // invoked when partition is empty (no running processes)
+    std::function<void()> empty_cb = [] {};
 };
 
 #endif // PARTITION_HPP

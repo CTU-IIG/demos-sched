@@ -64,6 +64,9 @@ executable('yaml-demo',
 executable('api-test', ['api_test.c'],
            dependencies : [ libdemos_sch_dep ])
 
+executable('api-init-test', ['api_init_test.c'],
+           dependencies : [ libdemos_sch_dep ])
+
 conf_data = configuration_data({
   'MAX_CPUS' : get_option('max_cpus'),
 })

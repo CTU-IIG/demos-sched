@@ -30,53 +30,64 @@ public:
             Partition &partition,
             std::string argv,
             std::chrono::nanoseconds budget,
-            std::chrono::nanoseconds budget_jitter = std::chrono::nanoseconds(0),
-            bool continuous = false);
+            bool has_initialization = false);
 
-    // bool is_completed();
+    /** Spawns the underlying system process. */
     void exec();
+
+    /**
+     * Kills the process, and all children in its cgroup.
+     *
+     * Does not wait for exit, you should wait for the exit of all processes
+     * on the parent partition using `set_empty_cb`.
+     */
     void kill();
 
+    /** Freezes all processes in the cgroup of this process. */
     void freeze();
+    /** Resumes all processes in the cgroup of this process. */
     void unfreeze();
-    std::chrono::nanoseconds get_actual_budget();
 
+    std::chrono::nanoseconds get_actual_budget();
+    pid_t get_pid() const;
+    bool needs_initialization() const;
+    bool is_running() const;
     bool is_completed() const;
+
     void mark_completed();
     void mark_uncompleted();
 
-    bool is_running();
-
-    pid_t get_pid() const;
-
-    // delete copy constructor
-    //        Process(const Process&) = delete;
-    //        Process& operator=(const Process&) = delete;
 private:
     ev::loop_ref loop;
-    ev::evfd completed_w;
-    ev::child child_w;
+    ev::evfd completed_w{ loop };
+    ev::child child_w{ loop };
     int efd_continue; // new period eventfd
 
     Partition &part;
     CgroupEvents cge;
     CgroupFreezer cgf;
 
+    std::string argv;
+    std::chrono::nanoseconds budget;
+    std::chrono::nanoseconds actual_budget;
+    bool has_initialization;
+    bool completed = false;
+    bool demos_completed = false;
+    // cannot be replaced by `pid >= 0`, as we want
+    //  to keep pid even after process exits, to be
+    //  able to correctly handle some delayed events
+    /** Indicates if the process or any of its (possibly detached) children are running. */
+    bool running = false;
+    /** Indicates if the explicitly spawned process is running */
+    bool original_process_running = false;
+    /** Indicates if the process was killed using `Process::kill()`. */
+    bool killed = false;
+    pid_t pid = -1;
+
+    void handle_end();
     void populated_cb(bool populated);
     void completed_cb();
     void child_terminated_cb(ev::child &w, int revents);
-
-    // std::string partition_cgrp_name;
-    std::string argv;
-    std::chrono::nanoseconds budget;
-    std::chrono::nanoseconds budget_jitter;
-    std::chrono::nanoseconds actual_budget;
-    bool completed = false;
-    bool demos_completed = false;
-    bool continuous;
-    bool running = false;
-    pid_t pid = -1;
-    // Cgroup cgroup;
 };
 
 #endif

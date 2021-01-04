@@ -37,9 +37,15 @@ Node Config::normalize_process(const Node &proc, float default_budget)
         for (auto key : proc) {
             string k = key.first.as<string>();
             if (k == "cmd") {
+                // which shell command to run to start the process
                 norm_proc[k] = proc[k].as<string>();
             } else if (k == "budget") {
+                // how long can the process run in each window cycle
                 norm_proc[k] = proc[k].as<int>();
+            } else if (k == "init") {
+                // if true, we wait until the process completes initialization
+                //  before freezing it and starting normal scheduling
+                norm_proc[k] = proc[k].as<bool>();
             } else {
                 throw runtime_error("Unexpected key: " + k);
             }
@@ -51,6 +57,11 @@ Node Config::normalize_process(const Node &proc, float default_budget)
             throw runtime_error("Missing budget");
         }
         norm_proc["budget"] = default_budget;
+    }
+
+    // after "budget" to keep typical key ordering in case neither is specified
+    if (!norm_proc["init"]) {
+        norm_proc["init"] = false;
     }
 
     return norm_proc;
@@ -83,9 +94,7 @@ Node Config::normalize_partition(const Node &part,
                 norm_part[k] = part[k].as<string>();
             else if (k == "processes")
                 processes = normalize_processes(part[k], total_budget);
-            else if (k == "cmd")
-                ;
-            else if (k == "budget")
+            else if (k == "cmd" || k == "budget" || k == "init")
                 ;
             else
                 throw runtime_error("Unexpected key: " + k);
@@ -97,12 +106,15 @@ Node Config::normalize_partition(const Node &part,
         norm_part["name"] = name;
     }
 
+    // Matej Kafka: imo, this shouldn't be supported;
+    //  it's needless duplication which saves 1 line in config file
     if (!norm_part["processes"]) {
         if (!processes) {
             Node process;
-            process["cmd"] = part["cmd"];
-            if (part["budget"]) {
-                process["budget"] = part["budget"];
+            for (const string &key : { "cmd", "budget", "init" }) {
+                if (part[key]) {
+                    process[key] = part[key];
+                }
             }
             processes.push_back(normalize_process(process, total_budget));
         }
@@ -256,7 +268,8 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
           c.freezer_cg, c.cpuset_cg, c.unified_cg, ypart["name"].as<string>());
         for (auto yprocess : ypart["processes"]) {
             auto budget = chrono::milliseconds(yprocess["budget"].as<int>());
-            partitions.back().add_process(c.loop, yprocess["cmd"].as<string>(), budget);
+            partitions.back().add_process(
+              c.loop, yprocess["cmd"].as<string>(), budget, yprocess["init"].as<bool>());
         }
     }
 
@@ -284,7 +297,7 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
                 cpus &= allowed_cpus;
             }
             slices.push_back(
-              make_unique<Slice>(c.loop, c.start_time, sc_part_ptr, be_part_ptr, cpus));
+              make_unique<Slice>(c.loop, sc_part_ptr, be_part_ptr, cpus));
         }
 
         auto budget = chrono::milliseconds(length);
