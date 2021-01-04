@@ -52,7 +52,7 @@ public:
     pid_t get_pid() const;
     bool needs_initialization() const;
     bool is_running() const;
-    bool is_completed() const;
+    bool is_pending() const;
 
     void mark_completed();
     void mark_uncompleted();

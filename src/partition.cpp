@@ -99,22 +99,22 @@ void Partition::move_to_next_proc()
     }
 }
 
-Process *Partition::find_unfinished_process()
+Process *Partition::seek_pending_process()
 {
-    if (completed || empty) {
+    if (finished || empty) {
         return nullptr;
     }
     for (size_t i = 0; i < processes.size(); i++) {
-        if (!current_proc->is_completed()) return &*current_proc;
+        if (current_proc->is_pending()) return &*current_proc;
         move_to_next_proc();
     }
-    completed = true;
+    finished = true;
     return nullptr;
 }
 
 void Partition::clear_completed_flag()
 {
-    completed = false;
+    finished = false;
     for (auto &p : processes) {
         p.mark_uncompleted();
     }

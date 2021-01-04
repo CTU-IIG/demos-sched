@@ -26,8 +26,8 @@ Slice::Slice(ev::loop_ref loop, Partition *sc, Partition *be, cpu_set cpus)
 bool Slice::load_next_process()
 {
     Process *proc = nullptr;
-    if (sc) proc = sc->find_unfinished_process();
-    if (!proc && be) proc = be->find_unfinished_process();
+    if (sc) proc = sc->seek_pending_process();
+    if (!proc && be) proc = be->seek_pending_process();
     // nothing to run
     if (!proc) return false;
 

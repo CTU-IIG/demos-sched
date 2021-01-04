@@ -74,10 +74,11 @@ public:
     void disconnect();
 
     /**
-     * Returns pointer to next unfinished process,
-     * if there is one, otherwise returns nullptr.
+     * Returns pointer to next pending (running and incomplete) process, if there is one.
+     * If current process is pending, return that one (without seeking to the next).
+     * Otherwise returns nullptr.
      */
-    Process *find_unfinished_process();
+    Process *seek_pending_process();
 
     /** Registers a callback that is called when the partition is emptied (all processes ended). */
     void set_empty_cb(std::function<void()> new_empty_cb);
@@ -100,7 +101,9 @@ private:
     std::string name;
     size_t proc_count = 0;
 
-    bool completed = false;
+    // when true, there are no pending processes
+    // cached flag, not strictly needed
+    bool finished = false;
     bool empty = true;
 
     // cyclic queue

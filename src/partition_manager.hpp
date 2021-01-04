@@ -85,7 +85,7 @@ private:
         Process *proc;
         // find next uninitialized process
         for (; init_iter != partitions.end(); init_iter++) {
-            proc = init_iter->find_unfinished_process();
+            proc = init_iter->seek_pending_process();
             if (proc) return proc;
         }
         return nullptr;

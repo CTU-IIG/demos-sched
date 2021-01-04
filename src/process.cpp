@@ -106,9 +106,9 @@ bool Process::needs_initialization() const
     return has_initialization;
 }
 
-bool Process::is_completed() const
+bool Process::is_pending() const
 {
-    return !is_running() || completed;
+    return is_running() && !completed;
 }
 
 void Process::mark_completed()
