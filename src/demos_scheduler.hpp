@@ -30,8 +30,6 @@ public:
      * It is guaranteed that all processes are ended before this function returns.
      *
      * Assumes that system processes are already created.
-     *
-     * @param start_fn - function that kicks off the
      */
     void run()
     {
