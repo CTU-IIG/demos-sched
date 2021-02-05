@@ -12,15 +12,15 @@ windows:
 partitions:
   - name: SC1
     processes:
-      - cmd: build/src/api-init-test
+      - cmd: build/src/api-init-test one two
         budget: 1500
         init: yes
   - name: SC2
     processes:
-      - cmd: build/src/api-init-test
+      - cmd: build/src/api-init-test raz dva
         budget: 1500
         init: yes
   - name: BE1
     processes:
-      - cmd: yes > /dev/null
+      - cmd: sleep 1
         budget: 1500
