@@ -69,7 +69,7 @@ void Partition::reset(bool move_to_first_proc,
                       const cpu_set cpus,
                       std::function<void()> process_completion_cb)
 {
-    // must be non-null
+    // must be non-empty
     assert(process_completion_cb);
 
     clear_completed_flag();

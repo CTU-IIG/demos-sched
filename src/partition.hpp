@@ -74,9 +74,15 @@ public:
     void disconnect();
 
     /**
-     * Returns pointer to next pending (running and incomplete) process, if there is one.
+     * Returns pointer to next pending process, if there is one.
      * If current process is pending, return that one (without seeking to the next).
      * Otherwise returns nullptr.
+     *
+     * Pending process is a process which is:
+     *  1) running (=did not exit yet)
+     *  2) incomplete (=did not signal completion or run out of its budget
+     *     since last reset (in current window))
+     *  (basically, the next process for which it makes sense to run in current window)
      */
     Process *seek_pending_process();
 
@@ -102,7 +108,7 @@ private:
     size_t proc_count = 0;
 
     // when true, there are no pending processes
-    // cached flag, not strictly needed
+    // cached flag, not strictly needed, speeds up lookup in `seek_pending_process()`
     bool finished = false;
     bool empty = true;
 
