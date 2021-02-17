@@ -1,6 +1,6 @@
 project('demos-sched', ['cpp', 'c'],
 	default_options : [
-	  'cpp_std=c++14',
+	  'cpp_std=c++17',
 	  'default_library=static',
 	],
 	meson_version : '>=0.49.2',
