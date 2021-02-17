@@ -95,12 +95,12 @@ int demos_initialization_completed()
 
     if (!initialization_pending) {
         LOG_DEBUG(
-          "Warning: Called `demos_initialization_completed()` without pending initialization");
-        initialization_pending = false;
-        // do not call demos_completed, just continue with execution and signal error
+          "Warning: Called `demos_initialization_completed()` without pending initialization "
+          "(did you set `init: yes` for this process in the DEmOS configuration file?)");
         // given that the process expected to have "extra" time to do the initialization,
         //  and it actually initialized during normal scheduling window, it should just
-        //  continue running until the first block of work is completed
+        //  continue running until the first block of work is completed, therefore we
+        //  won't call `demos_completed()` here and just return with error
         errno = EWOULDBLOCK;
         return -1;
     }
