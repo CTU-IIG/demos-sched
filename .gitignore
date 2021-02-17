@@ -1,5 +1,6 @@
 *swp
-build
+build/
+build-aarch64/
 src/main.cpp
 src/a.out
 tags
