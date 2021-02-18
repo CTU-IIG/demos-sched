@@ -36,6 +36,8 @@ void print_help()
             "  -h                 print this message\n"
             "To control logger output, use the following environment variables:\n"
             "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
+            "  DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, \n"
+            "      even when it is convinced that the attached terminal doesn't support it\n"
             "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n";
     // clang-format on
 }
@@ -253,13 +255,10 @@ int main(int argc, char *argv[])
         reexec_via_systemd_run(argc, argv);
     }
 
-    // Set loglevel from environment, e.g., export SPDLOG_LEVEL=info
-    spdlog::cfg::load_env_levels();
-    if (!getenv("DEMOS_PLAIN_LOG")) {
-        logger->set_pattern(">>> %H:%M:%S.%e [%^%l%$] %v");
-    } else {
-        logger->set_pattern(">>> [%l] %v");
-    }
+    // setup our global spdlog logger (outputs to stderr)
+    initialize_logger(getenv("DEMOS_PLAIN_LOG") ? ">>> [%l] %v" : ">>> %H:%M:%S.%e [%^%l%$] %v",
+                     true,
+                     getenv("DEMOS_FORCE_COLOR_LOG") != nullptr);
 
     // demos is running in a libev event loop
     ev::default_loop loop;
