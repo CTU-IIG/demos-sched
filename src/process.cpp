@@ -131,7 +131,7 @@ pid_t Process::get_pid() const
     return pid;
 }
 
-/** Called when the cgroup is empty and we want to signal it to partition. */
+/** Called when the cgroup is empty and we want to signal it to the parent partition. */
 void Process::handle_end()
 {
     running = false;

@@ -29,14 +29,14 @@ void print_help()
     // clang-format off
     cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
             "  -c <CONFIG_FILE>   path to configuration file\n"
-            "  -C <CONFIG>        in-line configuration in YAML format\n"
+            "  -C <CONFIG>        inline configuration in YAML format\n"
             "  -g <CGROUP_NAME>   name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
             "  -s                 rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
             "  -d                 dump config file without execution\n"
             "  -h                 print this message\n"
             "To control logger output, use the following environment variables:\n"
             "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
-            "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)";
+            "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n";
     // clang-format on
 }
 

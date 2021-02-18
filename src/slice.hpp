@@ -16,7 +16,7 @@ using time_point = std::chrono::steady_clock::time_point;
  *
  * In each slice, there are potentially 2 partitions:
  * - `sc_partition` = safety-critical partition
- * - `be_partition` = best-effort partittion
+ * - `be_partition` = best-effort partition
  *
  * First, safety-critical partition is ran; after it finishes (either its time
  * budget is exhausted, or it completes), best-effort partition is started.

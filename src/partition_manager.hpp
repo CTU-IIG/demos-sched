@@ -31,7 +31,10 @@ public:
         for (auto &p : partitions) {
             // we want to run init for each partition in the widest
             //  cpu_set it will ever run in; otherwise, multi-threaded
-            //  program would initialize to run with lower number of threads
+            //  program could initialize to run with lower number of threads,
+            //  which would be inefficient; this way, the process might run
+            //  on fewer cores than it has threads in some windows, but that
+            //  isn't as much of a problem for performance
             cpus_ptr = mf.find_widest_cpu_set(p);
             p.reset(true, cpus_ptr ? *cpus_ptr : default_cpu_set, part_cb);
         }
