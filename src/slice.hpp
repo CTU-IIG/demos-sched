@@ -9,7 +9,6 @@
 #include <ev++.h>
 #include <functional>
 
-using Partitions = std::list<Partition>;
 using time_point = std::chrono::steady_clock::time_point;
 
 /**

@@ -10,6 +10,7 @@
 #include <list>
 
 using namespace std::placeholders;
+using Partitions = std::list<Partition>;
 using Processes = std::list<Process>;
 
 /**
