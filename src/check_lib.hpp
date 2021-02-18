@@ -1,5 +1,4 @@
-#ifndef DEMOSSCHED_HPP
-#define DEMOSSCHED_HPP
+#pragma once
 
 #include <err.h>
 #include <iostream>
@@ -24,5 +23,3 @@
         }                                                                                          \
         ret;                                                                                       \
     })
-
-#endif // DEMOSSCHED_HPP

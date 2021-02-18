@@ -2,8 +2,8 @@
 #define PARTITION_HPP
 
 #include "cgroup.hpp"
+#include "check_lib.hpp"
 #include "cpu_set.hpp"
-#include "demossched.hpp"
 #include "process.hpp"
 #include <chrono>
 #include <functional>

@@ -1,8 +1,8 @@
 #ifndef SLICE_HPP
 #define SLICE_HPP
 
+#include "check_lib.hpp"
 #include "cpu_set.hpp"
-#include "demossched.hpp"
 #include "partition.hpp"
 #include "timerfd.hpp"
 #include <chrono>

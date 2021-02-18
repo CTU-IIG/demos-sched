@@ -3,7 +3,7 @@
 #include <err.h>
 #include <fstream>
 
-#include "demossched.hpp"
+#include "check_lib.hpp"
 
 using namespace std;
 

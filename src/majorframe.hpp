@@ -1,7 +1,7 @@
 #ifndef MAJORFRAME_HPP
 #define MAJORFRAME_HPP
 
-#include "demossched.hpp"
+#include "check_lib.hpp"
 #include "timerfd.hpp"
 #include "window.hpp"
 #include <ev++.h>
