@@ -28,7 +28,7 @@ Process::Process(ev::loop_ref loop,
     , actual_budget(budget)
     , has_initialization(has_initialization)
 {
-    freeze();
+    suspend();
     completed_w.set(std::bind(&Process::completed_cb, this));
     completed_w.start();
     child_w.set<Process, &Process::child_terminated_cb>(this);
@@ -76,15 +76,15 @@ void Process::kill()
     killed = true;
 }
 
-void Process::freeze()
+void Process::suspend()
 {
     cgf.freeze();
     if (is_running()) {
-        logger->trace("Frozen process '{}'", pid);
+        logger->trace("Suspended process '{}'", pid);
     }
 }
 
-void Process::unfreeze()
+void Process::resume()
 {
     assert(is_running());
     logger->trace("Resuming process '{}'", pid);

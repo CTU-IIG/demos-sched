@@ -37,7 +37,7 @@ bool Slice::load_next_process()
 
 void Slice::start_current_process()
 {
-    current_proc->unfreeze();
+    current_proc->resume();
     timeout += current_proc->get_actual_budget();
     timer.start(timeout);
 }
@@ -69,7 +69,7 @@ TODO: When BE partition process is interrupted by window end,
 void Slice::stop()
 {
     if (current_proc) {
-        current_proc->freeze();
+        current_proc->suspend();
     }
     if (sc) sc->disconnect();
     if (be) be->disconnect();
@@ -80,7 +80,7 @@ void Slice::stop()
 void Slice::schedule_next()
 {
     timer.stop();
-    current_proc->freeze();
+    current_proc->suspend();
     current_proc->mark_completed();
 
     if (!load_next_process()) {

@@ -112,13 +112,13 @@ private:
         logger->trace("Initializing process '{}'", p->get_pid());
         // resume the process; it should stop on its own after initialization is completed
         // then, it will call init_next_process as callback
-        p->unfreeze();
+        p->resume();
     }
 
     /** Called as a completion callback from process. */
     void process_init_completion_cb()
     {
-        initialized_proc->freeze();
+        initialized_proc->suspend();
         initialized_proc->mark_completed();
         init_next_process();
     }

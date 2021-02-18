@@ -16,7 +16,7 @@ Partition::Partition(Cgroup &freezer_parent,
     , current_proc(nullptr)
     , name(name)
 {
-    freeze();
+    suspend();
 }
 
 Process &Partition::get_current_proc()
@@ -24,17 +24,17 @@ Process &Partition::get_current_proc()
     return *current_proc;
 }
 
-void Partition::freeze()
+void Partition::suspend()
 {
     for (auto &p : processes) {
-        p.freeze();
+        p.suspend();
     }
 }
 
-void Partition::unfreeze()
+void Partition::resume()
 {
     for (auto &p : processes) {
-        p.unfreeze();
+        p.resume();
     }
 }
 

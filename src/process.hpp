@@ -43,10 +43,16 @@ public:
      */
     void kill();
 
-    /** Freezes all processes in the cgroup of this process. */
-    void freeze();
-    /** Resumes all processes in the cgroup of this process. */
-    void unfreeze();
+    /**
+     * Suspends this process and all children.
+     * Internally, this freezes the underlying cgroup.
+     */
+    void suspend();
+    /**
+     * Resumes this process and all children.
+     * Internally, this unfreezes the underlying cgroup.
+     */
+    void resume();
 
     std::chrono::nanoseconds get_actual_budget();
     pid_t get_pid() const;
