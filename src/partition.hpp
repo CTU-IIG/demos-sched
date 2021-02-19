@@ -1,5 +1,4 @@
-#ifndef PARTITION_HPP
-#define PARTITION_HPP
+#pragma once
 
 #include "cgroup.hpp"
 #include "check_lib.hpp"
@@ -118,10 +117,8 @@ private:
     void clear_completed_flag();
 
     // cached so that we don't recreate new std::function each time
-    std::function<void()> default_completed_cb = [] {};
+    inline static const std::function<void()> default_completed_cb = [] {};
     std::function<void()> _completed_cb = default_completed_cb;
     // invoked when partition is empty (no running processes)
     std::function<void()> empty_cb = [] {};
 };
-
-#endif // PARTITION_HPP
