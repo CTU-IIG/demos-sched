@@ -15,27 +15,11 @@ Partition::Partition(Cgroup &freezer_parent,
     , cge(events_parent, name)
     , current_proc(nullptr)
     , name(name)
-{
-    suspend();
-}
+{}
 
 Process &Partition::get_current_proc()
 {
     return *current_proc;
-}
-
-void Partition::suspend()
-{
-    for (auto &p : processes) {
-        p.suspend();
-    }
-}
-
-void Partition::resume()
-{
-    for (auto &p : processes) {
-        p.resume();
-    }
 }
 
 void Partition::kill_all()

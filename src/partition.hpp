@@ -33,10 +33,6 @@ public:
 
     Process &get_current_proc();
 
-    /** Suspends all processes in this partition. Idempotent. */
-    void suspend();
-    /** Resumes all processes in this partition. Idempotent. */
-    void resume();
     /** Kills all system processes from this partition. */
     void kill_all();
 

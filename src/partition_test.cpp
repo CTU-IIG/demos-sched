@@ -20,7 +20,7 @@ int main()
 
         Partition part(freezer_path, cpuset_path, unified_path, "partA");
         part.add_process(loop, "src/infinite_proc 1000000 be2_A", 1s);
-        part.resume();
+        part.get_current_proc().resume();
 
         loop.run();
 
