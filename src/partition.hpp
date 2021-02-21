@@ -112,9 +112,10 @@ private:
     void move_to_next_proc();
     void clear_completed_flag();
 
+    // TODO: is this the right place for this definition?
     // cached so that we don't recreate new std::function each time
-    inline static const std::function<void()> default_completed_cb = [] {};
-    std::function<void()> _completed_cb = default_completed_cb;
+    inline static const std::function<void()> NOOP = [] {};
+    std::function<void()> _completed_cb = NOOP;
     // invoked when partition is empty (no running processes)
     std::function<void()> empty_cb = [] {};
 };

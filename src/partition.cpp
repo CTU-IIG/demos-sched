@@ -67,7 +67,7 @@ void Partition::reset(bool move_to_first_proc,
 
 void Partition::disconnect()
 {
-    _completed_cb = default_completed_cb;
+    _completed_cb = NOOP;
 }
 
 void Partition::completed_cb()
