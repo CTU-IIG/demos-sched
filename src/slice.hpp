@@ -31,12 +31,15 @@ public:
 
     // these should really be std::optional, but since C++
     //  is a half-assed, optional references are not a thing
-    Partition *sc;
-    Partition *be;
+    /** Safety-critical partition running in this slice. */
+    Partition *const sc;
+    /** Best-effort partition running in this slice. */
+    Partition *const be;
     const cpu_set cpus;
 
     void start(time_point current_time);
     void stop();
+
 private:
     Process *current_proc = nullptr;
     // will be overwritten in start(...), value is not important
