@@ -18,7 +18,11 @@ public:
     PartitionManager(const PartitionManager &) = delete;
     const PartitionManager &operator=(const PartitionManager &) = delete;
 
-    /** Initializes all processes. */
+    /**
+     * Initializes all processes.
+     *
+     * NOTE: initialization may get interrupted if scheduler receives SIGINT or SIGTERM signal.
+     */
     void run_process_init(MajorFrame &mf, std::function<void()> init_cb)
     {
         logger->debug("Process initialization started");
@@ -49,7 +53,12 @@ public:
         }
     }
 
-    /** Stops all processes. Processes might not terminate immediately. */
+    /**
+     * Stops all underlying system processes.
+     *
+     * Processes might not terminate immediately, but eventual termination is guaranteed.
+     * To get notified when that happens, set a callback by calling `set_completion_cb(...)`.
+     */
     void kill_all()
     {
         for (auto &p : partitions) {

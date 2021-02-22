@@ -54,6 +54,9 @@ void Partition::reset(bool move_to_first_proc,
                       std::function<void()> process_completion_cb)
 {
     // must be non-empty
+    // MK: this is not due to technical reasons, but I don't have any use-case
+    //  for the callback being empty, and enforcing this might avoid some bugs;
+    //  feel free to change it if you need to do so
     assert(process_completion_cb);
 
     clear_completed_flag();

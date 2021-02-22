@@ -66,7 +66,12 @@ private:
         mf.start(std::chrono::steady_clock::now());
     }
 
-    /** Called when all processes exited (or were terminated). */
+    /**
+     * Called when all processes exited (or were terminated).
+     *
+     * NOTE: this may get called before `start_scheduler()`,
+     *  in case all processes exit during initialization.
+     */
     void completion_cb()
     {
         logger->debug("All processes exited");

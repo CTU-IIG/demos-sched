@@ -53,8 +53,11 @@ public:
     void create_processes();
 
     /**
-     * Prepare partition for running under new slice.
-     * After this is called, slice may start scheduling processes from this partition.
+     * Prepare partition for running under a new controller.
+     * After this is called, you may start scheduling processes from this partition.
+     *
+     * Call `disconnect()` after you are done with this partition and do not wish
+     * to receive more completion callbacks.
      *
      * TODO: not really sure about the naming, but `reset` and `disconnect` seem the best;
      *  before, it was `bind_to_slice` and `unbind`, but these are not only used by slices,
