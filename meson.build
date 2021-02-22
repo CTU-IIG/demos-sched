@@ -5,7 +5,9 @@ project('demos-sched', ['cpp', 'c'],
 	],
 	meson_version : '>=0.49.2',
        )
-add_global_arguments(['-Weffc++'], language : 'cpp')
+add_project_arguments(['-Weffc++'], language : 'cpp')
+# without this, std::filesystem is not present for some compilers
+add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
 
 cpp = meson.get_compiler('cpp')
 
