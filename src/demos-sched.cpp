@@ -56,7 +56,7 @@ void handle_cgroup_exc(stringstream &commands,
         case EROFS:
         case ENOENT:
             if (sys_fs_cg_path.find("/sys/fs/cgroup/") != 0) {
-                throw "Unexpected cgroup path " + sys_fs_cg_path;
+                throw runtime_error("Unexpected cgroup path " + sys_fs_cg_path);
             }
 
             if (sys_fs_cg_path.find("freezer/", 15) != string::npos) {
@@ -66,7 +66,7 @@ void handle_cgroup_exc(stringstream &commands,
             } else if (sys_fs_cg_path.find("unified/", 15) != string::npos) {
                 mount_cmds << "mount -t cgroup2 none /sys/fs/cgroup/unified";
             } else {
-                throw "Unexpected cgroup controller path" + sys_fs_cg_path;
+                throw runtime_error("Unexpected cgroup controller path" + sys_fs_cg_path);
             }
             mount_cmds << endl;
             break;
