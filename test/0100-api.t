@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 3
+plan_tests 4
 
 api-test
 is $? 1 "Running outside of demos-sched fails"
@@ -13,3 +13,24 @@ readarray -t lines < <(demos-sched -C "{
 echo PATH=$PATH >&2
 is "${lines[0]}" "first" "first iteration"
 is "${lines[1]}" "second" "second iteration"
+
+
+# Check that demos doesn't hang when process exits during initialization
+# 3 seconds should be long enough, but fundamentally, it's a race condition
+timeout 3s demos-sched -C '
+windows:
+  - length: 1
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: exit
+        budget: 100
+        init: yes
+      - cmd: exit
+        budget: 100
+'
+ok $? "Does not hang on process exit during initialization"

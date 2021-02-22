@@ -117,17 +117,17 @@ bool Partition::is_empty() const
     return empty;
 }
 
-void Partition::set_empty_cb(std::function<void()> new_empty_cb)
+void Partition::set_process_exit_cb(std::function<void(bool)> new_exit_cb)
 {
-    empty_cb = new_empty_cb;
+    _proc_exit_cb = new_exit_cb;
 }
 
 void Partition::proc_exit_cb()
 {
-    for (auto &p : processes) {
-        if (p.is_running()) return;
-    }
     empty = true;
-    // notify that there are no running processes in this partition
-    empty_cb();
+    for (auto &p : processes) {
+        if (p.is_running()) empty = false;
+    }
+    // notify that a process exited
+    _proc_exit_cb(empty);
 }

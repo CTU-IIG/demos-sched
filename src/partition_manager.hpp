@@ -1,3 +1,5 @@
+#pragma once
+
 #include "log.hpp"
 #include "majorframe.hpp"
 #include "slice.hpp"
@@ -8,10 +10,7 @@ public:
     PartitionManager(Partitions &partitions)
         : partitions(partitions)
     {
-        auto part_cb = std::bind(&PartitionManager::empty_partition_cb, this);
-        for (auto &p : partitions) {
-            p.set_empty_cb(part_cb);
-        }
+        set_exit_cb(&PartitionManager::process_exit_cb);
     }
 
     // delete move and copy constructors, as we have a pointer data member
@@ -31,7 +30,7 @@ public:
         // used when partition is not contained in any slice, not really important
         const cpu_set default_cpu_set{};
         const cpu_set *cpus_ptr;
-        auto part_cb = std::bind(&PartitionManager::process_init_completion_cb, this);
+        auto completion_cb = std::bind(&PartitionManager::process_init_completion_cb, this);
         for (auto &p : partitions) {
             // we want to run init for each partition in the widest
             //  cpu_set it will ever run in; otherwise, multi-threaded
@@ -40,12 +39,19 @@ public:
             //  on fewer cores than it has threads in some windows, but that
             //  isn't as much of a problem for performance
             cpus_ptr = mf.find_widest_cpu_set(p);
-            p.reset(true, cpus_ptr ? *cpus_ptr : default_cpu_set, part_cb);
+            p.reset(true, cpus_ptr ? *cpus_ptr : default_cpu_set, completion_cb);
         }
+
+        // overwrite process exit callback set in constructor
+        // we need this to be able to detect that a process exited during initialization
+        //  and we should move on to the next one, otherwise a deadlock would occur
+        // this will be reset to the original callback after initialization is finished
+        set_exit_cb(&PartitionManager::process_init_exit_cb);
+
         init_next_process();
     }
 
-    /** Spawns frozen processes from all partitions. */
+    /** Spawns suspended processes from all partitions. */
     void create_processes()
     {
         for (auto &p : partitions) {
@@ -83,9 +89,20 @@ private:
     // initialized in `run_process_init`
     std::function<void()> init_cb = nullptr;
 
-    /** Called when partition is emptied. */
-    void empty_partition_cb()
+    /** Sets up passed process exit callback, bound to `this`. */
+    void set_exit_cb(void (PartitionManager::* cb_method)(bool))
     {
+        using namespace std::placeholders;
+        auto proc_exit_cb = std::bind(cb_method, this, _1);
+        for (auto &p : partitions) {
+            p.set_process_exit_cb(proc_exit_cb);
+        }
+    }
+
+    /** Called when a process exits in one of the managed partitions. */
+    void process_exit_cb(bool partition_empty)
+    {
+        if (!partition_empty) return;
         for (auto &p : partitions) {
             if (!p.is_empty()) return;
         }
@@ -103,16 +120,20 @@ private:
         return nullptr;
     }
 
-    void finish_process_init()
+    void init_next_process()
     {
-        for (auto &p : partitions) {
-            p.disconnect();
+        initialized_proc = find_next_uninitialized_process();
+        if (initialized_proc) {
+            init_process(initialized_proc);
+        } else {
+            finish_process_init();
         }
-        logger->debug("Process initialization finished");
-        init_cb();
     }
 
-    /** Initiates single process. Completion is handled by init_next_process(). */
+    /**
+     * Initializes a single process.
+     * Completion is handled by `process_init_completion_cb()`.
+     */
     void init_process(Process *p)
     {
         if (!p->needs_initialization()) {
@@ -127,6 +148,18 @@ private:
         p->resume();
     }
 
+    void finish_process_init()
+    {
+        // reset process exit cb to the original one
+        set_exit_cb(&PartitionManager::process_exit_cb);
+        // remove completion cb
+        for (Partition &p : partitions) {
+            p.disconnect();
+        }
+        logger->debug("Process initialization finished");
+        init_cb();
+    }
+
     /** Called as a completion callback from process. */
     void process_init_completion_cb()
     {
@@ -135,13 +168,17 @@ private:
         init_next_process();
     }
 
-    void init_next_process()
+    /** Called when a process exits during initialization. */
+    void process_init_exit_cb(bool partition_empty)
     {
-        initialized_proc = find_next_uninitialized_process();
-        if (initialized_proc) {
-            init_process(initialized_proc);
-        } else {
-            finish_process_init();
+        // if this is false, it means some other process exited,
+        //  this may happen for example on receiving SIGINT
+        if (!initialized_proc->is_running()) {
+            // end initialization of this process and move on to the next one
+            process_init_completion_cb();
         }
+
+        // call original callback
+        process_exit_cb(partition_empty);
     }
 };

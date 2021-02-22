@@ -85,8 +85,12 @@ public:
      */
     Process *seek_pending_process();
 
-    /** Registers a callback that is called when the partition is emptied (all processes ended). */
-    void set_empty_cb(std::function<void()> new_empty_cb);
+    /**
+     * Registers a callback that is called whenever any process exits.
+     *
+     * The single boolean parameter to the callback indicates if the partition is empty.
+     */
+    void set_process_exit_cb(std::function<void(bool)> new_exit_cb);
 
     /** Returns true if there are no running processes inside this partition. */
     bool is_empty() const;
@@ -119,6 +123,6 @@ private:
     // cached so that we don't recreate new std::function each time
     inline static const std::function<void()> NOOP = [] {};
     std::function<void()> _completed_cb = NOOP;
-    // invoked when partition is empty (no running processes)
-    std::function<void()> empty_cb = [] {};
+    // invoked when a process in this partition exits
+    std::function<void(bool)> _proc_exit_cb = [](bool _) {};
 };
