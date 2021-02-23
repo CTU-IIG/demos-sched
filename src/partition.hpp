@@ -53,7 +53,7 @@ public:
     void create_processes();
 
     /**
-     * Prepare partition for running under a new controller.
+     * Prepare partition for running under a new owner (currently either Slice or PartitionManager).
      * After this is called, you may start scheduling processes from this partition.
      *
      * Call `disconnect()` after you are done with this partition and do not wish
@@ -75,12 +75,12 @@ public:
     /**
      * Returns pointer to next pending process, if there is one.
      * If current process is pending, return that one (without seeking to the next).
-     * Otherwise returns nullptr.
+     * If no process is pending, returns nullptr.
      *
-     * Pending process is a process which is:
-     *  1) running (=did not exit yet)
+     * Pending process is a process which is both:
+     *  1) running (=did not exit yet) and
      *  2) incomplete (=did not signal completion or run out of its budget
-     *     since last reset (in current window))
+     *     since last call to `reset(...)`)
      *  (basically, the next process for which it makes sense to run in current window)
      */
     Process *seek_pending_process();

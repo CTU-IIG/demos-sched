@@ -60,7 +60,7 @@ public:
     }
 
     /**
-     * Stops all underlying system processes.
+     * Kills all underlying system processes.
      *
      * Processes might not terminate immediately, but eventual termination is guaranteed.
      * To get notified when that happens, set a callback by calling `set_completion_cb(...)`.
