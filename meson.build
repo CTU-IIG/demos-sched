@@ -5,6 +5,9 @@ project('yaml_cpp', ['cpp'],
 	  'buildtype=release',
 	])
 
+add_project_arguments(['-w'], language : ['c', 'cpp'])
+add_project_arguments(['-Wno-effc++'], language : 'cpp')
+
 # contrib-pattern = 'src/contrib/*.cpp'
 
 inc_dir = include_directories('include')
