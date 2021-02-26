@@ -1,6 +1,9 @@
 project('libev', 'c',
         version: '4.31')
 
+add_project_arguments(['-w'], language : ['c', 'cpp'])
+add_project_arguments(['-Wno-effc++'], language : 'cpp')
+
 cc = meson.get_compiler('c')
 libm_dep = cc.find_library('m')
 
