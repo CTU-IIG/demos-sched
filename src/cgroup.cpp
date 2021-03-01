@@ -75,13 +75,17 @@ std::string Cgroup::get_path() const
 //////////////////
 CgroupFreezer::CgroupFreezer(string parent_path, string name)
     : Cgroup(parent_path, name)
-{
-    fd_state = CHECK(open((path + "/freezer.state").c_str(), O_RDWR | O_NONBLOCK));
-}
+    , fd_state{ CHECK(open((path + "/freezer.state").c_str(), O_RDWR | O_NONBLOCK)) }
+{}
 
 CgroupFreezer::CgroupFreezer(Cgroup &parent, string name)
     : CgroupFreezer(parent.get_path(), name)
 {}
+
+CgroupFreezer::~CgroupFreezer()
+{
+    close(fd_state);
+}
 
 void CgroupFreezer::freeze()
 {
@@ -98,13 +102,17 @@ void CgroupFreezer::unfreeze()
 /////////////////////
 CgroupCpuset::CgroupCpuset(string parent_path, string name)
     : Cgroup(parent_path, name)
-{
-    fd_cpus = CHECK(open((path + "/cpuset.cpus").c_str(), O_RDWR | O_NONBLOCK));
-}
+    , fd_cpus{ CHECK(open((path + "/cpuset.cpus").c_str(), O_RDWR | O_NONBLOCK)) }
+{}
 
 CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/)
     : CgroupCpuset(parent.get_path(), name)
 {}
+
+CgroupCpuset::~CgroupCpuset()
+{
+    close(fd_cpus);
+}
 
 void CgroupCpuset::set_cpus(cpu_set cpus)
 {
@@ -118,9 +126,8 @@ void CgroupCpuset::set_cpus(cpu_set cpus)
 /////////////////////
 CgroupUnified::CgroupUnified(std::string parent_path, std::string name)
     : Cgroup(parent_path, name)
-{
-    fd_events = CHECK(open((path + "/cgroup.events").c_str(), O_RDONLY | O_NONBLOCK));
-}
+    , fd_events{ CHECK(open((path + "/cgroup.events").c_str(), O_RDONLY | O_NONBLOCK)) }
+{}
 
 CgroupUnified::CgroupUnified(Cgroup &parent, std::string name)
     : CgroupUnified(parent.get_path(), name)
@@ -147,7 +154,7 @@ CgroupEvents::CgroupEvents(ev::loop_ref loop,
     , events_w(loop)
     , populated_cb(populated_cb)
 {
-    if (!populated_cb) throw bad_function_call();
+    assert(populated_cb);
     events_w.set<CgroupEvents, &CgroupEvents::event_cb>(this);
     events_w.start(this->fd_events, ev::EXCEPTION);
 }

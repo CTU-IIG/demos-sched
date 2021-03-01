@@ -39,14 +39,13 @@ public:
     ~Cgroup();
 
     void add_process(pid_t pid);
-    // void add(const Process& proc); // ????
     void kill_all();
 
     // delete copy constructor
     Cgroup(const Cgroup &) = delete;
     Cgroup &operator=(const Cgroup &) = delete;
 
-    // Move constructor/assignment
+    // move constructor/assignment
     Cgroup(Cgroup &&other) = default;
     Cgroup &operator=(Cgroup &&) = default;
 
@@ -62,12 +61,13 @@ class CgroupFreezer : public Cgroup
 public:
     CgroupFreezer(std::string parent_path, std::string name);
     CgroupFreezer(Cgroup &parent, std::string name);
+    ~CgroupFreezer();
 
     void freeze();
     void unfreeze();
 
 private:
-    int fd_state = -1;
+    int fd_state;
 };
 
 class CgroupCpuset : public Cgroup
@@ -75,10 +75,12 @@ class CgroupCpuset : public Cgroup
 public:
     CgroupCpuset(std::string parent_path, std::string name);
     CgroupCpuset(Cgroup &parent, std::string name);
+    ~CgroupCpuset();
+
     void set_cpus(cpu_set cpus);
 
 private:
-    int fd_cpus = -1;
+    int fd_cpus;
     cpu_set current_cpus = { 0 };
 };
 
@@ -92,12 +94,14 @@ public:
     bool read_populated_status();
 
 protected:
-    int fd_events = -1;
+    int fd_events;
 };
 
-// Monitors cgroup.events (Cgroups v2) for changes and on every change
-// calls populated_cb callback with information whether the cgroup is
-// populated or not.
+/**
+ * Monitors cgroup.events (Cgroups v2) for changes and on every change
+ * calls populated_cb callback with information whether the cgroup is
+ * populated or not.
+ */
 class CgroupEvents : public CgroupUnified
 {
 public:
