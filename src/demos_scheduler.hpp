@@ -1,6 +1,9 @@
+#pragma once
+
 #include "log.hpp"
 #include "majorframe.hpp"
 #include "partition_manager.hpp"
+#include "power_manager.hpp"
 #include "slice.hpp"
 #include <chrono>
 #include <ev++.h>
@@ -12,6 +15,7 @@ public:
         : loop(ev_loop)
         , mf(major_frame)
         , partition_manager(partitions)
+        , power_manager()
     {
         // setup completion callback
         partition_manager.set_completion_cb([this] { completion_cb(); });
@@ -52,6 +56,7 @@ private:
     ev::loop_ref loop;
     MajorFrame &mf;
     PartitionManager partition_manager;
+    PowerManager power_manager;
     ev::sig sigint{ loop };
     ev::sig sigterm{ loop };
 
