@@ -1,5 +1,4 @@
 #include "check_lib.hpp"
-#include "config_parsing.hpp"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -15,6 +14,7 @@
 using namespace std;
 using namespace std::chrono_literals;
 
+// TODO: is this still relevant?
 int main(int argc, char *argv[])
 {
     int opt;

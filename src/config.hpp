@@ -1,8 +1,22 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
-#include "config_parsing.hpp" // TODO: Remove after refactoring
+#include "check_lib.hpp"
+#include "majorframe.hpp"
+#include <ev++.h>
+// silence warnings from yaml-cpp header files
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
 #include <yaml-cpp/yaml.h>
+#pragma GCC diagnostic pop
+
+typedef struct
+{
+    Cgroup &unified_cg;
+    Cgroup &cpuset_cg;
+    Cgroup &freezer_cg;
+    ev::default_loop &loop;
+} CgroupConfig;
 
 class Config
 {
