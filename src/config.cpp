@@ -1,5 +1,6 @@
 #include "config.hpp"
 #include "cpu_set.hpp"
+#include "log.hpp"
 #include "partition.hpp"
 #include "window.hpp"
 #include <cmath>
@@ -291,9 +292,21 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
             }
 
             cpu_set cpus(yslice["cpu"].as<string>());
-            if ((cpus & allowed_cpus) != cpus) {
-                cerr << "Warning: Running on CPUs " << (cpus & allowed_cpus).as_list()
-                     << " instead of " << cpus.as_list() << endl;
+            if ((cpus & allowed_cpus).count() == 0) {
+                logger->warn("Slice is supposed to run on CPU cores `{}`, but DEmOS cannot "
+                             "run on any these cores (either they are not present on current "
+                             "system or DEmOS has restricted CPU affinity); slice will "
+                             "run on the lowest allowed CPU core instead",
+                             cpus.as_list());
+                cpus.zero();
+                cpus.set(allowed_cpus.lowest());
+
+            } else if ((cpus & allowed_cpus) != cpus) {
+                logger->warn("Slice will run on CPU cores `{}` instead of `{}`, as the remaining "
+                             "cores are either not available on current system or DEmOS is not "
+                             "allowed to run on them due to configured process CPU affinity",
+                             (cpus & allowed_cpus).as_list(),
+                             cpus.as_list());
                 cpus &= allowed_cpus;
             }
             slices.push_back(
