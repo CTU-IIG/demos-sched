@@ -1,13 +1,12 @@
 #include "cgroup.hpp"
 #include "log.hpp"
-#include <err.h>
 #include <fstream>
 
 #include "check_lib.hpp"
 
 using namespace std;
 
-Cgroup::Cgroup(string path, bool may_exist)
+Cgroup::Cgroup(const string &path, bool may_exist)
     : path(path)
 {
     logger->trace("Creating cgroup {}", path);
@@ -24,11 +23,11 @@ Cgroup::Cgroup(string path, bool may_exist)
     }
 }
 
-Cgroup::Cgroup(string parent_path, string name)
+Cgroup::Cgroup(const string &parent_path, const string &name)
     : Cgroup(parent_path + "/" + name)
 {}
 
-Cgroup::Cgroup(Cgroup &parent, string name)
+Cgroup::Cgroup(const Cgroup &parent, const string &name)
     : Cgroup(parent.path, name)
 {}
 
@@ -73,12 +72,12 @@ std::string Cgroup::get_path() const
 }
 
 //////////////////
-CgroupFreezer::CgroupFreezer(string parent_path, string name)
+CgroupFreezer::CgroupFreezer(const string &parent_path, const string &name)
     : Cgroup(parent_path, name)
     , fd_state{ CHECK(open((path + "/freezer.state").c_str(), O_RDWR | O_NONBLOCK)) }
 {}
 
-CgroupFreezer::CgroupFreezer(Cgroup &parent, string name)
+CgroupFreezer::CgroupFreezer(const Cgroup &parent, const string &name)
     : CgroupFreezer(parent.get_path(), name)
 {}
 
@@ -100,12 +99,12 @@ void CgroupFreezer::unfreeze()
 }
 
 /////////////////////
-CgroupCpuset::CgroupCpuset(string parent_path, string name)
+CgroupCpuset::CgroupCpuset(const string &parent_path, const string &name)
     : Cgroup(parent_path, name)
     , fd_cpus{ CHECK(open((path + "/cpuset.cpus").c_str(), O_RDWR | O_NONBLOCK)) }
 {}
 
-CgroupCpuset::CgroupCpuset(Cgroup &parent, std::string name /* Cgroup &garbage*/)
+CgroupCpuset::CgroupCpuset(const Cgroup &parent, const std::string &name)
     : CgroupCpuset(parent.get_path(), name)
 {}
 
@@ -126,12 +125,12 @@ void CgroupCpuset::set_cpus(cpu_set cpus)
 }
 
 /////////////////////
-CgroupUnified::CgroupUnified(std::string parent_path, std::string name)
+CgroupUnified::CgroupUnified(const string &parent_path, const string &name)
     : Cgroup(parent_path, name)
     , fd_events{ CHECK(open((path + "/cgroup.events").c_str(), O_RDONLY | O_NONBLOCK)) }
 {}
 
-CgroupUnified::CgroupUnified(Cgroup &parent, std::string name)
+CgroupUnified::CgroupUnified(const Cgroup &parent, const std::string &name)
     : CgroupUnified(parent.get_path(), name)
 {}
 
@@ -140,18 +139,19 @@ CgroupUnified::~CgroupUnified()
     close(fd_events);
 }
 
-bool CgroupUnified::read_populated_status()
+bool CgroupUnified::read_populated_status() const
 {
     char buf[100];
     ssize_t size = CHECK(pread(fd_events, buf, sizeof(buf) - 1, 0));
-    return (std::string(buf, size).find("populated 1") != std::string::npos);
+    return (std::string(buf, static_cast<unsigned long>(size)).find("populated 1") !=
+            std::string::npos);
 }
 
 /////////////////////
 CgroupEvents::CgroupEvents(ev::loop_ref loop,
-                           string parent_path,
-                           string name,
-                           std::function<void(bool)> populated_cb)
+                           const string &parent_path,
+                           const string &name,
+                           const std::function<void(bool)> &populated_cb)
     : CgroupUnified(parent_path, name)
     , events_w(loop)
     , populated_cb(populated_cb)
@@ -162,9 +162,9 @@ CgroupEvents::CgroupEvents(ev::loop_ref loop,
 }
 
 CgroupEvents::CgroupEvents(ev::loop_ref loop,
-                           Cgroup &parent,
-                           string name,
-                           std::function<void(bool)> populated_cb)
+                           const Cgroup &parent,
+                           const string &name,
+                           const std::function<void(bool)> &populated_cb)
     : CgroupEvents(loop, parent.get_path(), name, populated_cb)
 {}
 

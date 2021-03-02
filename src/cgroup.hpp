@@ -10,32 +10,28 @@
 #include <unistd.h>
 
 #include <bitset>
+#include <cerrno>
+#include <csignal>
 #include <err.h>
-#include <errno.h>
 #include <ev++.h>
 #include <functional>
 #include <iostream>
 #include <list>
 #include <memory>
-#include <signal.h>
 #include <sys/types.h>
 #include <vector>
 
 #include "config.h"
 #include "cpu_set.hpp"
 
-// cpu usage mask
-typedef std::bitset<MAX_CPUS> Cpu;
-
-class Process;
-
 class Cgroup
 {
 public:
-    Cgroup() {}
-    Cgroup(std::string path, bool may_exist = false);
-    Cgroup(std::string parent_path, std::string name);
-    Cgroup(Cgroup &parent, std::string name);
+    Cgroup() : path{} {}
+
+    explicit Cgroup(const std::string &path, bool may_exist = false);
+    Cgroup(const std::string &parent_path, const std::string &name);
+    Cgroup(const Cgroup &parent, const std::string &name);
     ~Cgroup();
 
     void add_process(pid_t pid);
@@ -49,18 +45,18 @@ public:
     Cgroup(Cgroup &&other) = default;
     Cgroup &operator=(Cgroup &&) = default;
 
-    std::string get_path() const;
+    [[nodiscard]] std::string get_path() const;
 
 protected:
     bool remove = true;
-    std::string path = "";
+    std::string path;
 };
 
 class CgroupFreezer : public Cgroup
 {
 public:
-    CgroupFreezer(std::string parent_path, std::string name);
-    CgroupFreezer(Cgroup &parent, std::string name);
+    CgroupFreezer(const std::string &parent_path, const std::string &name);
+    CgroupFreezer(const Cgroup &parent, const std::string &name);
     ~CgroupFreezer();
 
     void freeze();
@@ -73,8 +69,8 @@ private:
 class CgroupCpuset : public Cgroup
 {
 public:
-    CgroupCpuset(std::string parent_path, std::string name);
-    CgroupCpuset(Cgroup &parent, std::string name);
+    CgroupCpuset(const std::string &parent_path, const std::string &name);
+    CgroupCpuset(const Cgroup &parent, const std::string &name);
     ~CgroupCpuset();
 
     void set_cpus(cpu_set cpus);
@@ -87,11 +83,11 @@ private:
 class CgroupUnified : public Cgroup
 {
 public:
-    CgroupUnified(std::string parent_path, std::string name);
-    CgroupUnified(Cgroup &parent, std::string name);
+    CgroupUnified(const std::string &parent_path, const std::string &name);
+    CgroupUnified(const Cgroup &parent, const std::string &name);
     ~CgroupUnified();
 
-    bool read_populated_status();
+    [[nodiscard]] bool read_populated_status() const;
 
 protected:
     int fd_events;
@@ -106,14 +102,14 @@ class CgroupEvents : public CgroupUnified
 {
 public:
     CgroupEvents(ev::loop_ref loop,
-                 std::string parent_path,
-                 std::string name,
-                 std::function<void(bool)> populated_cb);
+                 const std::string &parent_path,
+                 const std::string &name,
+                 const std::function<void(bool)> &populated_cb);
 
     CgroupEvents(ev::loop_ref loop,
-                 Cgroup &parent,
-                 std::string name,
-                 std::function<void(bool)> populated_cb);
+                 const Cgroup &parent,
+                 const std::string &name,
+                 const std::function<void(bool)> &populated_cb);
 
     ~CgroupEvents();
 
