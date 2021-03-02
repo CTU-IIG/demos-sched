@@ -266,9 +266,9 @@ int main(int argc, char *argv[])
     try {
         // load config
         if (!config_file.empty()) {
-            config.loadFile(config_file);
+            config.load_from_file(config_file);
         } else if (!config_str.empty()) {
-            config.loadStr(config_str);
+            config.load_from_string(config_str);
         } else {
             // no config was passed
             print_help();
