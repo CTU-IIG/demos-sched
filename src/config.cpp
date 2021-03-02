@@ -1,42 +1,39 @@
 #include "config.hpp"
-#include "cpu_set.hpp"
 #include "log.hpp"
-#include "partition.hpp"
-#include "window.hpp"
 #include <cmath>
 #include <exception>
 
 using namespace std;
 using namespace YAML;
 
-void Config::loadFile(std::string file_name)
+void Config::load_from_file(const string &file_name)
 {
     try {
         config = YAML::LoadFile(file_name);
-    } catch (const YAML::BadFile &e) {
-        throw runtime_error("Cannot load configuration file: " + file_name);
+    } catch (const YAML::BadFile &) {
+        throw_with_nested(runtime_error("Cannot load configuration file: " + file_name));
     } catch (const YAML::Exception &e) {
         throw runtime_error("Configuration error: "s + e.what());
     }
 }
 
-void Config::loadStr(string cfg)
+void Config::load_from_string(const string &config_str)
 {
     try {
-        config = YAML::Load(cfg);
+        config = YAML::Load(config_str);
     } catch (const YAML::Exception &e) {
         throw runtime_error("Configuration error: "s + e.what());
     }
 }
 
-Node Config::normalize_process(const Node &proc, float default_budget)
+static Node normalize_process(const Node &proc, float default_budget)
 {
     Node norm_proc;
     if (proc.IsScalar()) {
         norm_proc["cmd"] = proc.as<string>();
     } else {
         for (auto key : proc) {
-            string k = key.first.as<string>();
+            auto k = key.first.as<string>();
             if (k == "cmd") {
                 // which shell command to run to start the process
                 norm_proc[k] = proc[k].as<string>();
@@ -68,12 +65,13 @@ Node Config::normalize_process(const Node &proc, float default_budget)
     return norm_proc;
 }
 
-Node Config::normalize_processes(const Node &processes, float total_budget)
+static Node normalize_processes(const Node &processes, float total_budget)
 {
     Node norm_processes;
     if (processes.IsSequence()) {
         for (const auto &proc : processes) {
-            norm_processes.push_back(normalize_process(proc, total_budget / processes.size()));
+            norm_processes.push_back(
+              normalize_process(proc, total_budget / static_cast<float>(processes.size())));
         }
     } else {
         norm_processes.push_back(normalize_process(processes, total_budget));
@@ -90,7 +88,7 @@ Node Config::normalize_partition(const Node &part,
         processes = normalize_processes(part, total_budget);
     } else if (part.IsMap()) {
         for (auto key : part) {
-            string k = key.first.as<string>();
+            auto k = key.first.as<string>();
             if (k == "name")
                 norm_part[k] = part[k].as<string>();
             else if (k == "processes")
@@ -157,7 +155,7 @@ Node Config::normalize_slice(const Node &slice,
     Node norm_slice;
 
     for (auto key : slice) {
-        string k = key.first.as<string>();
+        auto k = key.first.as<string>();
         if (k == "cpu")
             norm_slice[k] = slice[k].as<string>();
         else if (k == "sc_partition")
@@ -165,16 +163,16 @@ Node Config::normalize_slice(const Node &slice,
             // partition otherwise, SC partition would use up the whole budget, not leaving any
             // space for BE partition
             norm_slice[k] =
-              process_xx_partition_and_get_name(slice[k], win_length * 0.6, partitions);
+              process_xx_partition_and_get_name(slice[k], win_length * 0.6f, partitions);
         else if (k == "be_partition")
             norm_slice[k] =
-              process_xx_partition_and_get_name(slice[k], win_length * 1.0, partitions);
+              process_xx_partition_and_get_name(slice[k], win_length * 1.0f, partitions);
         else if (k == "sc_processes")
             norm_slice["sc_partition"] =
-              process_xx_processes_and_get_name(slice[k], win_length * 0.6, partitions);
+              process_xx_processes_and_get_name(slice[k], win_length * 0.6f, partitions);
         else if (k == "be_processes")
             norm_slice["be_partition"] =
-              process_xx_processes_and_get_name(slice[k], win_length * 1.0, partitions);
+              process_xx_processes_and_get_name(slice[k], win_length * 1.0f, partitions);
         else
             throw runtime_error("Unexpected key: " + k);
     }
@@ -196,13 +194,14 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
         throw runtime_error("Cannot have both '*_partition' and '*_processes' in the same window.");
 
     for (auto key : win) {
-        string k = key.first.as<string>();
+        auto k = key.first.as<string>();
         if (k == "length")
             norm_win[k] = win_length;
         else if (k == "slices") {
             Node slices;
             for (const auto &slice : win[k])
-                slices.push_back(normalize_slice(slice, win_length, partitions));
+                slices.push_back(
+                  normalize_slice(slice, static_cast<float>(win_length), partitions));
             norm_win[k] = slices;
         } else if (k == "sc_partition")
             ;
@@ -223,7 +222,8 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
              { "sc_partition", "be_partition", "sc_processes", "be_processes" }) {
             if (win[key]) slice[key] = win[key];
         }
-        norm_win["slices"].push_back(normalize_slice(slice, win_length, partitions));
+        norm_win["slices"].push_back(
+          normalize_slice(slice, static_cast<float>(win_length), partitions));
     }
     return norm_win;
 }
@@ -253,7 +253,7 @@ void Config::normalize()
     config = norm_config;
 }
 
-static Partition *find_partition(const string name, Partitions &partitions)
+static Partition *find_partition(const string &name, Partitions &partitions)
 {
     for (auto &p : partitions) {
         if (p.get_name() == name) return &p;
@@ -309,8 +309,7 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
                              cpus.as_list());
                 cpus &= allowed_cpus;
             }
-            slices.push_back(
-              make_unique<Slice>(c.loop, sc_part_ptr, be_part_ptr, cpus));
+            slices.push_back(make_unique<Slice>(c.loop, sc_part_ptr, be_part_ptr, cpus));
         }
 
         auto budget = chrono::milliseconds(length);
