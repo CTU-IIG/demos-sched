@@ -116,11 +116,13 @@ CgroupCpuset::~CgroupCpuset()
 
 void CgroupCpuset::set_cpus(cpu_set cpus)
 {
-    if (cpus != current_cpus) {
-        string s = cpus.as_list();
-        CHECK_MSG(write(fd_cpus, s.c_str(), s.size()), "Cannot set cpuset to " + s);
-        current_cpus = cpus;
-    }
+    if (cpus == current_cpus) return;
+
+    // validate that we are not attempting to set an empty cpuset
+    assert(cpus.count() > 0);
+    string s = cpus.as_list();
+    CHECK_MSG(write(fd_cpus, s.c_str(), s.size()), "Cannot set cpuset to " + s);
+    current_cpus = cpus;
 }
 
 /////////////////////
