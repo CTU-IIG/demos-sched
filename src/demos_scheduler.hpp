@@ -8,13 +8,13 @@
 class DemosScheduler
 {
 public:
-    DemosScheduler(ev::loop_ref loop, Partitions &partitions, MajorFrame &mf)
-        : loop(loop)
-        , mf(mf)
+    DemosScheduler(ev::loop_ref ev_loop, Partitions &partitions, MajorFrame &major_frame)
+        : loop(ev_loop)
+        , mf(major_frame)
         , partition_manager(partitions)
     {
         // setup completion callback
-        partition_manager.set_completion_cb(std::bind(&DemosScheduler::completion_cb, this));
+        partition_manager.set_completion_cb([this] { completion_cb(); });
         // setup signal handlers
         sigint.set<DemosScheduler, &DemosScheduler::signal_cb>(this);
         sigterm.set<DemosScheduler, &DemosScheduler::signal_cb>(this);
@@ -57,7 +57,7 @@ private:
 
     void startup_fn()
     {
-        partition_manager.run_process_init(mf, std::bind(&DemosScheduler::start_scheduler, this));
+        partition_manager.run_process_init(mf, [this] { start_scheduler(); });
     }
 
     void start_scheduler()
