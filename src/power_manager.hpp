@@ -71,6 +71,8 @@ using std::string;
  * `./scaling_available_frequencies` file, as the allowed p-states are too granular to list them
  * individually.
  *
+ * TODO: would it be useful to create read-only CpufreqPolicy objects for monitoring
+ *  even when we don't have write access to cpufreq dir?
  *
  * TODO: in case DEmOS is killed or crashes without stack unwinding, the CPU governors will not
  *  be reset to original values; fundamentally, the only "reliable" solutions are:
@@ -81,6 +83,35 @@ using std::string;
  *      are correctly executed on each invocation, even if DEmOS itself crashes
  *   Technically, 1) is supported now, as DEmOS will not touch governors if they are already all
  *    set to "userspace". Still, 2) would imo be a better solution.
+ *
+ *
+ * ## Usage examples
+ *
+ * ### Set all cores to max frequency (this works even when cpufreq is not supported)
+ * When cpufreq is not accessible, the iterator will be empty and this will be a no-op.
+ * ```
+ * for (auto &p : power_manager.policy_iter()) {
+ *     p.write_frequency(p.max_frequency);
+ * }
+ * ```
+ *
+ * ### Set min frequency for A53 cluster on i.MX8
+ * It's a good idea to first check if we can use the power manager (cpufreq is supported
+ * and accessible), otherwise the policy lookup will fail (`power_manager.is_active()`)
+ * ```
+ * if (power_manager.is_active()) {
+ *     auto &p = power_manager.get_policy("policy0");
+ *     p.write_frequency(p.min_frequency);
+ * }
+ * ```
+ *
+ * ### Set frequency for the 3rd core to 1.20 GHz (and for all other cores under the same policy)
+ * NOTE: here, you have to know the supported frequency beforehand
+ * ```
+ * if (power_manager.is_active()) {
+ *     power_manager.set_core_frequency(3, 1200 * 1000000);
+ * }
+ * ```
  */
 class PowerManager
 {
@@ -165,6 +196,9 @@ public: ////////////////////////////////////////////////////////////////////////
     /** Sets core frequency of the cpufreq policy controlling `core_i`-th CPU core. */
     void set_core_frequency(CpuIndex core_i, CpuFrequencyHz freq)
     {
+        // TODO: is this a good API?
+        //  I think it might be better to remove it and keep
+        //  only `get_policy(name)` and `policy_iter()`
         if (!active) return;
         get_core_policy(core_i).write_frequency(freq);
     }
