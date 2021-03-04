@@ -358,6 +358,6 @@ partitions:
 
 - if everything sucks run this script
     ```
-    src/release_agent.sh
+    src/cleanup_crash.sh
     ```
 

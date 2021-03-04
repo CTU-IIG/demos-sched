@@ -41,3 +41,13 @@ rmdir `ls -d $CPUSET$d$d/ 2>/dev/null ` 2>/dev/null
 rmdir `ls -d $CPUSET$d/ 2>/dev/null ` 2>/dev/null
 rmdir `ls -d $UNIFIED$d$d/ 2>/dev/null ` 2>/dev/null
 rmdir `ls -d $UNIFIED$d/ 2>/dev/null ` 2>/dev/null
+
+
+# reset CPU frequency scaling state
+if [[ -f "/sys/devices/system/cpu/intel_pstate/status" ]]; then
+    # for Intel, it is enough to reset driver to active mode
+    echo "active" > "/sys/devices/system/cpu/intel_pstate/status"
+else
+    # for others, switch all policies to schedutil (and hope that was the default)
+    echo "schedutil" | tee /sys/devices/system/cpu/cpufreq/policy*/scaling_governor
+fi
