@@ -1,6 +1,11 @@
 #ifndef DEMOSSCH_H
 #define DEMOSSCH_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /**
  * Initialize interface for demos-sched.
  *
@@ -9,7 +14,7 @@
  *
  * @return 0 if successful, -1 otherwise and `errno` is set appropriately
  */
-int demos_init();
+int demos_init(void);
 
 /**
  * Signalizes to the scheduler that initialization is completed
@@ -21,7 +26,7 @@ int demos_init();
  *
  * @return 0 if successful, -1 otherwise and `errno` is set appropriately
  */
-int demos_initialization_completed();
+int demos_initialization_completed(void);
 
 /**
  * Signalizes to the scheduler that all work for the current window is completed (see spec.)
@@ -32,6 +37,10 @@ int demos_initialization_completed();
  * @todo make sure, that process cannot be scheduled multiple times in one window
  * @todo set errno
  */
-int demos_completed();
+int demos_completed(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // DEMOSSCH_H
