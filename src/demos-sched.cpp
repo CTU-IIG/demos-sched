@@ -216,6 +216,18 @@ void reexec_via_systemd_run(int argc, char *argv[])
     CHECK(execvp(args[0], const_cast<char **>(args.data())));
 }
 
+void log_exception(const std::exception &e)
+{
+    logger->error("Exception: {}", e.what());
+    try {
+        std::rethrow_if_nested(e);
+    } catch (const std::exception &e) {
+        log_exception(e);
+    } catch (...) {
+        logger->critical("Unknown nested exception");
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int opt;
@@ -324,7 +336,7 @@ int main(int argc, char *argv[])
         sched.run();
 
     } catch (const exception &e) {
-        logger->error("Exception: {}", e.what());
+        log_exception(e);
         exit(1);
     } catch (...) {
         logger->critical("Unknown exception");
