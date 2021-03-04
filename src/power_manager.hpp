@@ -141,7 +141,7 @@ public: ////////////////////////////////////////////////////////////////////////
 
     PowerManager()
     {
-        logger->trace("Checking for `cpufreq` support and permissions");
+        logger->debug("Checking for `cpufreq` support and permissions");
         if (!check_support()) {
             active = false;
             return;
@@ -207,7 +207,7 @@ public: ////////////////////////////////////////////////////////////////////////
     {
     public:
         explicit PolicyIterator(PowerManager *p)
-          : pm(p)
+            : pm(p)
         {}
         policy_iterator begin() { return pm->policies.begin(); }
         policy_iterator end() { return pm->policies.end(); }
@@ -217,29 +217,46 @@ public: ////////////////////////////////////////////////////////////////////////
     };
 
     [[nodiscard]] size_t policy_count() const { return policies.size(); }
-    PolicyIterator policy_iter() {return PolicyIterator(this);}
+    PolicyIterator policy_iter() { return PolicyIterator(this); }
 
 private: ///////////////////////////////////////////////////////////////////////////////////////////
     static bool check_support()
     {
-        if (!fs::exists("/sys/devices/system/cpu/cpufreq")) {
-            logger->warn("`cpufreq` is not supported by your kernel, "
-                         "DEmOS will run without control over frequency of CPU cores, "
-                         "which may result in impaired predictability and thermal properties "
-                         "of the running configuration.");
-            return false;
-        }
+        // just checking .../cpufreq is not enough to detect usable cpufreq support; for example,
+        // the Ubuntu environment in GitHub Actions has cpufreq dir, but it's empty;
+        // using policy0 seems more reliable
 
-        if (!is_cpufreq_writeable()) {
-            logger->warn("DEmOS doesn't have permission to control CPU core frequencies - "
-                         "running without frequency scaling support, "
-                         "which may result in impaired predictability and thermal properties "
-                         "of the running configuration. To resolve, either run DEmOS as a root, "
-                         "or use a more granular mechanism to provide read-write access to files "
-                         "under the `/sys/devices/system/cpu/` directory.");
-            return false;
+        // FIXME: is it guaranteed that there will be a `policy0`?
+        fs::path path("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+        logger->trace("Using following path to test `cpufreq` support: `{}`", path.string());
+        try {
+            file_open<std::ofstream>(path);
+            return true;
+        } catch (IOError &err) {
+            // does not exist
+            if (err.errno_() == ENOENT) {
+                logger->warn("`cpufreq` seems not to be supported by your kernel. "
+                             "DEmOS will run without control over frequency of CPU cores, "
+                             "which may result in impaired predictability and thermal properties "
+                             "of the running configuration.");
+                return false;
+            }
+            // exists, but we cannot write into it
+            if (err.errno_() == EACCES) {
+                logger->warn(
+                  "DEmOS doesn't have permission to control CPU core frequencies - "
+                  "running without frequency scaling support, "
+                  "which may result in impaired predictability and thermal properties "
+                  "of the running configuration. To resolve, either run DEmOS as root, "
+                  "or use a more granular mechanism to provide read-write access to files "
+                  "under the `/sys/devices/system/cpu/` directory.");
+                return false;
+            }
+
+            // some other error
+            std::throw_with_nested(
+              runtime_error("Failed to open CPU policy governor file for writing"));
         }
-        return true;
     }
 
     static bool system_has_intel_cpu()
@@ -280,20 +297,6 @@ private: ///////////////////////////////////////////////////////////////////////
         logger->debug("Resetting `intel_pstate` driver mode to `{}`", original_intel_pstate_status);
         auto os = file_open<std::ofstream>("/sys/devices/system/cpu/intel_pstate/status");
         os << original_intel_pstate_status;
-    }
-
-    static bool is_cpufreq_writeable()
-    {
-        // FIXME: is it guaranteed that there will be a `policy0`?
-        try {
-            file_open<std::ofstream>("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
-            return true;
-        } catch (IOError &err) {
-            if (err.errno_() == EACCES) {
-                return false;
-            }
-            std::throw_with_nested(runtime_error("Failed to open CPU policy governor file for writing"));
-        }
     }
 
     void setup_policy_objects()
