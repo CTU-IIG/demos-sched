@@ -284,21 +284,16 @@ private: ///////////////////////////////////////////////////////////////////////
 
     static bool is_cpufreq_writeable()
     {
-        // we cannot use streams here, as they don't give the reason why opening failed
-        // ^ wow, how do you even design an API that's this bad?
-
         // FIXME: is it guaranteed that there will be a `policy0`?
-        string path = "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor";
-        FILE *fp = fopen(path.c_str(), "w");
-        if (fp == nullptr) {
-            if (errno == EACCES) {
+        try {
+            file_open<std::ofstream>("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
+            return true;
+        } catch (IOError &err) {
+            if (err.errno_() == EACCES) {
                 return false;
             }
-            throw runtime_error("Failed to open CPU policy governor file for writing: errno `" +
-                                std::to_string(errno) + "`: " + strerror(errno));
+            std::throw_with_nested(runtime_error("Failed to open CPU policy governor file for writing"));
         }
-        fclose(fp);
-        return true;
     }
 
     void setup_policy_objects()
