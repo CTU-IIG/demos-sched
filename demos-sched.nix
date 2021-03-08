@@ -1,4 +1,4 @@
-{ stdenv, meson, ninja, perl, pkg-config, libev, libyamlcpp }:
+{ stdenv, meson, ninja, perl, pkg-config, libev, libyamlcpp, extraAttrs ? {} }:
 let
   libev-patched = libev.overrideAttrs (attrs: rec {
     pname = attrs.pname or "libev";
@@ -11,9 +11,9 @@ let
       ./subprojects/libev-Add-experimental-support-for-EPOLLPRI-to-the-epoll-b.patch
     ];
   });
-in stdenv.mkDerivation {
+in stdenv.mkDerivation ({
   name = "demos-sched";
   src = builtins.fetchGit { url = ./.; };
   nativeBuildInputs = [ meson ninja perl pkg-config ];
   buildInputs = [ libev-patched libyamlcpp ];
-}
+} // extraAttrs)
