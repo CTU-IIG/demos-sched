@@ -1,29 +1,20 @@
 #include "check_lib.hpp"
 #include "config.hpp"
 #include "demos_scheduler.hpp"
-#include "majorframe.hpp"
-#include <fstream>
 #include <iostream>
-#include <list>
 
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <sched.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
-
-#include "log.hpp"
-#include "spdlog/cfg/env.h"
 
 using namespace std;
 
-string opt_demos_cg_name = "demos";
-// size_t anonyme_partition_counter = 0;
+static string opt_demos_cg_name = "demos";
 
-void print_help()
+static void print_help()
 {
     // clang-format off
     cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
@@ -41,10 +32,10 @@ void print_help()
     // clang-format on
 }
 
-void handle_cgroup_exc(stringstream &commands,
-                       stringstream &mount_cmds,
-                       const system_error &e,
-                       const string &sys_fs_cg_path)
+static void handle_cgroup_exc(stringstream &commands,
+                              stringstream &mount_cmds,
+                              const system_error &e,
+                              const string &sys_fs_cg_path)
 {
     switch (e.code().value()) {
         case EACCES:
@@ -75,10 +66,10 @@ void handle_cgroup_exc(stringstream &commands,
     }
 }
 
-void create_toplevel_cgroups(Cgroup &unified,
-                             Cgroup &freezer,
-                             Cgroup &cpuset,
-                             const std::string demos_cg_name)
+static void create_toplevel_cgroups(Cgroup &unified,
+                                    Cgroup &freezer,
+                                    Cgroup &cpuset,
+                                    const std::string &demos_cg_name)
 {
     string unified_path, freezer_path, cpuset_path;
     string cpus, mems;
@@ -189,12 +180,12 @@ void create_toplevel_cgroups(Cgroup &unified,
     logger->debug("Cgroup permission check passed");
 }
 
-string pluralize(int count, string noun)
+static string pluralize(unsigned long count, const string &noun)
 {
     return to_string(count) + " " + noun + (count != 1 ? "s" : "");
 }
 
-void reexec_via_systemd_run(int argc, char *argv[])
+static void reexec_via_systemd_run(int argc, char *argv[])
 {
     vector<const char *> args({ "systemd-run", "--scope", "-p", "Delegate=yes", "--user" });
 
@@ -216,7 +207,7 @@ void reexec_via_systemd_run(int argc, char *argv[])
     CHECK(execvp(args[0], const_cast<char **>(args.data())));
 }
 
-void log_exception(const std::exception &e)
+static void log_exception(const std::exception &e)
 {
     logger->error("Exception: {}", e.what());
     try {
@@ -268,8 +259,8 @@ int main(int argc, char *argv[])
 
     // setup our global spdlog logger (outputs to stderr)
     initialize_logger(getenv("DEMOS_PLAIN_LOG") ? ">>> [%l] %v" : ">>> %H:%M:%S.%e [%^%l%$] %v",
-                     true,
-                     getenv("DEMOS_FORCE_COLOR_LOG") != nullptr);
+                      true,
+                      getenv("DEMOS_FORCE_COLOR_LOG") != nullptr);
 
     // demos is running in a libev event loop
     ev::default_loop loop;
@@ -312,7 +303,7 @@ int main(int argc, char *argv[])
         logger->info("Parsed " + pluralize(partitions.size(), "partition") + " and " +
                      pluralize(windows.size(), "window"));
 
-        if (partitions.size() == 0 || windows.size() == 0) {
+        if (partitions.empty() || windows.empty()) {
             errx(1, "Need at least one partition in one window");
         }
 
