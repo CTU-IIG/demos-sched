@@ -1,3 +1,4 @@
+# builds demos-sched with different versions of gcc and meson to test compatibility
 {
   pkgsUnstable ? import (fetchTarball "https://github.com/NixOS/nixpkgs-channels/archive/nixos-unstable.tar.gz") { }
 }:
@@ -10,7 +11,7 @@ let
     let
       myStdenv = with pkgs; (overrideCC stdenv (builtins.getAttr cc pkgs));
     in with pkgs;
-    callPackage ./demos-sched.nix ({
+    callPackage ../demos-sched.nix ({
       stdenv = myStdenv;
       meson = meson.overrideAttrs (attrs: { depsHostHostPropagated = [ ]; });
       libyamlcpp = libyamlcpp.override { stdenv = myStdenv; };
@@ -26,7 +27,7 @@ let
       };
     });
 in {
-  unstable = with pkgsUnstable; callPackage ./demos-sched.nix { };
+  unstable = with pkgsUnstable; callPackage ../demos-sched.nix { };
   meson-0-49-2 = demosSchedWithCC { pkgs = pkgsMeson-0-49-2; cc = "gcc8"; overrideMesonCC = true; };
   gcc8 = demosSchedWithCC { pkgs = pkgsUnstable; cc= "gcc8"; };
   gcc9 = demosSchedWithCC { pkgs = pkgsUnstable; cc= "gcc9"; };
