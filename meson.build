@@ -29,6 +29,9 @@ else
   yaml_cpp_dep = dependency('yaml-cpp')
 endif
 
+spdlog_proj = subproject('spdlog')
+spdlog_dep = spdlog_proj.get_variable('spdlog_dep')
+
 if meson.version().version_compare('>=0.52')
   # By default, gcc does not report warnings in system header. Treat
   # libev as system header to not see warnings from there.

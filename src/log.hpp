@@ -8,7 +8,7 @@
 // this pragma is supported in GCC, but not Clang
 #pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
 #pragma GCC diagnostic ignored "-Weffc++"
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 #pragma GCC diagnostic pop
 
 /** A global spdlog logger instance, initialized by `initialize_logger(...)`. */

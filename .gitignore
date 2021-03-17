@@ -1,8 +1,10 @@
 *swp
-build/
-build-aarch64/
-src/main.cpp
-src/a.out
+/build/
+/build-aarch64/
+/subprojects/spdlog*
+/subprojects/packagecache
+!/subprojects/*.wrap
+
 tags
 Session.vim
 demos-sched.creator.user

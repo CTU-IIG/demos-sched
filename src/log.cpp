@@ -1,7 +1,7 @@
 #include "log.hpp"
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/cfg/env.h"
+#include <spdlog/cfg/env.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 std::shared_ptr<spdlog::logger> logger = nullptr;
 
@@ -12,9 +12,9 @@ void initialize_logger(std::string pattern, bool load_env_levels, bool force_col
       "stderr", force_colors ? spdlog::color_mode::always : spdlog::color_mode::automatic);
 
     if (load_env_levels) {
-        // set loglevel from environment, e.g., export SPDLOG_LEVEL=info
+        // set log level from environment, e.g., export SPDLOG_LEVEL=info
         spdlog::cfg::load_env_levels();
     }
 
-    logger->set_pattern(pattern);
+    logger->set_pattern(std::move(pattern));
 }
