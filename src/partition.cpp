@@ -1,7 +1,6 @@
 #include "partition.hpp"
 #include "log.hpp"
 #include <algorithm>
-#include <string.h>
 
 using namespace std::placeholders;
 using namespace std;
@@ -16,11 +15,6 @@ Partition::Partition(Cgroup &freezer_parent,
     , current_proc(nullptr)
     , name(name)
 {}
-
-Process &Partition::get_current_proc()
-{
-    return *current_proc;
-}
 
 void Partition::kill_all()
 {

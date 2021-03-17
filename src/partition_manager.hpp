@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "log.hpp"
 #include "majorframe.hpp"
 #include "slice.hpp"
@@ -7,7 +9,7 @@
 class PartitionManager
 {
 public:
-    PartitionManager(Partitions &partitions)
+    explicit PartitionManager(Partitions &partitions)
         : partitions(partitions)
     {
         set_exit_cb(&PartitionManager::process_exit_cb);
@@ -22,15 +24,15 @@ public:
      *
      * NOTE: initialization may get interrupted if scheduler receives SIGINT or SIGTERM signal.
      */
-    void run_process_init(MajorFrame &mf, std::function<void()> init_cb)
+    void run_process_init(MajorFrame &mf, std::function<void()> init_cb_)
     {
         logger->debug("Process initialization started");
-        this->init_cb = init_cb;
+        this->init_cb = std::move(init_cb_);
 
         // used when partition is not contained in any slice, not really important
         const cpu_set default_cpu_set{};
         const cpu_set *cpus_ptr;
-        auto completion_cb = std::bind(&PartitionManager::process_init_completion_cb, this);
+        auto part_completion_cb = [this] { process_init_completion_cb(); };
         for (auto &p : partitions) {
             // we want to run init for each partition in the widest
             //  cpu_set it will ever run in; otherwise, multi-threaded
@@ -39,7 +41,7 @@ public:
             //  on fewer cores than it has threads in some windows, but that
             //  isn't as much of a problem for performance
             cpus_ptr = mf.find_widest_cpu_set(p);
-            p.reset(true, cpus_ptr ? *cpus_ptr : default_cpu_set, completion_cb);
+            p.reset(true, cpus_ptr ? *cpus_ptr : default_cpu_set, part_completion_cb);
         }
 
         // overwrite process exit callback set in constructor
@@ -76,9 +78,9 @@ public:
      * Sets callback that is called when all partitions
      * are empty (so there are no processes to schedule).
      */
-    void set_completion_cb(std::function<void()> completion_cb)
+    void set_completion_cb(std::function<void()> completion_cb_)
     {
-        this->completion_cb = completion_cb;
+        this->completion_cb = std::move(completion_cb_);
     }
 
 private:
@@ -93,7 +95,7 @@ private:
     void set_exit_cb(void (PartitionManager::* cb_method)(bool))
     {
         using namespace std::placeholders;
-        auto proc_exit_cb = std::bind(cb_method, this, _1);
+        auto proc_exit_cb = std::bind(cb_method, this, _1); // NOLINT(modernize-avoid-bind)
         for (auto &p : partitions) {
             p.set_process_exit_cb(proc_exit_cb);
         }
@@ -144,7 +146,8 @@ private:
 
         logger->trace("Initializing process '{}'", p->get_pid());
         // resume the process; it should stop on its own after initialization is completed
-        // then, it will call init_next_process as callback
+        // then, it will call init_next_process as callback; if it exits instead (probably
+        //  due to an error), `process_init_exit_cb` will be called
         p->resume();
     }
 

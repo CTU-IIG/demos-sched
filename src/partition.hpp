@@ -31,8 +31,6 @@ public:
               Cgroup &events_parent,
               std::string name = "");
 
-    Process &get_current_proc();
-
     /** Kills all system processes from this partition. */
     void kill_all();
 
@@ -64,7 +62,7 @@ public:
      *  but also during init; if you have anything better, feel free to change these
      */
     void reset(bool move_to_first_proc,
-               const cpu_set cpus,
+               cpu_set cpus,
                std::function<void()> process_completion_cb);
 
     /**
@@ -93,13 +91,13 @@ public:
     void set_process_exit_cb(std::function<void(bool)> new_exit_cb);
 
     /** Returns true if there are no running processes inside this partition. */
-    bool is_empty() const;
-    std::string get_name() const;
+    [[nodiscard]] bool is_empty() const;
+    [[nodiscard]] std::string get_name() const;
 
-    // protected:
     CgroupCpuset cgc;
     // cgf and cge are read by Process constructor in process.cpp
     CgroupFreezer cgf;
+    // does not need to be CgroupEvents, we only use it to create child cgroups for processes
     Cgroup cge;
     void proc_exit_cb();
     void completed_cb();
@@ -124,5 +122,5 @@ private:
     inline static const std::function<void()> NOOP = [] {};
     std::function<void()> _completed_cb = NOOP;
     // invoked when a process in this partition exits
-    std::function<void(bool)> _proc_exit_cb = [](bool _) {};
+    std::function<void(bool)> _proc_exit_cb = [](bool) {};
 };

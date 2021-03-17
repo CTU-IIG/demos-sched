@@ -31,7 +31,7 @@ using std::string;
  * but only to discrete predefined values.
  *
  * For example, the ARM Cortex-A53 cluster in an i.MX 8 CPU supports 4 frequencies:
- * 0.6 GHz, 0.896 GHz, 1.104 GHz and 1.2GHz, with voltage varying appropriately.
+ * 0.6 GHz, 0.896 GHz, 1.104 GHz and 1.2GHz, with voltage varying accordingly.
  *
  *
  * ## CPU core groups (cpufreq policies)
@@ -70,6 +70,8 @@ using std::string;
  * difference is that it does not expose all supported frequencies in the
  * `./scaling_available_frequencies` file, as the allowed p-states are too granular to list them
  * individually.
+ *
+ * TODO: sleep states, and what about them?
  *
  * TODO: would it be useful to create read-only CpufreqPolicy objects for monitoring
  *  even when we don't have write access to cpufreq dir?
