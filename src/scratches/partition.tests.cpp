@@ -7,6 +7,7 @@
 using namespace std;
 using namespace std::chrono_literals;
 
+// needs refactor, API changed in the meantime
 int main()
 {
     ev::default_loop loop;
@@ -19,7 +20,7 @@ int main()
           "my_cgroup";
 
         Partition part(freezer_path, cpuset_path, unified_path, "partA");
-        part.add_process(loop, "src/infinite_proc 1000000 be2_A", 1s);
+        part.add_process(loop, "src/tests/infinite_proc 1000000 be2_A", 1s);
         part.get_current_proc().resume();
 
         loop.run();

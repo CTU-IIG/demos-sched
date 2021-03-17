@@ -1,5 +1,4 @@
 #include <iostream>
-#include <list>
 #include <yaml-cpp/node/detail/node.h>
 #include <yaml-cpp/yaml.h>
 
