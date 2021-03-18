@@ -8,5 +8,5 @@ tests = '''
 '''.split()
 
 foreach t: tests
-	test(t, find_program(t), protocol : 'tap', workdir : meson.current_build_dir())
+	test(t, find_program(t), protocol : 'tap', workdir : meson.current_build_dir(), is_parallel: false)
 endforeach
