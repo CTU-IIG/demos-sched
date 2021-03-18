@@ -13,9 +13,8 @@ int main(int argc, char **argv)
     char *msg = argv[2];
     fprintf(stderr, "launched %s\n", argv[2]);
 
-    while (1) {
+    while (true) {
         usleep(period);
         fprintf(stderr, "%s\n", msg);
     }
-    return 0;
 }

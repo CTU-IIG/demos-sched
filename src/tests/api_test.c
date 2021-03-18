@@ -1,6 +1,5 @@
 #include "demos-sch.h"
 #include <err.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 

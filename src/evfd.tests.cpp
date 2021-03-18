@@ -1,7 +1,6 @@
 #include "err.h"
 #include "evfd.hpp"
 #include <iostream>
-#include <sys/types.h>
 #include <unistd.h>
 
 using namespace std;
@@ -16,11 +15,12 @@ int main()
     });
 
     switch (fork()) {
-        case -1:
+        case -1: {
             err(1, "fork");
+        }
         case 0: {
             uint64_t buf = 1;
-            printf("Writing to efd\n");
+            cout << "Writing to efd" << endl;
             efd.write(buf);
             break;
         }
