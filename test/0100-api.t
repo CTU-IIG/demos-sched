@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 4
+plan_tests 5
 
 api-test
 is $? 1 "Running outside of demos-sched fails"
@@ -34,3 +34,25 @@ partitions:
         budget: 100
 '
 ok $? "Does not hang on process exit during initialization"
+
+
+# Check that each process has opportunity to initialize before window scheduler starts
+out=$(demos-sched -m "<test>" -C '
+windows:
+  - length: 50
+    slices:
+      - {cpu: 0, sc_partition: SC1}
+      - {cpu: 1, sc_partition: SC2}
+
+partitions:
+  - name: SC1
+    processes: [{cmd: api-init-test, budget: 50, init: yes}]
+  - name: SC2
+    processes: [{cmd: api-init-test, budget: 50, init: yes}]
+')
+is "$out" \
+"init start
+init done
+init start
+init done
+<test>"
