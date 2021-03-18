@@ -290,12 +290,14 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
+
         // set up demos container cgroups
         Cgroup unified_root, freezer_root, cpuset_root;
         create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
-
         logger->debug("Top level cgroups created");
 
+
+        // load windows and partitions from config
         CgroupConfig cc = { .unified_cg = unified_root,
                             .cpuset_cg = cpuset_root,
                             .freezer_cg = freezer_root,
@@ -312,9 +314,9 @@ int main(int argc, char *argv[])
             errx(1, "Need at least one partition in one window");
         }
 
-        MajorFrame mf(loop, move(windows));
-        DemosScheduler sched(loop, partitions, mf);
 
+        // initialize the main scheduler instance
+        DemosScheduler sched(loop, move(partitions), move(windows), window_sync_message);
         // this spawns the underlying system processes
         sched.setup();
 

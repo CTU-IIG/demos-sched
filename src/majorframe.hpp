@@ -1,5 +1,4 @@
-#ifndef MAJORFRAME_HPP
-#define MAJORFRAME_HPP
+#pragma once
 
 #include "check_lib.hpp"
 #include "timerfd.hpp"
@@ -18,7 +17,13 @@ using time_point = std::chrono::steady_clock::time_point;
 class MajorFrame
 {
 public:
-    MajorFrame(ev::loop_ref loop, Windows &&windows);
+    /**
+     * @param loop - main ev loop
+     * @param windows - scheduled windows
+     * @param sync_message - if not empty, this message is printed to stdout
+     *  at the beginning of each window
+     */
+    MajorFrame(ev::loop_ref loop, Windows &&windows, std::string sync_message);
 
     void start(time_point start_time);
     void stop();
@@ -35,9 +40,8 @@ private:
     Windows::iterator current_win;
     // will be overwritten in start(...), value is not important
     time_point timeout = time_point::min();
+    const std::string sync_message;
 
     void move_to_next_window();
     void timeout_cb();
 };
-
-#endif // MAJORFRAME_HPP

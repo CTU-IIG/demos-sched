@@ -8,9 +8,17 @@
 
 class PartitionManager
 {
+private:
+    Partitions partitions;
+    Partitions::iterator init_iter = partitions.begin();
+    Process *initialized_proc = nullptr;
+    std::function<void()> completion_cb = [] {};
+    // initialized in `run_process_init`
+    std::function<void()> init_cb = nullptr;
+
 public:
-    explicit PartitionManager(Partitions &partitions)
-        : partitions(partitions)
+    explicit PartitionManager(Partitions &&partitions)
+      : partitions(std::move(partitions))
     {
         set_exit_cb(&PartitionManager::process_exit_cb);
     }
@@ -84,13 +92,6 @@ public:
     }
 
 private:
-    Partitions &partitions;
-    Partitions::iterator init_iter = partitions.begin();
-    Process *initialized_proc = nullptr;
-    std::function<void()> completion_cb = [] {};
-    // initialized in `run_process_init`
-    std::function<void()> init_cb = nullptr;
-
     /** Sets up passed process exit callback, bound to `this`. */
     void set_exit_cb(void (PartitionManager::* cb_method)(bool))
     {

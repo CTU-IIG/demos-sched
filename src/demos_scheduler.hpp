@@ -10,11 +10,19 @@
 
 class DemosScheduler
 {
+private:
+    ev::loop_ref loop;
+    MajorFrame mf;
+    PartitionManager partition_manager;
+    PowerManager power_manager;
+    ev::sig sigint{ loop };
+    ev::sig sigterm{ loop };
+
 public:
-    DemosScheduler(ev::loop_ref ev_loop, Partitions &partitions, MajorFrame &major_frame)
+    DemosScheduler(ev::loop_ref ev_loop, Partitions &&partitions, Windows &&windows, const std::string &frame_sync_message)
         : loop(ev_loop)
-        , mf(major_frame)
-        , partition_manager(partitions)
+        , mf(loop, std::move(windows), frame_sync_message)
+        , partition_manager(std::move(partitions))
         , power_manager()
     {
         // setup completion callback
@@ -53,13 +61,6 @@ public:
     }
 
 private:
-    ev::loop_ref loop;
-    MajorFrame &mf;
-    PartitionManager partition_manager;
-    PowerManager power_manager;
-    ev::sig sigint{ loop };
-    ev::sig sigterm{ loop };
-
     void startup_fn()
     {
         partition_manager.run_process_init(mf, [this] { start_scheduler(); });
