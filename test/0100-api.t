@@ -37,6 +37,9 @@ ok $? "Does not hang on process exit during initialization"
 
 
 # Check that each process has opportunity to initialize before window scheduler starts
+# this assumes that your shell (/bin/sh) starts up in under ~40ms
+# alternative would be to make the window longer (and adjust sleep in api-init-test),
+#  but that would make the test itself longer
 out=$(demos-sched -m "<test>" -C '
 windows:
   - length: 50
