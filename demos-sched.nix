@@ -1,4 +1,4 @@
-{ stdenv, meson, ninja, perl, pkg-config, libev, libyamlcpp, extraAttrs ? {} }:
+{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, extraAttrs ? {}, withSubmodules ? false }:
 let
   libev-patched = libev.overrideAttrs (attrs: rec {
     pname = attrs.pname or "libev";
@@ -28,7 +28,10 @@ let
   };
 in stdenv.mkDerivation ({
   name = "demos-sched";
-  src = srcWithSubmodules;
+  src = if withSubmodules then srcWithSubmodules else builtins.fetchGit { url = ./.; };
+  # Delete subprojects if building with Nix-provided dependencies
+  patchPhase = lib.optionalString (!withSubmodules) "rm -rf subprojects";
   nativeBuildInputs = [ meson ninja perl pkg-config ];
-  buildInputs = [ libev-patched libyamlcpp ];
+  buildInputs = []
+                ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp ];
 } // extraAttrs)
