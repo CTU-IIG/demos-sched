@@ -14,24 +14,6 @@ using namespace std;
 
 static string opt_demos_cg_name = "demos";
 
-static void print_help()
-{
-    // clang-format off
-    cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
-            "  -c <CONFIG_FILE>   path to configuration file\n"
-            "  -C <CONFIG>        inline configuration in YAML format\n"
-            "  -g <CGROUP_NAME>   name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
-            "  -s                 rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
-            "  -d                 dump config file without execution\n"
-            "  -h                 print this message\n"
-            "To control logger output, use the following environment variables:\n"
-            "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
-            "  DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, \n"
-            "      even when it is convinced that the attached terminal doesn't support it\n"
-            "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n";
-    // clang-format on
-}
-
 static void handle_cgroup_exc(stringstream &commands,
                               stringstream &mount_cmds,
                               const system_error &e,
@@ -219,14 +201,34 @@ static void log_exception(const std::exception &e)
     }
 }
 
+static void print_help()
+{
+    // clang-format off
+    cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
+            "  -c <CONFIG_FILE>    path to configuration file\n"
+            "  -C <CONFIG>         inline configuration in YAML format\n"
+            "  -g <CGROUP_NAME>    name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
+            "  -m <WINDOW_MESSAGE> print the passed message to stdout at the beginning of each window;\n"
+            "                       this may be useful for external synchronization with scheduler windows\n"
+            "  -s                  rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
+            "  -d                  dump config file without execution\n"
+            "  -h                  print this message\n"
+            "To control logger output, use the following environment variables:\n"
+            "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
+            "  DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, \n"
+            "      even when it is convinced that the attached terminal doesn't support it\n"
+            "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n";
+    // clang-format on
+}
+
 int main(int argc, char *argv[])
 {
     int opt;
-    string config_file, config_str;
+    string config_file, config_str, window_sync_message;
     bool dump_config = false;
     bool systemd_run = false;
 
-    while ((opt = getopt(argc, argv, "dhg:c:C:s")) != -1) {
+    while ((opt = getopt(argc, argv, "dhgm:c:C:s")) != -1) {
         switch (opt) {
             case 'g': // custom root cgroup name
                 opt_demos_cg_name = optarg;
@@ -242,6 +244,9 @@ int main(int argc, char *argv[])
                 break;
             case 's': // rerun itself via systemd-run
                 systemd_run = true;
+                break;
+            case 'm': // synchronization message at the beginning of each window
+                window_sync_message = optarg;
                 break;
             case 'h':
                 print_help();
