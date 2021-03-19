@@ -20,6 +20,7 @@ else
     error('Unpatched libev detected')
   endif
 endif
+
 yaml_cpp_proj = subproject('yaml-cpp', required : false)
 if yaml_cpp_proj.found()
   # Use version from the submodule (if initialized)
@@ -29,8 +30,13 @@ else
   yaml_cpp_dep = dependency('yaml-cpp')
 endif
 
-spdlog_proj = subproject('spdlog')
-spdlog_dep = spdlog_proj.get_variable('spdlog_dep')
+spdlog_proj = subproject('spdlog', required: false, default_options: ['compile_library=true'])
+if spdlog_proj.found()
+  spdlog_dep = spdlog_proj.get_variable('spdlog_dep')
+else
+  spdlog_dep = dependency('spdlog')
+endif
+
 
 if meson.version().version_compare('>=0.52')
   # By default, gcc does not report warnings in system header. Treat

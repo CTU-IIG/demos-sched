@@ -1,9 +1,6 @@
 *swp
 /build/
 /build-aarch64/
-/subprojects/spdlog*
-/subprojects/packagecache
-!/subprojects/*.wrap
 
 tags
 Session.vim
