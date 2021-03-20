@@ -8,6 +8,8 @@
 #include <functional>
 #include <list>
 
+class Partition;
+
 using namespace std::placeholders;
 using Partitions = std::list<Partition>;
 using Processes = std::list<Process>;
@@ -25,7 +27,6 @@ using Processes = std::list<Process>;
 class Partition
 {
 public:
-    // Partition( Processes &&processes, std::string cgroup_name );
     Partition(Cgroup &freezer_parent,
               Cgroup &cpuset_parent,
               Cgroup &events_parent,

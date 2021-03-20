@@ -6,7 +6,9 @@
 #include <ev++.h>
 #include <list>
 
-using Slices = std::vector<std::unique_ptr<Slice>>;
+class Window;
+
+using Windows = std::list<Window>;
 
 /**
  * Represents a time interval when given slices are running on the CPU. Has a

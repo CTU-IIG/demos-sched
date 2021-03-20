@@ -309,10 +309,10 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
                              cpus.as_list());
                 cpus &= allowed_cpus;
             }
-            slices.push_back(make_unique<Slice>(c.loop, sc_part_ptr, be_part_ptr, cpus));
+            slices.emplace_back(c.loop, sc_part_ptr, be_part_ptr, cpus);
         }
 
         auto budget = chrono::milliseconds(length);
-        windows.push_back(make_unique<Window>(move(slices), budget));
+        windows.emplace_back(move(slices), budget);
     }
 }

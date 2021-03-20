@@ -6,7 +6,6 @@
 #include <ev++.h>
 #include <list>
 
-using Windows = std::vector<std::unique_ptr<Window>>;
 using time_point = std::chrono::steady_clock::time_point;
 
 /**

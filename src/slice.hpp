@@ -8,7 +8,11 @@
 #include <ev++.h>
 #include <functional>
 
+class Slice;
+
 using time_point = std::chrono::steady_clock::time_point;
+// use std::list as we don't have move and copy constructors
+using Slices = std::list<Slice>;
 
 /**
  * Associates partitions/processes with a given CPU core set. Always scheduled as part of a Window.

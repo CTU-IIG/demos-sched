@@ -8,13 +8,13 @@ Window::Window(Slices &&slices, std::chrono::nanoseconds length)
 void Window::start(std::chrono::steady_clock::time_point current_time)
 {
     for (auto &s : slices) {
-        s->start(current_time);
+        s.start(current_time);
     }
 }
 
 void Window::stop()
 {
     for (auto &s : slices) {
-        s->stop();
+        s.stop();
     }
 }

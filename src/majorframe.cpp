@@ -27,22 +27,22 @@ void MajorFrame::start(time_point current_time)
         // flush to force correct synchronization with other stdout prints from scheduled programs
         cout.flush();
     }
-    current_win->get()->start(current_time);
-    timeout = current_time + current_win->get()->length;
+    current_win->start(current_time);
+    timeout = current_time + current_win->length;
     timer.start(timeout);
 }
 
 void MajorFrame::stop()
 {
     timer.stop();
-    current_win->get()->stop();
+    current_win->stop();
 }
 
 void MajorFrame::timeout_cb()
 {
     logger->trace("Window ended, starting next one");
 
-    current_win->get()->stop();
+    current_win->stop();
     move_to_next_window();
     start(timeout);
 }
@@ -52,11 +52,11 @@ const cpu_set *MajorFrame::find_widest_cpu_set(Partition &partition)
     Partition *p = &partition;
     const cpu_set *best_found = nullptr;
     for (auto &w : windows) {
-        for (auto &s : w->slices) {
-            if (s->sc != p && s->be != p) continue; // not our partition
+        for (auto &s : w.slices) {
+            if (s.sc != p && s.be != p) continue; // not our partition
             // if we haven't found any cpuset yet, or the compared cpuset has more cores, store it
-            if (!best_found || s->cpus.count() > best_found->count()) {
-                best_found = &s->cpus;
+            if (!best_found || s.cpus.count() > best_found->count()) {
+                best_found = &s.cpus;
             }
         }
     }
