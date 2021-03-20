@@ -1,7 +1,5 @@
 #include "window.hpp"
 
-using namespace std;
-
 Window::Window(Slices &&slices, std::chrono::nanoseconds length)
     : length(length)
     , slices(move(slices))

@@ -39,13 +39,11 @@ public: ////////////////////////////////////////////////////////////////////////
     const bool active;
 
 public: ////////////////////////////////////////////////////////////////////////////////////////////
-    // delete copy and move constructors
+    // delete copy and (implicitly) move constructors
     // otherwise we'd have to deal with move semantics w.r.t. resetting governor state,
     //  which would be too much pointless work
     CpufreqPolicy(const CpufreqPolicy &) = delete;
     CpufreqPolicy &operator=(const CpufreqPolicy &) = delete;
-    CpufreqPolicy(CpufreqPolicy &&) = delete;
-    CpufreqPolicy &operator=(CpufreqPolicy &&) = delete;
 
     explicit CpufreqPolicy(fs::path policy_dir_path)
         : policy_dir{ std::move(policy_dir_path) }

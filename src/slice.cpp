@@ -1,7 +1,5 @@
 #include "slice.hpp"
 
-using namespace std;
-
 /*
 TODO: I think there is a subtle race condition here, where
  the window or process timeout could fire and before the process
@@ -13,10 +11,10 @@ TODO: I think there is a subtle race condition here, where
 Slice::Slice(ev::loop_ref loop, Partition *sc, Partition *be, cpu_set cpus)
     : sc(sc)
     , be(be)
-    , cpus(cpus)
+    , cpus(std::move(cpus))
     , timer(loop)
 {
-    timer.set(bind(&Slice::schedule_next, this));
+    timer.set([this] { schedule_next(); });
 }
 
 /**

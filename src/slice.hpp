@@ -1,5 +1,4 @@
-#ifndef SLICE_HPP
-#define SLICE_HPP
+#pragma once
 
 #include "check_lib.hpp"
 #include "cpu_set.hpp"
@@ -46,11 +45,9 @@ private:
     time_point timeout = time_point::min();
     ev::timerfd timer;
     // cached, so that we don't create new std::function each time we set the callback
-    std::function<void()> completion_cb_cached = std::bind(&Slice::schedule_next, this);
+    std::function<void()> completion_cb_cached = [this] { schedule_next(); };
 
     bool load_next_process();
     void start_current_process();
     void schedule_next();
 };
-
-#endif // SLICE_HPP

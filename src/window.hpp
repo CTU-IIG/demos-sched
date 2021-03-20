@@ -1,5 +1,4 @@
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#pragma once
 
 #include "check_lib.hpp"
 #include "slice.hpp"
@@ -26,5 +25,3 @@ public:
 
 private:
 };
-
-#endif // WINDOW_HPP
