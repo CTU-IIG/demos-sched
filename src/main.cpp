@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
                      pluralize(windows.size(), "window"));
 
         if (partitions.empty() || windows.empty()) {
-            errx(1, "Need at least one partition in one window");
+            throw runtime_error("Need at least one partition in one window");
         }
 
 
