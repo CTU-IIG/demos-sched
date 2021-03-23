@@ -11,9 +11,24 @@ let
       ./subprojects/libev-Add-experimental-support-for-EPOLLPRI-to-the-epoll-b.patch
     ];
   });
+  # Stable Nix cannot work with submodules so we construct the source
+  # tree with submodules "manually".
+  srcWithSubmodules = stdenv.mkDerivation {
+    name = "demos-src-with-submodules";
+    srcMain = builtins.fetchGit { url = ./.; };
+    srcEv   = builtins.fetchGit { url = ./subprojects/libev; };
+    srcYaml = builtins.fetchGit { url = ./subprojects/yaml-cpp; };
+    buildCommand = ''
+      cp -a $srcMain $out
+      chmod +w $out/subprojects
+      copySub() { rm -rf $2 && cp -a $1 $2; }
+      copySub $srcEv $out/subprojects/libev
+      copySub $srcYaml $out/subprojects/yaml-cpp
+    '';
+  };
 in stdenv.mkDerivation ({
   name = "demos-sched";
-  src = builtins.fetchGit { url = ./.; };
+  src = srcWithSubmodules;
   nativeBuildInputs = [ meson ninja perl pkg-config ];
   buildInputs = [ libev-patched libyamlcpp ];
 } // extraAttrs)
