@@ -49,7 +49,7 @@ the target ARM system.
       -h                 print this message
 
 
-Format of configuration files is documented in the section [Guide for writing configurations](#Guide for writing configurations).
+Format of configuration files is documented in the section [Guide for writing configurations](#Guide-for-writing-configurations).
 
 ## Project terminology
 
