@@ -54,7 +54,7 @@ static Node normalize_process(const Node &proc, float default_budget)
         if (isnan(default_budget)) {
             throw runtime_error("Missing budget");
         }
-        norm_proc["budget"] = default_budget;
+        norm_proc["budget"] = int(default_budget);
     }
 
     // after "budget" to keep typical key ordering in case neither is specified
@@ -80,7 +80,7 @@ static Node normalize_processes(const Node &processes, float total_budget)
 }
 
 Node Config::normalize_partition(const Node &part,
-                                 float total_budget) // can be NAN to enforce budget
+                                 float total_budget) // can be NAN to require explicit budgets in YAML file
 {
     Node norm_part, processes;
 
