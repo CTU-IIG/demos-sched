@@ -42,8 +42,8 @@ public:
      * `create_processes()` must be explicitly called after all processes are added.
      */
     void add_process(ev::loop_ref loop,
-                     std::string argv,
-                     std::chrono::nanoseconds budget,
+                     const std::string &argv,
+                     std::chrono::milliseconds budget,
                      bool has_initialization);
 
     /**

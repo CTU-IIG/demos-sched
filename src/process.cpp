@@ -14,7 +14,7 @@ Process::Process(ev::loop_ref loop,
                  const std::string &name,
                  Partition &part,
                  std::string argv,
-                 std::chrono::nanoseconds budget,
+                 std::chrono::milliseconds budget,
                  bool has_initialization)
     : loop(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
@@ -97,7 +97,7 @@ void Process::resume()
     cgf.unfreeze();
 }
 
-std::chrono::nanoseconds Process::get_actual_budget()
+std::chrono::milliseconds Process::get_actual_budget() const
 {
     return actual_budget;
 }

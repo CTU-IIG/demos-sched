@@ -1,6 +1,6 @@
 #include "window.hpp"
 
-Window::Window(ev::loop_ref loop_, std::chrono::nanoseconds length_)
+Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_)
     : loop(loop_)
     , length(length_)
 {}

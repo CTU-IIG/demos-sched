@@ -22,9 +22,9 @@ private:
     uint64_t finished_sc_partitions = 0;
 
 public:
-    Window(ev::loop_ref loop, std::chrono::nanoseconds length);
+    Window(ev::loop_ref loop, std::chrono::milliseconds length);
 
-    const std::chrono::nanoseconds length;
+    const std::chrono::milliseconds length;
     // use std::list as we don't have move and copy constructors
     std::list<Slice> slices;
 

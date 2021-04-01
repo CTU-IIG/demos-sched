@@ -111,9 +111,9 @@ bool Partition::is_empty() const
     return empty;
 }
 
-void Partition::set_process_exit_cb(std::function<void(bool)> new_exit_cb)
+void Partition::set_process_exit_cb(function<void(bool)> new_exit_cb)
 {
-    _proc_exit_cb = new_exit_cb;
+    _proc_exit_cb = move(new_exit_cb);
 }
 
 void Partition::proc_exit_cb()

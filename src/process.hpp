@@ -29,7 +29,7 @@ public:
             const std::string& name,
             Partition &partition,
             std::string argv,
-            std::chrono::nanoseconds budget,
+            std::chrono::milliseconds budget,
             bool has_initialization = false);
 
     /** Spawns the underlying system process. */
@@ -54,7 +54,7 @@ public:
      */
     void resume();
 
-    std::chrono::nanoseconds get_actual_budget();
+    [[nodiscard]] std::chrono::milliseconds get_actual_budget() const;
     [[nodiscard]] pid_t get_pid() const;
     [[nodiscard]] bool needs_initialization() const;
     [[nodiscard]] bool is_running() const;
@@ -74,8 +74,8 @@ private:
     CgroupFreezer cgf;
 
     std::string argv;
-    std::chrono::nanoseconds budget;
-    std::chrono::nanoseconds actual_budget;
+    std::chrono::milliseconds budget;
+    std::chrono::milliseconds actual_budget;
     bool has_initialization;
     bool completed = false;
     bool demos_completed = false;
