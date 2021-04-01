@@ -59,7 +59,7 @@ void Process::exec()
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        logger->debug("Running '{}' as PID {}", argv, pid);
+        logger->debug("Running '{}' as PID {} (partition '{}')", argv, pid, part.get_name());
         child_w.start(pid, 0);
         // add process to cgroup (echo PID > cgroup.procs)
         cge.add_process(pid);
@@ -81,14 +81,14 @@ void Process::suspend()
 {
     cgf.freeze();
     if (is_running()) {
-        logger->trace("Suspended process '{}'", pid);
+        logger->trace("Suspended process '{}' (partition '{}')", pid, part.get_name());
     }
 }
 
 void Process::resume()
 {
     assert(is_running());
-    logger->trace("Resuming process '{}'", pid);
+    logger->trace("Resuming process '{}' (partition '{}')", pid, part.get_name());
     uint64_t buf = 1;
     if (demos_completed) {
         CHECK(write(efd_continue, &buf, sizeof(buf)));
