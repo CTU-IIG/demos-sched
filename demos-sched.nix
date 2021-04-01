@@ -1,4 +1,4 @@
-{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, extraAttrs ? {}, withSubmodules ? false }:
+{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, spdlog, extraAttrs ? {}, withSubmodules ? false }:
 let
   libev-patched = libev.overrideAttrs (attrs: rec {
     pname = attrs.pname or "libev";
@@ -15,15 +15,17 @@ let
   # tree with submodules "manually".
   srcWithSubmodules = stdenv.mkDerivation {
     name = "demos-src-with-submodules";
-    srcMain = builtins.fetchGit { url = ./.; };
-    srcEv   = builtins.fetchGit { url = ./subprojects/libev; };
-    srcYaml = builtins.fetchGit { url = ./subprojects/yaml-cpp; };
+    srcMain   = builtins.fetchGit { url = ./.; };
+    srcEv     = builtins.fetchGit { url = ./subprojects/libev; };
+    srcYaml   = builtins.fetchGit { url = ./subprojects/yaml-cpp; };
+    srcSpdlog = builtins.fetchGit { url = ./subprojects/spdlog; };
     buildCommand = ''
       cp -a $srcMain $out
       chmod +w $out/subprojects
       copySub() { rm -rf $2 && cp -a $1 $2; }
       copySub $srcEv $out/subprojects/libev
       copySub $srcYaml $out/subprojects/yaml-cpp
+      copySub $srcSpdlog $out/subprojects/spdlog
     '';
   };
 in stdenv.mkDerivation ({
@@ -33,5 +35,5 @@ in stdenv.mkDerivation ({
   patchPhase = lib.optionalString (!withSubmodules) "rm -rf subprojects";
   nativeBuildInputs = [ meson ninja perl pkg-config ];
   buildInputs = []
-                ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp ];
+                ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp spdlog ];
 } // extraAttrs)
