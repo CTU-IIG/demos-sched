@@ -21,8 +21,8 @@ typedef struct
 class Config
 {
 public:
-    void load_from_file(const std::string& file_name);
-    void load_from_string(const std::string& config_str);
+    void load_from_file(const std::string &file_name);
+    void load_from_string(const std::string &config_str);
 
     void normalize();
     void create_demos_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions);
