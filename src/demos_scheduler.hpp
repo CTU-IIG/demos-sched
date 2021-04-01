@@ -89,7 +89,7 @@ private:
 
     void stop_scheduler()
     {
-        mf.stop();
+        mf.stop(std::chrono::steady_clock::now());
         loop.break_loop(ev::ALL);
     }
 

@@ -38,6 +38,8 @@ void Slice::start_next_process(time_point current_time)
     }
     running_process->resume();
     timeout = current_time + running_process->get_actual_budget();
+    // if budget was shortened in previous window, this resets it back to full length
+    running_process->reset_budget();
     timer.start(timeout);
 }
 
@@ -69,18 +71,21 @@ void Slice::start_be(time_point current_time)
     start_partition(be, current_time, false);
 }
 
-/*
-TODO: When BE partition process is interrupted by window end,
- store how much of its budget it used up, and next time it runs
- in a window, restart the process with lowered budget.
- Otherwise, single long BE process could block all other
- processes in the same partition from executing.
-*/
-void Slice::stop()
+void Slice::stop(time_point current_time)
 {
+    if (running_process && running_partition == be) {
+        // we're interrupting a process from the BE partition
+        // subtract used time from budget for the next run
+        using namespace std::chrono;
+        auto remaining = duration_cast<milliseconds>(timeout - current_time);
+        running_process->set_remaining_budget(remaining);
+    }
+
     if (running_process) {
         running_process->suspend();
+        running_process = nullptr;
     }
+
     if (sc) sc->disconnect();
     if (be) be->disconnect();
     timer.stop();

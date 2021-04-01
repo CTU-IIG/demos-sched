@@ -30,7 +30,7 @@ public:
 
     void add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
     void start(time_point current_time);
-    void stop();
+    void stop(time_point current_time);
 
 private:
     void slice_sc_end_cb([[maybe_unused]] Slice *slice, time_point current_time);

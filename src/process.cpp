@@ -132,6 +132,18 @@ pid_t Process::get_pid() const
     return pid;
 }
 
+void Process::set_remaining_budget(std::chrono::milliseconds next_budget)
+{
+    assert(next_budget < budget);
+    actual_budget = next_budget;
+    logger->trace("Next budget for process '{}' shortened to '{} ms'.", pid, next_budget.count());
+}
+
+void Process::reset_budget()
+{
+    actual_budget = budget;
+}
+
 /** Called when the cgroup is empty and we want to signal it to the parent partition. */
 void Process::handle_end()
 {

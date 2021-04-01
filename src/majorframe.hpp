@@ -25,7 +25,7 @@ public:
     MajorFrame(ev::loop_ref loop, Windows &&windows, std::string sync_message);
 
     void start(time_point start_time);
-    void stop();
+    void stop(time_point current_time);
 
     /**
      * Compares cpu_sets of all slices containing given partition

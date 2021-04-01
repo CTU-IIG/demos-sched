@@ -54,6 +54,17 @@ public:
      */
     void resume();
 
+    /**
+     * Sets budget for the next window.
+     *
+     * Used for BE processes that are suspended due to a window timeout before
+     * they use up the whole budget in a single window.
+     */
+    void set_remaining_budget(std::chrono::milliseconds next_budget);
+
+    /** Resets next budget to the default value. */
+    void reset_budget();
+
     [[nodiscard]] std::chrono::milliseconds get_actual_budget() const;
     [[nodiscard]] pid_t get_pid() const;
     [[nodiscard]] bool needs_initialization() const;

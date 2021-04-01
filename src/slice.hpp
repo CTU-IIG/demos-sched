@@ -46,7 +46,7 @@ public:
     void start_sc(time_point current_time);
     /** Starts execution of BE partition, if present. */
     void start_be(time_point current_time);
-    void stop();
+    void stop(time_point current_time);
 
 private:
     std::function<void(Slice *, time_point)> sc_done_cb;

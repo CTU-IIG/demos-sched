@@ -32,17 +32,17 @@ void MajorFrame::start(time_point current_time)
     timer.start(timeout);
 }
 
-void MajorFrame::stop()
+void MajorFrame::stop(time_point current_time)
 {
     timer.stop();
-    current_win->stop();
+    current_win->stop(current_time);
 }
 
 void MajorFrame::timeout_cb()
 {
     logger->trace("Window ended, starting next one");
 
-    current_win->stop();
+    current_win->stop(timeout);
     move_to_next_window();
     start(timeout);
 }
