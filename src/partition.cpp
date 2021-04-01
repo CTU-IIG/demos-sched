@@ -85,6 +85,10 @@ Process *Partition::seek_pending_process()
         if (current_proc->is_pending()) return &*current_proc;
         move_to_next_proc();
     }
+    // if no process is left pending, we've executed all processes during this window
+    // moving to next process means that in the next window, execution will continue
+    //  round the circular queue instead of repeating the last finished process again
+    move_to_next_proc();
     return nullptr;
 }
 

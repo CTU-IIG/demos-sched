@@ -74,7 +74,7 @@ public:
     /**
      * Returns pointer to next pending process, if there is one.
      * If current process is pending, return that one (without seeking to the next).
-     * If no process is pending, returns nullptr.
+     * If no process is pending, returns nullptr and seeks to next process.
      *
      * Pending process is a process which is both:
      *  1) running (=did not exit yet) and
