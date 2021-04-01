@@ -26,7 +26,7 @@ class Process
 {
 public:
     Process(ev::loop_ref loop,
-            std::string name,
+            const std::string& name,
             Partition &partition,
             std::string argv,
             std::chrono::nanoseconds budget,
@@ -55,10 +55,10 @@ public:
     void resume();
 
     std::chrono::nanoseconds get_actual_budget();
-    pid_t get_pid() const;
-    bool needs_initialization() const;
-    bool is_running() const;
-    bool is_pending() const;
+    [[nodiscard]] pid_t get_pid() const;
+    [[nodiscard]] bool needs_initialization() const;
+    [[nodiscard]] bool is_running() const;
+    [[nodiscard]] bool is_pending() const;
 
     void mark_completed();
     void mark_uncompleted();
@@ -93,7 +93,7 @@ private:
     void handle_end();
     void populated_cb(bool populated);
     void completed_cb();
-    void child_terminated_cb(ev::child &w, int revents);
+    void child_terminated_cb(ev::child &w, [[maybe_unused]] int revents);
 };
 
 #endif

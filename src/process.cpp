@@ -2,34 +2,35 @@
 #include "log.hpp"
 #include "partition.hpp"
 #include <cassert>
+#include <cstdio>
+#include <cstdlib>
 #include <functional>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/eventfd.h>
-#include <sys/wait.h>
 #include <system_error>
 
 using namespace std::placeholders;
-using namespace std;
 
 Process::Process(ev::loop_ref loop,
-                 std::string name,
+                 const std::string &name,
                  Partition &part,
-                 string argv,
+                 std::string argv,
                  std::chrono::nanoseconds budget,
                  bool has_initialization)
     : loop(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
     , part(part)
-    , cge(loop, part.cge, name, std::bind(&Process::populated_cb, this, _1))
+    , cge(loop,
+          part.cge,
+          name,
+          std::bind(&Process::populated_cb, this, _1)) // NOLINT(modernize-avoid-bind)
     , cgf(part.cgf, name)
-    , argv(argv)
+    , argv(std::move(argv))
     , budget(budget)
     , actual_budget(budget)
     , has_initialization(has_initialization)
 {
     suspend();
-    completed_w.set(std::bind(&Process::completed_cb, this));
+    completed_w.set(std::bind(&Process::completed_cb, this)); // NOLINT(modernize-avoid-bind)
     completed_w.start();
     child_w.set<Process, &Process::child_terminated_cb>(this);
 }
@@ -178,7 +179,7 @@ void Process::completed_cb()
 }
 
 /** Called when our spawned child process terminates. */
-void Process::child_terminated_cb(ev::child &w, int revents)
+void Process::child_terminated_cb(ev::child &w, [[maybe_unused]] int revents)
 {
     w.stop();
     int wstatus = w.rstatus;
