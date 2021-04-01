@@ -109,9 +109,8 @@ private:
     std::string name;
     size_t proc_count = 0;
 
-    // when true, there are no pending processes
-    // cached flag, not strictly needed, speeds up lookup in `seek_pending_process()`
-    bool finished = false;
+    /** Indicates if this partition is empty.
+     *  Cached property to speed up exit checks in PartitionManager. */
     bool empty = true;
 
     // cyclic queue

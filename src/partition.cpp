@@ -81,20 +81,15 @@ void Partition::move_to_next_proc()
 
 Process *Partition::seek_pending_process()
 {
-    if (finished || empty) {
-        return nullptr;
-    }
     for (size_t i = 0; i < processes.size(); i++) {
         if (current_proc->is_pending()) return &*current_proc;
         move_to_next_proc();
     }
-    finished = true;
     return nullptr;
 }
 
 void Partition::clear_completed_flag()
 {
-    finished = false;
     for (auto &p : processes) {
         p.mark_uncompleted();
     }
