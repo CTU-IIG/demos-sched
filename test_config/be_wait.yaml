@@ -1,0 +1,26 @@
+# shows that BE partitions wait for completion of all SC partitions before starting
+
+windows:
+  - length: 150
+    slices:
+      - cpu: 0
+        sc_partition: SC1
+        be_partition: BE1
+      - cpu: 1
+        sc_partition: SC2
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: sleep 0.1; echo SC1-1 done
+        budget: 50
+      - cmd: sleep 0.04; echo SC1-2 done
+        budget: 20
+  - name: BE1
+    processes:
+      - cmd: sleep 0.02; echo BE done
+        budget: 10
+  - name: SC2
+    processes:
+      - cmd: sleep 0.2; echo SC2 done
+        budget: 100

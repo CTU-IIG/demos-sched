@@ -1,4 +1,5 @@
 #include "slice.hpp"
+#include <cassert>
 
 /*
 TODO: I think there is a subtle race condition here, where
@@ -8,53 +9,64 @@ TODO: I think there is a subtle race condition here, where
  window will arrive to the new window, and the process will be immediately
  blocked and not run at all during next window.
  */
-Slice::Slice(ev::loop_ref loop, Partition *sc, Partition *be, cpu_set cpus)
+Slice::Slice(ev::loop_ref loop,
+             std::function<void(Slice *, time_point)> sc_done_cb,
+             Partition *sc,
+             Partition *be,
+             cpu_set cpus)
     : sc(sc)
     , be(be)
     , cpus(std::move(cpus))
+    , sc_done_cb(std::move(sc_done_cb))
     , timer(loop)
 {
     timer.set([this] { schedule_next(); });
 }
 
-/**
- * Finds next unfinished process and stores it in `current_proc`.
- * @return true if found, false if no runnable process is available
- */
-bool Slice::load_next_process()
+/** Finds and starts next unfinished process from current_partition. */
+void Slice::start_next_process(time_point current_time)
 {
-    Process *proc = nullptr;
-    if (sc) proc = sc->seek_pending_process();
-    if (!proc && be) proc = be->seek_pending_process();
-    // nothing to run
-    if (!proc) return false;
-
-    current_proc = proc;
-    return true;
-}
-
-void Slice::start_current_process()
-{
-    current_proc->resume();
-    timeout += current_proc->get_actual_budget();
+    // find next process
+    running_process = running_partition->seek_pending_process();
+    if (!running_process) {
+        // no process found, we're done
+        // call cb if running SC partition
+        if (running_partition == sc) {
+            sc_done_cb(this, current_time);
+        }
+        return;
+    }
+    running_process->resume();
+    timeout = current_time + running_process->get_actual_budget();
     timer.start(timeout);
 }
 
-void Slice::start(time_point current_time)
+void Slice::start_partition(Partition *part, time_point current_time, bool move_to_first_proc)
 {
-    if (sc) sc->reset(true, cpus, completion_cb_cached);
+    assert(part != nullptr);
+    running_partition = part;
+    if (part) {
+        part->reset(move_to_first_proc, cpus, completion_cb_cached);
+    }
+    start_next_process(current_time);
+}
+
+void Slice::start_sc(time_point current_time)
+{
+    if (!sc) {
+        sc_done_cb(this, current_time);
+        return;
+    }
+    start_partition(sc, current_time, true);
+}
+
+void Slice::start_be(time_point current_time)
+{
+    if (!be) return;
     // don't move to first process, we want to continue from the last one for BE,
     //  as there aren't strict deadlines for BE processes, and it's better if each BE process gets
     //  to run occasionally than if the first one would run all the time and the rest never
-    // we still need to set completion callback, otherwise BE processes
-    //  could not yield to the next BE process
-    if (be) be->reset(false, cpus, completion_cb_cached);
-
-    if (!load_next_process()) {
-        return; // nothing to run
-    }
-    timeout = current_time;
-    start_current_process();
+    start_partition(be, current_time, false);
 }
 
 /*
@@ -66,8 +78,8 @@ TODO: When BE partition process is interrupted by window end,
 */
 void Slice::stop()
 {
-    if (current_proc) {
-        current_proc->suspend();
+    if (running_process) {
+        running_process->suspend();
     }
     if (sc) sc->disconnect();
     if (be) be->disconnect();
@@ -78,11 +90,8 @@ void Slice::stop()
 void Slice::schedule_next()
 {
     timer.stop();
-    current_proc->suspend();
-    current_proc->mark_completed();
+    running_process->suspend();
+    running_process->mark_completed();
 
-    if (!load_next_process()) {
-        return; // nothing to run
-    }
-    start_current_process();
+    start_next_process(timeout);
 }

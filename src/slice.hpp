@@ -8,11 +8,7 @@
 #include <ev++.h>
 #include <functional>
 
-class Slice;
-
 using time_point = std::chrono::steady_clock::time_point;
-// use std::list as we don't have move and copy constructors
-using Slices = std::list<Slice>;
 
 /**
  * Associates partitions/processes with a given CPU core set. Always scheduled as part of a Window.
@@ -27,31 +23,42 @@ using Slices = std::list<Slice>;
 class Slice
 {
 public:
-    Slice(ev::loop_ref loop, Partition *sc, Partition *be, cpu_set cpus = cpu_set(0x1));
+    Slice(ev::loop_ref loop,
+          std::function<void(Slice *, time_point)> sc_done_cb,
+          Partition *sc,
+          Partition *be,
+          cpu_set cpus = cpu_set(0x1));
 
     Slice(const Slice &) = delete;
     const Slice &operator=(const Slice &) = delete;
 
-    // these should really be std::optional, but since C++
-    //  is a half-assed, optional references are not a thing
+    // these should really be std::optional, but optional references are not really a thing in C++
     /** Safety-critical partition running in this slice. */
     Partition *const sc;
     /** Best-effort partition running in this slice. */
     Partition *const be;
     const cpu_set cpus;
 
-    void start(time_point current_time);
+    /**
+     * Starts execution of SC partition, if present. Calls sc_done_cb
+     *  when done (or when SC partition is not present).
+     */
+    void start_sc(time_point current_time);
+    /** Starts execution of BE partition, if present. */
+    void start_be(time_point current_time);
     void stop();
 
 private:
-    Process *current_proc = nullptr;
+    std::function<void(Slice *, time_point)> sc_done_cb;
+    Process *running_process = nullptr;
+    Partition *running_partition = nullptr;
     // will be overwritten in start(...), value is not important
     time_point timeout = time_point::min();
     ev::timerfd timer;
     // cached, so that we don't create new std::function each time we set the callback
     std::function<void()> completion_cb_cached = [this] { schedule_next(); };
 
-    bool load_next_process();
-    void start_current_process();
     void schedule_next();
+    void start_partition(Partition *part, time_point current_time, bool move_to_first_proc);
+    void start_next_process(time_point current_time);
 };

@@ -9,6 +9,7 @@
 class Window;
 
 using Windows = std::list<Window>;
+using time_point = std::chrono::steady_clock::time_point;
 
 /**
  * Represents a time interval when given slices are running on the CPU. Has a
@@ -16,14 +17,21 @@ using Windows = std::list<Window>;
  */
 class Window
 {
+private:
+    ev::loop_ref loop;
+    uint64_t finished_sc_partitions = 0;
+
 public:
-    Window(Slices &&slices, std::chrono::nanoseconds length);
+    Window(ev::loop_ref loop, std::chrono::nanoseconds length);
 
-    std::chrono::nanoseconds length;
-    Slices slices;
+    const std::chrono::nanoseconds length;
+    // use std::list as we don't have move and copy constructors
+    std::list<Slice> slices;
 
-    void start(std::chrono::steady_clock::time_point current_time);
+    void add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
+    void start(time_point current_time);
     void stop();
 
 private:
+    void slice_sc_end_cb([[maybe_unused]] Slice *slice, time_point current_time);
 };

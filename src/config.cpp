@@ -280,7 +280,10 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
 
     for (auto ywindow : config["windows"]) {
         int length = ywindow["length"].as<int>();
-        Slices slices;
+
+        auto budget = chrono::milliseconds(length);
+        windows.emplace_back(c.loop, budget);
+        Window &w = windows.back();
 
         for (auto yslice : ywindow["slices"]) {
             Partition *sc_part_ptr = nullptr, *be_part_ptr = nullptr;
@@ -309,10 +312,8 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
                              cpus.as_list());
                 cpus &= allowed_cpus;
             }
-            slices.emplace_back(c.loop, sc_part_ptr, be_part_ptr, cpus);
-        }
 
-        auto budget = chrono::milliseconds(length);
-        windows.emplace_back(move(slices), budget);
+            w.add_slice(sc_part_ptr, be_part_ptr, cpus);
+        }
     }
 }
