@@ -23,7 +23,7 @@ public:
         set_exit_cb(&PartitionManager::process_exit_cb);
     }
 
-    // delete move and copy constructors, as we have a pointer data member
+    // delete copy and (implicitly) move constructors
     PartitionManager(const PartitionManager &) = delete;
     const PartitionManager &operator=(const PartitionManager &) = delete;
 
@@ -115,7 +115,6 @@ private:
     Process *find_next_uninitialized_process()
     {
         Process *proc;
-        // find next uninitialized process
         for (; init_iter != partitions.end(); init_iter++) {
             proc = init_iter->seek_pending_process();
             if (proc) return proc;

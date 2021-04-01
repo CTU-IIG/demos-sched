@@ -26,7 +26,7 @@ class Process
 {
 public:
     Process(ev::loop_ref loop,
-            const std::string& name,
+            const std::string &name,
             Partition &partition,
             std::string argv,
             std::chrono::milliseconds budget,

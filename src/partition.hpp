@@ -30,7 +30,7 @@ public:
     Partition(Cgroup &freezer_parent,
               Cgroup &cpuset_parent,
               Cgroup &events_parent,
-              std::string name = "");
+              const std::string &name = "");
 
     /** Kills all system processes from this partition. */
     void kill_all();
@@ -63,8 +63,8 @@ public:
      *  but also during init; if you have anything better, feel free to change these
      */
     void reset(bool move_to_first_proc,
-               cpu_set cpus,
-               std::function<void()> process_completion_cb);
+               const cpu_set &cpus,
+               const std::function<void()> &process_completion_cb);
 
     /**
      * Clears process completion callback set in `bind_to_slice(...)`.

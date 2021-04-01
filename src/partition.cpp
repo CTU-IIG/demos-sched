@@ -2,13 +2,12 @@
 #include "log.hpp"
 #include <algorithm>
 
-using namespace std::placeholders;
 using namespace std;
 
 Partition::Partition(Cgroup &freezer_parent,
                      Cgroup &cpuset_parent,
                      Cgroup &events_parent,
-                     std::string name)
+                     const string& name)
     : cgc(cpuset_parent, name)
     , cgf(freezer_parent, name)
     , cge(events_parent, name)
@@ -24,8 +23,8 @@ void Partition::kill_all()
 }
 
 void Partition::add_process(ev::loop_ref loop,
-                            string argv,
-                            chrono::nanoseconds budget,
+                            const string& argv,
+                            chrono::milliseconds budget,
                             bool has_initialization)
 {
     processes.emplace_back(
@@ -44,8 +43,8 @@ void Partition::create_processes()
 }
 
 void Partition::reset(bool move_to_first_proc,
-                      const cpu_set cpus,
-                      std::function<void()> process_completion_cb)
+                      const cpu_set& cpus,
+                      const function<void()>& process_completion_cb)
 {
     // must be non-empty
     // MK: this is not due to technical reasons, but I don't have any use-case
