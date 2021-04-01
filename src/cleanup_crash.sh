@@ -47,7 +47,7 @@ rmdir `ls -d $UNIFIED$d/ 2>/dev/null ` 2>/dev/null
 if [[ -f "/sys/devices/system/cpu/intel_pstate/status" ]]; then
     # for Intel, it is enough to reset driver to active mode
     echo "active" > "/sys/devices/system/cpu/intel_pstate/status"
-else
+elif [[ -d "/sys/devices/system/cpu/cpufreq" ]]; then
     # for others, switch all policies to schedutil (and hope that was the default)
     echo "schedutil" | tee /sys/devices/system/cpu/cpufreq/policy*/scaling_governor
 fi
