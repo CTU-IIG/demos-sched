@@ -10,7 +10,7 @@ TODO: I think there is a subtle race condition here, where
  blocked and not run at all during next window.
  */
 Slice::Slice(ev::loop_ref loop,
-             std::function<void(Slice *, time_point)> sc_done_cb,
+             std::function<void(Slice &, time_point)> sc_done_cb,
              Partition *sc,
              Partition *be,
              cpu_set cpus)
@@ -32,7 +32,7 @@ void Slice::start_next_process(time_point current_time)
         // no process found, we're done
         // call cb if running SC partition
         if (running_partition == sc) {
-            sc_done_cb(this, current_time);
+            sc_done_cb(*this, current_time);
         }
         return;
     }
@@ -56,7 +56,7 @@ void Slice::start_partition(Partition *part, time_point current_time, bool move_
 void Slice::start_sc(time_point current_time)
 {
     if (!sc) {
-        sc_done_cb(this, current_time);
+        sc_done_cb(*this, current_time);
         return;
     }
     start_partition(sc, current_time, true);

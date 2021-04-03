@@ -24,7 +24,7 @@ class Slice
 {
 public:
     Slice(ev::loop_ref loop,
-          std::function<void(Slice *, time_point)> sc_done_cb,
+          std::function<void(Slice &, time_point)> sc_done_cb,
           Partition *sc,
           Partition *be,
           cpu_set cpus = cpu_set(0x1));
@@ -49,7 +49,7 @@ public:
     void stop(time_point current_time);
 
 private:
-    std::function<void(Slice *, time_point)> sc_done_cb;
+    std::function<void(Slice &, time_point)> sc_done_cb;
     Process *running_process = nullptr;
     Partition *running_partition = nullptr;
     // will be overwritten in start(...), value is not important

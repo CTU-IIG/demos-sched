@@ -5,10 +5,10 @@ Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_)
     , length(length_)
 {}
 
-void Window::add_slice(Partition *sc, Partition *be, const cpu_set &cpus)
+Slice &Window::add_slice(Partition *sc, Partition *be, const cpu_set &cpus)
 {
-    auto sc_cb = [this](Slice *s, time_point t) { slice_sc_end_cb(s, t); };
-    slices.emplace_back(loop, sc_cb, sc, be, cpus);
+    auto sc_cb = [this](Slice &s, time_point t) { slice_sc_end_cb(s, t); };
+    return slices.emplace_back(loop, sc_cb, sc, be, cpus);
 }
 
 void Window::start(time_point current_time)
@@ -26,7 +26,7 @@ void Window::stop(time_point current_time)
     }
 }
 
-void Window::slice_sc_end_cb([[maybe_unused]] Slice *slice, time_point current_time)
+void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_time)
 {
     // option 1) run BE immediately after SC
     // slice->start_be(current_time);
