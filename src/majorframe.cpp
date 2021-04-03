@@ -1,5 +1,4 @@
 #include "majorframe.hpp"
-#include "log.hpp"
 #include <iostream>
 
 using namespace std;
@@ -40,8 +39,6 @@ void MajorFrame::stop(time_point current_time)
 
 void MajorFrame::timeout_cb()
 {
-    logger->trace("Window ended, starting next one");
-
     current_win->stop(timeout);
     move_to_next_window();
     start(timeout);

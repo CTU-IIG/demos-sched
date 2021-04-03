@@ -1,5 +1,8 @@
 #pragma once
 
+// sets SPDLOG_ACTIVE_LEVEL
+#include "config_meson.h"
+
 #pragma GCC diagnostic push
 // this suppresses the GCC warning about unknown pragma below
 #pragma GCC diagnostic ignored "-Wpragmas"
@@ -13,6 +16,8 @@
 
 /** A global spdlog logger instance, initialized by `initialize_logger(...)`. */
 extern std::shared_ptr<spdlog::logger> logger;
+
+#define TRACE(...) SPDLOG_LOGGER_TRACE(logger, __VA_ARGS__)
 
 /**
  * Sets up a global spdlog logger stored in the global `logger` variable.

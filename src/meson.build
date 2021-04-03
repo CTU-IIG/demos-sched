@@ -16,11 +16,11 @@ test('timerfd', executable('timerfd_tests', ['timerfd.tests.cpp', 'timerfd.cpp']
 
 subdir('tests')
 
-conf_data = configuration_data({
-  'MAX_CPUS' : get_option('max_cpus'),
-})
-
 configure_file(
-  output : 'config.h',
-  configuration : conf_data,
+	output : 'config_meson.h',
+	configuration : configuration_data({
+		'MAX_CPUS' : get_option('max_cpus'),
+		'SPDLOG_ACTIVE_LEVEL': (get_option('trace_logs')
+		    ? 'SPDLOG_LEVEL_TRACE' : 'SPDLOG_LEVEL_INFO'),
+	}),
 )

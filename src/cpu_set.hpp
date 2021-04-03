@@ -7,13 +7,14 @@
 extern "C"
 {
 #include "cpuset.h"
+#include "config_meson.h"
 }
 
 // C++ wrapper over C's cpu_set_t
 class cpu_set
 {
 public:
-    static constexpr int max_cpus = 64;
+    static constexpr int max_cpus = MAX_CPUS;
 
     // clang-format off
     cpu_set() : s(CPU_ALLOC(max_cpus)) { zero(); }

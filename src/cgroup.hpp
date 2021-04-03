@@ -21,7 +21,6 @@
 #include <sys/types.h>
 #include <vector>
 
-#include "config.h"
 #include "cpu_set.hpp"
 
 class Cgroup

@@ -1,5 +1,8 @@
 option('max_cpus', type : 'integer', value : 64, min : 1,
        description : 'Maximum number of supported CPUs')
 
+option('trace_logs', type: 'boolean', value: false,
+       description: 'If true, detailed trace logs are printed. By default, traces of CPU frequency management and process scheduling are omitted to improve performance. This options turns them on.')
+
 option('lib_verbose', type: 'boolean', value: false,
        description: 'If true, DEmOS process library will print verbose logs')

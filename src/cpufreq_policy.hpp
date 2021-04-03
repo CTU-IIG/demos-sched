@@ -86,7 +86,7 @@ public: ////////////////////////////////////////////////////////////////////////
         // check that freq is between min-max and is one of the supported frequencies
         validate_frequency(freq);
 
-        logger->trace("Changing CPU frequency to `{}` for `{}`", freq_to_str(freq), name);
+        TRACE("Changing CPU frequency to `{}` for `{}`", freq_to_str(freq), name);
         try {
             write_freq_file(policy_dir / "scaling_setspeed", freq);
         } catch (...) {

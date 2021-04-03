@@ -13,5 +13,5 @@ aarch64: MESON_OPTS=--cross-file aarch64.txt
 aarch64: build-aarch64/build.ninja
 	ninja -C $(<D)
 
-debug: MESON_OPTS=--buildtype=debug -Db_sanitize=address,undefined --optimization=g
+debug: MESON_OPTS=--debug -Db_sanitize=address,undefined --optimization=g -Dlib_verbose=true -Dtrace_logs=true
 debug: build/build.ninja

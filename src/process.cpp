@@ -81,14 +81,14 @@ void Process::suspend()
 {
     cgf.freeze();
     if (is_running()) {
-        logger->trace("Suspended process '{}' (partition '{}')", pid, part.get_name());
+        TRACE("Suspended process '{}' (partition '{}')", pid, part.get_name());
     }
 }
 
 void Process::resume()
 {
     assert(is_running());
-    logger->trace("Resuming process '{}' (partition '{}')", pid, part.get_name());
+    TRACE("Resuming process '{}' (partition '{}')", pid, part.get_name());
     uint64_t buf = 1;
     if (demos_completed) {
         CHECK(write(efd_continue, &buf, sizeof(buf)));
@@ -136,7 +136,7 @@ void Process::set_remaining_budget(std::chrono::milliseconds next_budget)
 {
     assert(next_budget < budget);
     actual_budget = next_budget;
-    logger->trace("Next budget for process '{}' shortened to '{} ms'.", pid, next_budget.count());
+    TRACE("Next budget for process '{}' shortened to '{} ms'.", pid, next_budget.count());
 }
 
 void Process::reset_budget()
@@ -182,7 +182,7 @@ void Process::populated_cb(bool populated)
  */
 void Process::completed_cb()
 {
-    logger->trace("Process '{}' completed (cmd: '{}')", pid, argv);
+    TRACE("Process '{}' completed (cmd: '{}')", pid, argv);
 
     // switch to next process
     completed = true;
