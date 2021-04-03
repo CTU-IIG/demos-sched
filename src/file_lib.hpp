@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <err.h>
 #include <filesystem>
 #include <fstream>
@@ -18,13 +19,9 @@ public:
         , _errno_(errno_)
     {}
 
-    [[nodiscard]] int errno_() const {
-        return _errno_;
-    }
+    [[nodiscard]] int errno_() const { return _errno_; }
 
-    [[nodiscard]] std::string err_str() const {
-        return std::string(strerror(_errno_));
-    }
+    [[nodiscard]] std::string err_str() const { return std::string(strerror(_errno_)); }
 };
 
 template<typename T>
