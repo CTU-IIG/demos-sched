@@ -3,7 +3,6 @@
 #include "log.hpp"
 #include "majorframe.hpp"
 #include "partition_manager.hpp"
-#include "power_manager.hpp"
 #include "slice.hpp"
 #include <chrono>
 #include <ev++.h>
@@ -14,7 +13,6 @@ private:
     ev::loop_ref loop;
     MajorFrame mf;
     PartitionManager partition_manager;
-    PowerManager power_manager;
     ev::sig sigint{ loop };
     ev::sig sigterm{ loop };
 
@@ -23,7 +21,6 @@ public:
         : loop(ev_loop)
         , mf(loop, std::move(windows), frame_sync_message)
         , partition_manager(std::move(partitions))
-        , power_manager()
     {
         // setup completion callback
         partition_manager.set_completion_cb([this] { completion_cb(); });

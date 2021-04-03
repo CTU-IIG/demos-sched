@@ -1,6 +1,7 @@
 #pragma once
 
 #include "check_lib.hpp"
+#include "scheduler_events.hpp"
 #include "slice.hpp"
 #include <chrono>
 #include <ev++.h>
@@ -20,18 +21,19 @@ class Window
 private:
     ev::loop_ref loop;
     uint64_t finished_sc_partitions = 0;
+    SchedulerEvents &sched_events;
 
 public:
-    Window(ev::loop_ref loop, std::chrono::milliseconds length);
-
     const std::chrono::milliseconds length;
-    // use std::list as we don't have move and copy constructors
-    std::list<Slice> slices;
+    // use std::list as Slice doesn't have move and copy constructors
+    std::list<Slice> slices{};
 
-    void add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
+    Window(ev::loop_ref loop, std::chrono::milliseconds length, SchedulerEvents &events);
+
+    Slice &add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
     void start(time_point current_time);
     void stop(time_point current_time);
 
 private:
-    void slice_sc_end_cb([[maybe_unused]] Slice *slice, time_point current_time);
+    void slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_time);
 };

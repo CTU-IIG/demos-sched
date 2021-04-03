@@ -16,6 +16,7 @@ typedef struct
     Cgroup &cpuset_cg;
     Cgroup &freezer_cg;
     ev::default_loop &loop;
+    SchedulerEvents &sched_events;
 } CgroupConfig;
 
 class Config

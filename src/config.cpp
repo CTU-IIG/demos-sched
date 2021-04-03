@@ -1,5 +1,5 @@
 #include "config.hpp"
-#include "log.hpp"
+#include "config_meson.h"
 #include <cmath>
 #include <exception>
 
@@ -282,8 +282,7 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
         int length = ywindow["length"].as<int>();
 
         auto budget = chrono::milliseconds(length);
-        windows.emplace_back(c.loop, budget);
-        Window &w = windows.back();
+        Window &w = windows.emplace_back(c.loop, budget, c.sched_events);
 
         for (auto yslice : ywindow["slices"]) {
             Partition *sc_part_ptr = nullptr, *be_part_ptr = nullptr;

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cstring>
+#include <power_policies/min_be.hpp>
 #include <sched.h>
 #include <unistd.h>
 
@@ -296,12 +297,15 @@ int main(int argc, char *argv[])
         create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
         logger->debug("Top level cgroups created");
 
+        // select power policy
+        PowerPolicy_MinBE pp{};
 
         // load windows and partitions from config
         CgroupConfig cc = { .unified_cg = unified_root,
                             .cpuset_cg = cpuset_root,
                             .freezer_cg = freezer_root,
-                            .loop = loop };
+                            .loop = loop,
+                            .sched_events = pp };
         Partitions partitions;
         Windows windows;
 
