@@ -15,3 +15,7 @@ aarch64: build-aarch64/build.ninja
 
 debug: MESON_OPTS=--debug -Db_sanitize=address,undefined --optimization=g -Dlib_verbose=true -Dtrace_logs=true
 debug: build/build.ninja
+
+# we cannot combine this with `debug`, because AddressSanitizer also overrides `new` and `delete`
+alloc_test: MESON_OPTS=--debug --optimization=g -Dtrace_logs=true -Dlog_allocations=true
+alloc_test: build/build.ninja

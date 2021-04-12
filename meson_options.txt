@@ -6,3 +6,6 @@ option('trace_logs', type: 'boolean', value: false,
 
 option('lib_verbose', type: 'boolean', value: false,
        description: 'If true, DEmOS process library will print verbose logs')
+
+option('log_allocations', type: 'boolean', value: false,
+       description: 'If true, DEmOS will log all heap allocations that happen after initialization.')

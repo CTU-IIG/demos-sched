@@ -1,7 +1,7 @@
 cxx = meson.get_compiler('cpp')
 
 executable('demos-sched',
-	['main.cpp','process.cpp','partition.cpp',
+	['main.cpp','memory_tracker.cpp','process.cpp','partition.cpp',
 	 'slice.cpp','window.cpp','majorframe.cpp',
 	 'cgroup.cpp', 'timerfd.cpp', 'evfd.cpp',
 	 'config.cpp', 'cpuset.c', 'log.cpp'],
@@ -20,6 +20,7 @@ configure_file(
 	output : 'config_meson.h',
 	configuration : configuration_data({
 		'MAX_CPUS' : get_option('max_cpus'),
+		'LOG_ALLOCATIONS' : get_option('log_allocations'),
 		'SPDLOG_ACTIVE_LEVEL': (get_option('trace_logs')
 		    ? 'SPDLOG_LEVEL_TRACE' : 'SPDLOG_LEVEL_INFO'),
 	}),

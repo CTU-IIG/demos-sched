@@ -2,6 +2,7 @@
 
 #include "log.hpp"
 #include "majorframe.hpp"
+#include "memory_tracker.hpp"
 #include "partition_manager.hpp"
 #include "slice.hpp"
 #include <chrono>
@@ -66,6 +67,7 @@ private:
     void start_scheduler()
     {
         logger->debug("Starting scheduler");
+        enable_allocation_logging();
         mf.start(std::chrono::steady_clock::now());
     }
 
@@ -94,6 +96,7 @@ private:
     void signal_cb()
     {
         logger->info("Received stop signal (SIGTERM or SIGINT), stopping all processes");
+        disable_allocation_logging();
         // this should trigger completion_cb() when scheduler is running,
         //  and at the same time allows for graceful async cleanup
         partition_manager.kill_all();
