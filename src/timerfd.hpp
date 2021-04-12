@@ -26,6 +26,7 @@ public:
     ~timerfd();
     void set(std::function<void()> callback);
     void start(std::chrono::steady_clock::time_point timeout);
+    using io::priority;
     using io::stop;
 
 private:
