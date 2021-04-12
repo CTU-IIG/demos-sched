@@ -10,9 +10,9 @@
 constexpr timespec timepointToTimespec(
   std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> tp)
 {
-    auto secs = std::chrono::time_point_cast<std::chrono::seconds>(tp);
-    auto ns = std::chrono::time_point_cast<std::chrono::nanoseconds>(tp) -
-              std::chrono::time_point_cast<std::chrono::nanoseconds>(secs);
+    using namespace std::chrono;
+    auto secs = time_point_cast<seconds>(tp);
+    auto ns = time_point_cast<nanoseconds>(tp) - time_point_cast<nanoseconds>(secs);
 
     return timespec{ secs.time_since_epoch().count(), ns.count() };
 }
@@ -23,10 +23,10 @@ class timerfd : private io
 {
 public:
     explicit timerfd(ev::loop_ref loop);
+    ~timerfd();
     void set(std::function<void()> callback);
     void start(std::chrono::steady_clock::time_point timeout);
     using io::stop;
-    ~timerfd();
 
 private:
     std::function<void()> callback = nullptr;
