@@ -18,11 +18,11 @@ okx demos-sched -C '{windows: [{length: 100, sc_partition: [ true ]}]}'
 # Tests that demos correctly prints synchronization message on each window start
 out=$(demos-sched -m "<SYNC>" -C '
 windows:
-  - length: 100
+  - length: 60
     slices: [{cpu: 0, sc_partition: SC1}]
   - length: 10
     slices: [{cpu: 0, sc_partition: SC1}]
-  - length: 15
+  - length: 60
     slices: [{cpu: 0, sc_partition: SC1}]
 
 partitions:
