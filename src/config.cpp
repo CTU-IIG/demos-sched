@@ -37,8 +37,9 @@ static Node normalize_process(const Node &proc, float default_budget)
             if (k == "cmd") {
                 // which shell command to run to start the process
                 norm_proc[k] = proc[k].as<string>();
-            } else if (k == "budget") {
-                // how long can the process run in each window cycle
+            } else if (k == "budget" || k == "jitter") {
+                // budget: how long can the process run in each window cycle
+                // jitter: variance in budget for each window cycle
                 norm_proc[k] = proc[k].as<int>();
             } else if (k == "init") {
                 // if true, we wait until the process completes initialization
@@ -57,7 +58,27 @@ static Node normalize_process(const Node &proc, float default_budget)
         norm_proc["budget"] = int(default_budget);
     }
 
-    // after "budget" to keep typical key ordering in case neither is specified
+    int budget = norm_proc["budget"].as<int>();
+    if (budget <= 0) {
+        throw runtime_error(
+          "Process budget must be a positive time duration in milliseconds, got '" +
+          to_string(budget) + "'");
+    }
+
+    if (!norm_proc["jitter"]) {
+        norm_proc["jitter"] = int(0);
+    } else {
+        int jitter = norm_proc["jitter"].as<int>();
+        if (jitter < 0) {
+            throw runtime_error(
+              "Jitter must be a non-negative time duration in milliseconds, got '" +
+              to_string(jitter) + "'");
+        }
+        if (jitter > budget) {
+            throw runtime_error("Jitter must not be greater than process budget");
+        }
+    }
+
     if (!norm_proc["init"]) {
         norm_proc["init"] = false;
     }
@@ -79,8 +100,9 @@ static Node normalize_processes(const Node &processes, float total_budget)
     return norm_processes;
 }
 
-Node Config::normalize_partition(const Node &part,
-                                 float total_budget) // can be NAN to require explicit budgets in YAML file
+Node Config::normalize_partition(
+  const Node &part,
+  float total_budget) // can be NAN to require explicit budgets in YAML file
 {
     Node norm_part, processes;
 
@@ -93,7 +115,7 @@ Node Config::normalize_partition(const Node &part,
                 norm_part[k] = part[k].as<string>();
             else if (k == "processes")
                 processes = normalize_processes(part[k], total_budget);
-            else if (k == "cmd" || k == "budget" || k == "init")
+            else if (k == "cmd" || k == "budget" || k == "jitter" || k == "init")
                 ;
             else
                 throw runtime_error("Unexpected key: " + k);
@@ -110,7 +132,7 @@ Node Config::normalize_partition(const Node &part,
     if (!norm_part["processes"]) {
         if (processes.IsNull()) {
             Node process;
-            for (const string &key : { "cmd", "budget", "init" }) {
+            for (const string &key : { "cmd", "budget", "jitter", "init" }) {
                 if (part[key]) {
                     process[key] = part[key];
                 }
@@ -269,8 +291,12 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
           c.freezer_cg, c.cpuset_cg, c.unified_cg, ypart["name"].as<string>());
         for (auto yprocess : ypart["processes"]) {
             auto budget = chrono::milliseconds(yprocess["budget"].as<int>());
-            partitions.back().add_process(
-              c.loop, yprocess["cmd"].as<string>(), budget, yprocess["init"].as<bool>());
+            auto budget_jitter = chrono::milliseconds(yprocess["jitter"].as<int>());
+            partitions.back().add_process(c.loop,
+                                          yprocess["cmd"].as<string>(),
+                                          budget,
+                                          budget_jitter,
+                                          yprocess["init"].as<bool>());
         }
     }
 

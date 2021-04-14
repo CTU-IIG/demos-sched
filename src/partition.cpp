@@ -7,7 +7,7 @@ using namespace std;
 Partition::Partition(Cgroup &freezer_parent,
                      Cgroup &cpuset_parent,
                      Cgroup &events_parent,
-                     const string& name)
+                     const string &name)
     : cgc(cpuset_parent, name)
     , cgf(freezer_parent, name)
     , cge(events_parent, name)
@@ -23,12 +23,13 @@ void Partition::kill_all()
 }
 
 void Partition::add_process(ev::loop_ref loop,
-                            const string& argv,
+                            const string &argv,
                             chrono::milliseconds budget,
+                            chrono::milliseconds budget_jitter,
                             bool has_initialization)
 {
     processes.emplace_back(
-      loop, "proc" + to_string(proc_count), *this, argv, budget, has_initialization);
+      loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter, has_initialization);
     proc_count++;
     current_proc = processes.begin();
     empty = false;
@@ -43,8 +44,8 @@ void Partition::create_processes()
 }
 
 void Partition::reset(bool move_to_first_proc,
-                      const cpu_set& cpus,
-                      const function<void()>& process_completion_cb)
+                      const cpu_set &cpus,
+                      const function<void()> &process_completion_cb)
 {
     // must be non-empty
     // MK: this is not due to technical reasons, but I don't have any use-case

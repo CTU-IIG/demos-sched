@@ -6,6 +6,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <vector>
+#include <random>
 
 #include "cgroup.hpp"
 #include "check_lib.hpp"
@@ -30,6 +31,7 @@ public:
             Partition &partition,
             std::string argv,
             std::chrono::milliseconds budget,
+            std::chrono::milliseconds budget_jitter,
             bool has_initialization = false);
 
     /** Spawns the underlying system process. */
@@ -65,7 +67,7 @@ public:
     /** Resets next budget to the default value. */
     void reset_budget();
 
-    [[nodiscard]] std::chrono::milliseconds get_actual_budget() const;
+    [[nodiscard]] std::chrono::milliseconds get_actual_budget();
     [[nodiscard]] pid_t get_pid() const;
     [[nodiscard]] bool needs_initialization() const;
     [[nodiscard]] bool is_running() const;
@@ -75,6 +77,8 @@ public:
     void mark_uncompleted();
 
 private:
+    std::uniform_int_distribution<long> jitter_distribution_ms;
+
     ev::loop_ref loop;
     ev::evfd completed_w{ loop };
     ev::child child_w{ loop };

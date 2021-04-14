@@ -9,21 +9,30 @@
 #include <system_error>
 
 using namespace std::placeholders;
+using milliseconds = std::chrono::milliseconds;
+
+// C++ <random> is broken beyond any reason
+// this initialisation is not really uniform, but we don't need that here
+// see https://stackoverflow.com/questions/45069219/how-to-succinctly-portably-and-thoroughly-seed-the-mt19937-prng
+static std::mt19937 gen{ std::random_device{}() };
 
 Process::Process(ev::loop_ref loop,
                  const std::string &name,
-                 Partition &part,
+                 Partition &partition,
                  std::string argv,
-                 std::chrono::milliseconds budget,
+                 milliseconds budget,
+                 milliseconds budget_jitter,
                  bool has_initialization)
-    : loop(loop)
+    // `budget +- jitter` seems more intuitive than `budget +- (jitter / 2)
+    : jitter_distribution_ms(-budget_jitter.count(), budget_jitter.count())
+    , loop(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
-    , part(part)
+    , part(partition)
     , cge(loop,
-          part.cge,
+          partition.cge,
           name,
           std::bind(&Process::populated_cb, this, _1)) // NOLINT(modernize-avoid-bind)
-    , cgf(part.cgf, name)
+    , cgf(partition.cgf, name)
     , argv(std::move(argv))
     , budget(budget)
     , actual_budget(budget)
@@ -97,9 +106,11 @@ void Process::resume()
     cgf.unfreeze();
 }
 
-std::chrono::milliseconds Process::get_actual_budget() const
+milliseconds Process::get_actual_budget()
 {
-    return actual_budget;
+    auto b = actual_budget + milliseconds(jitter_distribution_ms(gen));
+    // ensure budget is not negative
+    return b >= b.zero() ? b : b.zero();
 }
 
 bool Process::needs_initialization() const
@@ -132,11 +143,12 @@ pid_t Process::get_pid() const
     return pid;
 }
 
-void Process::set_remaining_budget(std::chrono::milliseconds next_budget)
+void Process::set_remaining_budget(milliseconds next_budget)
 {
+    assert(next_budget > next_budget.zero());
     assert(next_budget < budget);
     actual_budget = next_budget;
-    TRACE("Next budget for process '{}' shortened to '{} ms'.", pid, next_budget.count());
+    TRACE("Next budget for process '{}' shortened to '{} milliseconds'.", pid, next_budget.count());
 }
 
 void Process::reset_budget()

@@ -44,6 +44,7 @@ public:
     void add_process(ev::loop_ref loop,
                      const std::string &argv,
                      std::chrono::milliseconds budget,
+                     std::chrono::milliseconds budget_jitter,
                      bool has_initialization);
 
     /**
