@@ -23,6 +23,10 @@ Slice::Slice(ev::loop_ref loop,
     , completion_cb_cached{[this] { schedule_next(std::chrono::steady_clock::now()); }}
 {
     timer.set([this] { schedule_next(timeout); });
+    // set lower than default priority; this makes this timeout trigger
+    //  after MajorFrame window timer in case a process runs out of budget
+    //  at the same moment as window end
+    timer.priority = -1;
 }
 
 /** Finds and starts next unfinished process from current_partition. */
