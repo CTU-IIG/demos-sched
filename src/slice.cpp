@@ -1,4 +1,5 @@
 #include "slice.hpp"
+#include "log.hpp"
 #include <cassert>
 
 /*
@@ -37,8 +38,18 @@ void Slice::start_next_process(time_point current_time)
         }
         return;
     }
+
+    auto budget = running_process->get_actual_budget();
+    if (budget == budget.zero()) {
+        // probably due to combination of jitter and reduced leftover budget
+        TRACE("Skipping process with empty effective budget");
+        running_process->mark_completed();
+        return start_next_process(current_time);
+    }
+
+    TRACE("Running process '{}' for '{} milliseconds'", running_process->get_pid(), budget.count());
     running_process->resume();
-    timeout = current_time + running_process->get_actual_budget();
+    timeout = current_time + budget;
     // if budget was shortened in previous window, this resets it back to full length
     running_process->reset_budget();
     timer.start(timeout);
