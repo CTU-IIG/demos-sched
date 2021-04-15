@@ -40,7 +40,7 @@ public:
         // used when partition is not contained in any slice, not really important
         const cpu_set default_cpu_set{};
         const cpu_set *cpus_ptr;
-        auto part_completion_cb = [this] { process_init_completion_cb(); };
+        std::function<void()> part_completion_cb = [this] { process_init_completion_cb(); };
         for (auto &p : partitions) {
             // we want to run init for each partition in the widest
             //  cpu_set it will ever run in; otherwise, multi-threaded
