@@ -56,9 +56,9 @@ private:
     time_point timeout = time_point::min();
     ev::timerfd timer;
     // cached, so that we don't create new std::function each time we set the callback
-    std::function<void()> completion_cb_cached = [this] { schedule_next(); };
+    std::function<void()> completion_cb_cached;
 
-    void schedule_next();
+    void schedule_next(time_point current_time);
     void start_partition(Partition *part, time_point current_time, bool move_to_first_proc);
     void start_next_process(time_point current_time);
 };

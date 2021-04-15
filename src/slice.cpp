@@ -19,8 +19,9 @@ Slice::Slice(ev::loop_ref loop,
     , cpus(std::move(cpus))
     , sc_done_cb(std::move(sc_done_cb))
     , timer(loop)
+    , completion_cb_cached{[this] { schedule_next(std::chrono::steady_clock::now()); }}
 {
-    timer.set([this] { schedule_next(); });
+    timer.set([this] { schedule_next(timeout); });
 }
 
 /** Finds and starts next unfinished process from current_partition. */
@@ -92,11 +93,11 @@ void Slice::stop(time_point current_time)
 }
 
 // Called as a response to timeout or process completion.
-void Slice::schedule_next()
+void Slice::schedule_next(time_point current_time)
 {
     timer.stop();
     running_process->suspend();
     running_process->mark_completed();
 
-    start_next_process(timeout);
+    start_next_process(current_time);
 }
