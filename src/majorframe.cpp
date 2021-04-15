@@ -40,6 +40,9 @@ void MajorFrame::stop(time_point current_time)
 void MajorFrame::timeout_cb()
 {
     current_win->stop(timeout);
+    if (!current_win->has_sc_finished()) {
+        logger->warn("Window ended before all SC partitions finished");
+    }
     move_to_next_window();
     start(timeout);
 }
