@@ -22,6 +22,7 @@ private:
     ev::loop_ref loop;
     uint64_t finished_sc_partitions = 0;
     SchedulerEvents &sched_events;
+    bool stopping = false;
 
 public:
     const std::chrono::milliseconds length;
@@ -31,6 +32,7 @@ public:
     Window(ev::loop_ref loop, std::chrono::milliseconds length, SchedulerEvents &events);
 
     Slice &add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
+    [[nodiscard]] bool has_sc_finished() const;
     void start(time_point current_time);
     void stop(time_point current_time);
 

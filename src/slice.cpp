@@ -29,17 +29,24 @@ Slice::Slice(ev::loop_ref loop,
     timer.priority = -1;
 }
 
+bool Slice::load_next_process(time_point current_time)
+{
+    running_process = running_partition->seek_pending_process();
+    if (running_process) {
+        return true;
+    }
+    // no process found, we're done
+    // call cb if running SC partition
+    if (running_partition == sc) {
+        sc_done_cb(*this, current_time);
+    }
+    return false;
+}
+
 /** Finds and starts next unfinished process from current_partition. */
 void Slice::start_next_process(time_point current_time)
 {
-    // find next process
-    running_process = running_partition->seek_pending_process();
-    if (!running_process) {
-        // no process found, we're done
-        // call cb if running SC partition
-        if (running_partition == sc) {
-            sc_done_cb(*this, current_time);
-        }
+    if (!load_next_process(current_time)) {
         return;
     }
 
@@ -57,6 +64,14 @@ void Slice::start_next_process(time_point current_time)
     // if budget was shortened in previous window, this resets it back to full length
     running_process->reset_budget();
     timer.start(timeout);
+}
+
+void Slice::stop_current_process()
+{
+    timer.stop();
+    running_process->suspend();
+    running_process->mark_completed();
+    running_process = nullptr;
 }
 
 void Slice::start_partition(Partition *part, time_point current_time, bool move_to_first_proc)
@@ -89,30 +104,45 @@ void Slice::start_be(time_point current_time)
 
 void Slice::stop(time_point current_time)
 {
-    if (running_process && running_partition == be) {
+    timer.stop();
+    // it is OK to disconnect before stopping the running process
+    if (sc) sc->disconnect();
+    if (be) be->disconnect();
+
+    if (!running_process) {
+        return;
+    }
+
+    // in case the remaining time is less than a millisecond, we round it to zero
+    //  and consider the process completed; this lets us always schedule a whole number
+    //  of milliseconds, which is nicer to work with (and consistent with how config
+    //  exposes the times)
+    using namespace std::chrono;
+    auto remaining = duration_cast<milliseconds>(timeout - current_time);
+
+    if (remaining == remaining.zero()) {
+        // window ended approximately at the same moment when the process timed out
+        // Slice::stop is called before schedule_next due to higher timer priority
+        // we stop the running process and load the next one; this may call sc_done_cb
+        //  if this was the last process from the SC partition
+        stop_current_process();
+        load_next_process(current_time);
+        return;
+    }
+
+    if (running_partition == be) {
         // we're interrupting a process from the BE partition
-        // subtract used time from budget for the next run
-        using namespace std::chrono;
-        auto remaining = duration_cast<milliseconds>(timeout - current_time);
+        // store remaining budget for next run
         running_process->set_remaining_budget(remaining);
     }
 
-    if (running_process) {
-        running_process->suspend();
-        running_process = nullptr;
-    }
-
-    if (sc) sc->disconnect();
-    if (be) be->disconnect();
-    timer.stop();
+    running_process->suspend();
+    running_process = nullptr;
 }
 
 // Called as a response to timeout or process completion.
 void Slice::schedule_next(time_point current_time)
 {
-    timer.stop();
-    running_process->suspend();
-    running_process->mark_completed();
-
+    stop_current_process();
     start_next_process(current_time);
 }

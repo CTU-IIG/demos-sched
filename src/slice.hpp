@@ -60,5 +60,7 @@ private:
 
     void schedule_next(time_point current_time);
     void start_partition(Partition *part, time_point current_time, bool move_to_first_proc);
+    void stop_current_process();
+    bool load_next_process(time_point current_time);
     void start_next_process(time_point current_time);
 };

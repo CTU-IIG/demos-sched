@@ -12,6 +12,11 @@ Slice &Window::add_slice(Partition *sc, Partition *be, const cpu_set &cpus)
     return slices.emplace_back(loop, sc_cb, sc, be, cpus);
 }
 
+bool Window::has_sc_finished() const
+{
+    return finished_sc_partitions == slices.size();
+}
+
 void Window::start(time_point current_time)
 {
     logger->trace("Starting window");
@@ -25,20 +30,30 @@ void Window::start(time_point current_time)
 
 void Window::stop(time_point current_time)
 {
+    // when SC partition inside a slice completes at the same moment Window::stop is called,
+    //
+    stopping = true;
     for (auto &s : slices) {
         s.stop(current_time);
     }
+    stopping = false;
     sched_events.on_window_end(*this);
 }
 
 void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_time)
 {
+    finished_sc_partitions++;
+
+    if (stopping) {
+        // if the window is currently stopping, don't launch any new partition
+        return;
+    }
+
     // option 1) run BE immediately after SC
     // slice->start_be(current_time);
 
     // option 2) wait until all SC partitions finish
-    finished_sc_partitions++;
-    if (finished_sc_partitions == slices.size()) {
+    if (has_sc_finished()) {
         logger->trace("Starting BE partitions");
         sched_events.on_be_start(*this);
         for (auto &sp : slices) {
