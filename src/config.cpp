@@ -46,7 +46,7 @@ static Node normalize_process(const Node &proc, float default_budget)
                 //  before freezing it and starting normal scheduling
                 norm_proc[k] = proc[k].as<bool>();
             } else {
-                throw runtime_error("Unexpected key: " + k);
+                throw runtime_error("Unexpected config key: " + k);
             }
         }
     }
@@ -118,7 +118,7 @@ Node Config::normalize_partition(
             else if (k == "cmd" || k == "budget" || k == "jitter" || k == "init")
                 ;
             else
-                throw runtime_error("Unexpected key: " + k);
+                throw runtime_error("Unexpected config key: " + k);
         }
     }
 
@@ -196,7 +196,7 @@ Node Config::normalize_slice(const Node &slice,
             norm_slice["be_partition"] =
               process_xx_processes_and_get_name(slice[k], win_length * 1.0f, partitions);
         else
-            throw runtime_error("Unexpected key: " + k);
+            throw runtime_error("Unexpected config key: " + k);
     }
     return norm_slice;
 }
@@ -234,7 +234,7 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
         else if (k == "be_processes")
             ;
         else
-            throw runtime_error("Unexpected key: " + k);
+            throw runtime_error("Unexpected config key: " + k);
     }
 
     if (!norm_win["slices"]) {
@@ -265,7 +265,7 @@ void Config::normalize()
     config.remove("windows");
 
     for (const auto &node : config) {
-        throw runtime_error("Unexpected key: " + node.first.as<string>());
+        throw runtime_error("Unexpected config key: " + node.first.as<string>());
     }
 
     Node norm_config;
