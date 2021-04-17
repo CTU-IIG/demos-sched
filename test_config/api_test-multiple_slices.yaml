@@ -3,7 +3,7 @@
 partitions:
   - name: SC1
     processes:
-      - cmd: build/src/api-test
+      - cmd: ../build/src/tests/api-test
         budget: 2000
 
 windows:

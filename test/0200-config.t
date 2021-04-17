@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 9
+plan_tests 14
 
 test_normalization() {
     local test_name=$1
@@ -15,12 +15,23 @@ out=$(demos-sched -C "{ windows: [], partitions: [], garbage: garbage}" 2>&1)
 is $? 1 "garbage causes failure"
 like "$out" garbage "garbage reported"
 
+out=$(demos-sched -d -C "{}")
+like "$out" "set_cwd: false" "set_cwd defaults to false for inline config"
+out=$(demos-sched -d -c <(echo "set_cwd: false"))
+is $? 0 "config from FIFO file is accepted with 'set_cwd: false'"
+# we cannot use <(), as demos detects special files and throws error (tested below)
+tmp_config=$(mktemp)
+echo "{}" > "$tmp_config"
+out=$(demos-sched -d -c "$tmp_config")
+like "$out" "set_cwd: true" "set_cwd defaults to true for config file"
+
 test_normalization "missing slice definition" \
 "{
     windows: [ {length: 500, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100}] }]
 }" \
-"partitions:
+"set_cwd: false
+partitions:
   - name: SC
     processes:
       - cmd: echo
@@ -38,7 +49,8 @@ test_normalization "partition definition in window" \
 "{
     windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
 }" \
-"partitions:
+"set_cwd: false
+partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
@@ -55,7 +67,8 @@ test_normalization "partition definition in window with one process" \
 "{
     windows: [ {length: 500, sc_partition: {cmd: proc1, budget: 500} } ]
 }" \
-"partitions:
+"set_cwd: false
+partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
@@ -72,7 +85,8 @@ test_normalization "default budget" \
 "{
     windows: [ {length: 500, sc_partition: [{cmd: proc1}] } ]
 }" \
-"partitions:
+"set_cwd: false
+partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
@@ -91,7 +105,8 @@ test_normalization "process as string" \
 "{
     windows: [ {length: 500, sc_processes: proc} ]
 }" \
-"partitions:
+"set_cwd: false
+partitions:
   - name: anonymous_0
     processes:
       - cmd: proc
@@ -108,7 +123,8 @@ test_normalization "Processes as string" \
 "{
     windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
 }" \
-"partitions:
+"set_cwd: false
+partitions:
   - name: anonymous_0
     processes:
       - cmd: proc1
@@ -129,3 +145,8 @@ export DEMOS_PLAIN_LOG=1
 test_normalization "missing budget in canonical config" \
 		   "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
 		   ">>> [error] Exception: Missing budget"
+test_normalization "set_cwd: yes for inline config string fails" \
+		   "set_cwd: yes" \
+		   ">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
+out=$(demos-sched -d -c <(echo "{}"))
+is $? 1 "config from FIFO file is not accepted without 'set_cwd: false'"

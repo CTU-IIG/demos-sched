@@ -1,8 +1,8 @@
-#ifndef PROCESS_H
-#define PROCESS_H
+#pragma once
 
 #include <chrono>
 #include <fcntl.h>
+#include <filesystem>
 #include <iostream>
 #include <unistd.h>
 #include <vector>
@@ -30,6 +30,7 @@ public:
             const std::string &name,
             Partition &partition,
             std::string argv,
+            std::optional<std::filesystem::path> working_dir,
             std::chrono::milliseconds budget,
             std::chrono::milliseconds budget_jitter,
             bool has_initialization = false);
@@ -79,7 +80,7 @@ public:
 private:
     std::uniform_int_distribution<long> jitter_distribution_ms;
 
-    ev::loop_ref loop;
+    const ev::loop_ref loop;
     ev::evfd completed_w{ loop };
     ev::child child_w{ loop };
     int efd_continue; // new period eventfd
@@ -88,10 +89,11 @@ private:
     CgroupEvents cge;
     CgroupFreezer cgf;
 
-    std::string argv;
-    std::chrono::milliseconds budget;
+    const std::string argv;
+    const std::optional<std::filesystem::path> working_dir;
+    const std::chrono::milliseconds budget;
     std::chrono::milliseconds actual_budget;
-    bool has_initialization;
+    const bool has_initialization;
     bool completed = false;
     bool demos_completed = false;
     // cannot be replaced by `pid >= 0`, as we want
@@ -110,5 +112,3 @@ private:
     void completed_cb();
     void child_terminated_cb(ev::child &w, [[maybe_unused]] int revents);
 };
-
-#endif

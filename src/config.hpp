@@ -4,6 +4,7 @@
 #include "check_lib.hpp"
 #include "majorframe.hpp"
 #include <ev++.h>
+#include <filesystem>
 // silence warnings from yaml-cpp header files
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
@@ -32,6 +33,8 @@ public:
 
 private:
     YAML::Node config{};
+    bool config_is_regular_file = false;
+    std::optional<std::filesystem::path> config_file_path{};
     int anonymous_partition_counter = 0;
 
     YAML::Node normalize_window(const YAML::Node &win, YAML::Node &partitions);

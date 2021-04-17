@@ -6,11 +6,14 @@
 
 using namespace std;
 using namespace YAML;
+namespace fs = std::filesystem;
 
 void Config::load_from_file(const string &file_name)
 {
     try {
         config = YAML::LoadFile(file_name);
+        config_is_regular_file = fs::is_regular_file(file_name);
+        config_file_path = file_name;
     } catch (const YAML::BadFile &) {
         throw_with_nested(runtime_error("Cannot load configuration file: " + file_name));
     } catch (const YAML::Exception &e) {
@@ -22,6 +25,7 @@ void Config::load_from_string(const string &config_str)
 {
     try {
         config = YAML::Load(config_str);
+        config_file_path = nullopt;
     } catch (const YAML::Exception &e) {
         throw runtime_error("Configuration error: "s + e.what());
     }
@@ -253,6 +257,20 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
 
 void Config::normalize()
 {
+    // clang-format off
+    bool set_cwd = config["set_cwd"]
+        ? config_file_path
+            ? config["set_cwd"].as<bool>()
+            : throw runtime_error("'set_cwd' cannot be used in inline config string")
+        : config_file_path ? true : false;
+    // clang-format on
+    config.remove("set_cwd");
+
+    if (set_cwd && config_file_path && !config_is_regular_file) {
+        throw runtime_error("When config is passed through a FIFO or other special file type, "
+                            "'set_cwd' must be set to 'false'");
+    }
+
     Node norm_partitions;
     for (const auto &part : config["partitions"]) {
         norm_partitions.push_back(normalize_partition(part, NAN));
@@ -270,6 +288,7 @@ void Config::normalize()
     }
 
     Node norm_config;
+    norm_config["set_cwd"] = set_cwd;
     norm_config["partitions"] = norm_partitions;
     norm_config["windows"] = norm_windows;
 
@@ -287,6 +306,17 @@ static Partition *find_partition(const string &name, Partitions &partitions)
 // TODO: Move this out of Config to new DemosSched class
 void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions)
 {
+    optional<filesystem::path> process_cwd{};
+    if (config["set_cwd"].as<bool>()) {
+        assert(config_file_path != nullopt);
+        process_cwd =
+          (fs::current_path() / config_file_path.value().parent_path()).lexically_normal();
+        logger->debug("Using '{}' as the working directory for all processes",
+                      process_cwd->string());
+    } else {
+        logger->trace("Using current working directory for all processes");
+    }
+
     for (auto ypart : config["partitions"]) {
         partitions.emplace_back(
           c.freezer_cg, c.cpuset_cg, c.unified_cg, ypart["name"].as<string>());
@@ -295,6 +325,7 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
             auto budget_jitter = chrono::milliseconds(yprocess["jitter"].as<int>());
             partitions.back().add_process(c.loop,
                                           yprocess["cmd"].as<string>(),
+                                          process_cwd,
                                           budget,
                                           budget_jitter,
                                           yprocess["init"].as<bool>());

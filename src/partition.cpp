@@ -24,12 +24,19 @@ void Partition::kill_all()
 
 void Partition::add_process(ev::loop_ref loop,
                             const string &argv,
+                            const optional<filesystem::path> &working_dir,
                             chrono::milliseconds budget,
                             chrono::milliseconds budget_jitter,
                             bool has_initialization)
 {
-    processes.emplace_back(
-      loop, "proc" + to_string(proc_count), *this, argv, budget, budget_jitter, has_initialization);
+    processes.emplace_back(loop,
+                           "proc" + to_string(proc_count),
+                           *this,
+                           argv,
+                           working_dir,
+                           budget,
+                           budget_jitter,
+                           has_initialization);
     proc_count++;
     current_proc = processes.begin();
     empty = false;

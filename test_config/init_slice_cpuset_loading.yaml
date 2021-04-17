@@ -21,6 +21,6 @@ windows:
 partitions:
   - name: SC1
     processes:
-      - cmd: build/src/api-init-test
+      - cmd: ../build/src/tests/api-init-test
         budget: 1500
         init: yes

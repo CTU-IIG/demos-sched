@@ -20,6 +20,7 @@ Process::Process(ev::loop_ref loop,
                  const std::string &name,
                  Partition &partition,
                  std::string argv,
+                 std::optional<std::filesystem::path> working_dir,
                  milliseconds budget,
                  milliseconds budget_jitter,
                  bool has_initialization)
@@ -34,6 +35,7 @@ Process::Process(ev::loop_ref loop,
           std::bind(&Process::populated_cb, this, _1)) // NOLINT(modernize-avoid-bind)
     , cgf(partition.cgf, name)
     , argv(std::move(argv))
+    , working_dir(std::move(working_dir))
     , budget(budget)
     , actual_budget(budget)
     , has_initialization(has_initialization)
@@ -46,8 +48,6 @@ Process::Process(ev::loop_ref loop,
 
 void Process::exec()
 {
-    // TODO pipe
-
     // create new process
     pid = CHECK(fork());
     running = true;
@@ -64,11 +64,14 @@ void Process::exec()
         //  - efd_continue is used to signal continuation to process
         sprintf(val, "%d,%d,%d", completed_w.get_fd(), efd_continue, has_initialization);
         CHECK(setenv("DEMOS_PARAMETERS", val, 1));
+        if (working_dir) {
+            CHECK(chdir(working_dir->c_str()));
+        }
         CHECK(execl("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr));
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        logger->debug("Running '{}' as PID {} (partition '{}')", argv, pid, part.get_name());
+        logger->debug("Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
         child_w.start(pid, 0);
         // add process to cgroup (echo PID > cgroup.procs)
         cge.add_process(pid);

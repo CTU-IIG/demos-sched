@@ -1,7 +1,4 @@
 # one process switched between two cpus
-#
-# all times in ms
-# Major frame
 windows:
   - length: 500
     slices:
