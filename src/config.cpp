@@ -1,5 +1,6 @@
 #include "config.hpp"
 #include "config_meson.h"
+#include "log.hpp"
 #include <cmath>
 #include <exception>
 

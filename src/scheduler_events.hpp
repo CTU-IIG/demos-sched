@@ -1,8 +1,5 @@
 #pragma once
 
-#include "power_manager.hpp"
-#include "window.hpp"
-
 class Window;
 
 /**

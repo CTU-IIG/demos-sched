@@ -1,4 +1,5 @@
 #include "majorframe.hpp"
+#include "log.hpp"
 #include <iostream>
 
 using namespace std;
