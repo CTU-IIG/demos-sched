@@ -1,8 +1,0 @@
-# all times in ms
-# Major frame
-#period: 100 # not used, do we need this?
-windows:
-  - length: 1000
-    sc_processes: echo a
-    be_processes: foo
-
