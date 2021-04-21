@@ -1,5 +1,4 @@
-#ifndef EVFD_HPP
-#define EVFD_HPP
+#pragma once
 
 #include <ev++.h>
 #include <functional>
@@ -9,18 +8,16 @@ namespace ev {
 class evfd : private io
 {
 public:
-    evfd(ev::loop_ref loop);
-    void set(std::function<void(ev::evfd &)> callback);
+    explicit evfd(ev::loop_ref loop);
+    void set(std::function<void(ev::evfd &)> callback_);
     int get_fd();
     using io::start;
     using io::stop;
     ~evfd();
-    void write(const uint64_t val);
+    void write(uint64_t val);
 
 private:
     std::function<void(ev::evfd &)> callback = nullptr;
     void ev_callback(ev::io &w, int revents);
 };
 }
-
-#endif // EVFD_HPP

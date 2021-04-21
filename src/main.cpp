@@ -1,4 +1,4 @@
-#include "check_lib.hpp"
+#include "lib/check_lib.hpp"
 #include "config.hpp"
 #include "demos_scheduler.hpp"
 #include <iostream>

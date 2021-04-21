@@ -1,6 +1,5 @@
 #pragma once
 
-#include "check_lib.hpp"
 #include "scheduler_events.hpp"
 #include "slice.hpp"
 #include <chrono>

@@ -1,13 +1,13 @@
 #include "evfd.hpp"
-#include "check_lib.hpp"
-#include <stdint.h>
+#include "lib/check_lib.hpp"
+#include <cstdint>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
 using namespace std;
 
-ev::evfd::evfd(loop_ref loop)
-    : io(loop)
+ev::evfd::evfd(loop_ref loop_)
+    : io(loop_)
 {
     fd = CHECK(eventfd(0, EFD_NONBLOCK));
     io::set(fd, ev::READ);
@@ -25,9 +25,9 @@ void ev::evfd::write(const uint64_t val)
         throw std::system_error(errno, std::generic_category(), std::string(__PRETTY_FUNCTION__));
 }
 
-void ev::evfd::set(std::function<void(ev::evfd &)> callback)
+void ev::evfd::set(std::function<void(ev::evfd &)> callback_)
 {
-    this->callback = callback;
+    this->callback = std::move(callback_);
 }
 
 int ev::evfd::get_fd()

@@ -9,7 +9,6 @@
 #include <random>
 
 #include "cgroup.hpp"
-#include "check_lib.hpp"
 #include "evfd.hpp"
 #include "timerfd.hpp"
 

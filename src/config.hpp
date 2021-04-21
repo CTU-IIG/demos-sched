@@ -1,7 +1,6 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
-#include "check_lib.hpp"
 #include "majorframe.hpp"
 #include <ev++.h>
 #include <filesystem>

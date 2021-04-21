@@ -1,6 +1,5 @@
 #pragma once
 
-#include "check_lib.hpp"
 #include "timerfd.hpp"
 #include "window.hpp"
 #include <ev++.h>

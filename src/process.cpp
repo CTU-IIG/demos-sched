@@ -1,4 +1,5 @@
 #include "process.hpp"
+#include "lib/check_lib.hpp"
 #include "log.hpp"
 #include "partition.hpp"
 #include <cassert>

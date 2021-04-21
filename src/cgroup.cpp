@@ -2,7 +2,7 @@
 #include "log.hpp"
 #include <fstream>
 
-#include "check_lib.hpp"
+#include "lib/check_lib.hpp"
 
 using namespace std;
 

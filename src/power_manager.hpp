@@ -1,8 +1,7 @@
 #pragma once
 
-#include "check_lib.hpp"
 #include "cpufreq_policy.hpp"
-#include "file_lib.hpp"
+#include "lib/file_lib.hpp"
 #include "log.hpp"
 #include <filesystem>
 #include <fstream>
