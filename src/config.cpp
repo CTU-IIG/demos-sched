@@ -3,6 +3,7 @@
 #include "log.hpp"
 #include <cmath>
 #include <exception>
+#include <lib/assert.hpp>
 
 using namespace std;
 using namespace YAML;
@@ -308,7 +309,7 @@ void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Parti
 {
     optional<filesystem::path> process_cwd{};
     if (config["set_cwd"].as<bool>()) {
-        assert(config_file_path != nullopt);
+        ASSERT(config_file_path != nullopt);
         process_cwd =
           (fs::current_path() / config_file_path.value().parent_path()).lexically_normal();
         logger->debug("Using '{}' as the working directory for all processes",

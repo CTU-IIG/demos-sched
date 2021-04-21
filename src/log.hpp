@@ -13,6 +13,11 @@
 #pragma GCC diagnostic ignored "-Weffc++"
 #include <spdlog/spdlog.h>
 #pragma GCC diagnostic pop
+// spdlog headers contain <cassert>, which we don't want,
+//  as we use `ASSERT` from lib/assert.hpp instead
+// undef to prevent accidental misuse
+#undef assert
+#undef assert_perror
 
 /** A global spdlog logger instance, initialized by `initialize_logger(...)`. */
 extern std::shared_ptr<spdlog::logger> logger;

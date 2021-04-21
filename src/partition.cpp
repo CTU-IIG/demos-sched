@@ -1,5 +1,5 @@
 #include "partition.hpp"
-#include "log.hpp"
+#include "lib/assert.hpp"
 #include <algorithm>
 
 using namespace std;
@@ -58,7 +58,7 @@ void Partition::reset(bool move_to_first_proc,
     // MK: this is not due to technical reasons, but I don't have any use-case
     //  for the callback being empty, and enforcing this might avoid some bugs;
     //  feel free to change it if you need to do so
-    assert(process_completion_cb);
+    ASSERT(process_completion_cb);
 
     clear_completed_flag();
     cgc.set_cpus(cpus);

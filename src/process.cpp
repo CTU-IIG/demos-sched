@@ -2,10 +2,10 @@
 #include "lib/check_lib.hpp"
 #include "log.hpp"
 #include "partition.hpp"
-#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
+#include <lib/assert.hpp>
 #include <sys/eventfd.h>
 #include <system_error>
 
@@ -100,7 +100,7 @@ void Process::suspend()
 
 void Process::resume()
 {
-    assert(is_running());
+    ASSERT(is_running());
     TRACE("Resuming process '{}' (partition '{}')", pid, part.get_name());
     uint64_t buf = 1;
     if (demos_completed) {
@@ -149,8 +149,8 @@ pid_t Process::get_pid() const
 
 void Process::set_remaining_budget(milliseconds next_budget)
 {
-    assert(next_budget > next_budget.zero());
-    assert(next_budget < budget);
+    ASSERT(next_budget > next_budget.zero());
+    ASSERT(next_budget < budget);
     actual_budget = next_budget;
     TRACE("Next budget for process '{}' shortened to '{} milliseconds'.", pid, next_budget.count());
 }

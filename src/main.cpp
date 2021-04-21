@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include <algorithm>
-#include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <power_policies/min_be.hpp>
@@ -80,9 +79,9 @@ static void create_toplevel_cgroups(Cgroup &unified,
         }
     }
 
-    assert(!unified_path.empty());
-    assert(!freezer_path.empty());
-    assert(!cpuset_path.empty());
+    ASSERT(!unified_path.empty());
+    ASSERT(!freezer_path.empty());
+    ASSERT(!cpuset_path.empty());
 
     logger->debug("Checking cgroup access permissions...");
 

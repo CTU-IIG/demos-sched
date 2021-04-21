@@ -5,9 +5,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <lib/assert.hpp>
 #include <optional>
-#include <string>
 #include <set>
+#include <string>
 #include <utility>
 
 namespace fs = std::filesystem;
@@ -198,7 +199,7 @@ private: ///////////////////////////////////////////////////////////////////////
         while (stream >> item) {
             items.insert(item);
         }
-        assert(stream.eof());
+        ASSERT(stream.eof());
         return items;
     }
 

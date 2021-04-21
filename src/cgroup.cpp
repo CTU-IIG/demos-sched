@@ -1,6 +1,7 @@
 #include "cgroup.hpp"
 #include "log.hpp"
 #include <fstream>
+#include <lib/assert.hpp>
 
 #include "lib/check_lib.hpp"
 
@@ -118,7 +119,7 @@ void CgroupCpuset::set_cpus(cpu_set cpus)
     if (cpus == current_cpus) return;
 
     // validate that we are not attempting to set an empty cpuset
-    assert(cpus.count() > 0);
+    ASSERT(cpus.count() > 0);
     string s = cpus.as_list();
     CHECK_MSG(write(fd_cpus, s.c_str(), s.size()), "Cannot set cpuset to " + s);
     current_cpus = cpus;
@@ -156,7 +157,7 @@ CgroupEvents::CgroupEvents(ev::loop_ref loop,
     , events_w(loop)
     , populated_cb(populated_cb)
 {
-    assert(populated_cb);
+    ASSERT(populated_cb);
     events_w.set<CgroupEvents, &CgroupEvents::event_cb>(this);
     events_w.start(this->fd_events, ev::EXCEPTION);
 }

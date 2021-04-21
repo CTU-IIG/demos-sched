@@ -1,6 +1,6 @@
 #include "slice.hpp"
 #include "log.hpp"
-#include <cassert>
+#include <lib/assert.hpp>
 
 /*
 TODO: I think there is a subtle race condition here, where
@@ -20,7 +20,7 @@ Slice::Slice(ev::loop_ref loop,
     , cpus(std::move(cpus))
     , sc_done_cb(std::move(sc_done_cb))
     , timer(loop)
-    , completion_cb_cached{[this] { schedule_next(std::chrono::steady_clock::now()); }}
+    , completion_cb_cached{ [this] { schedule_next(std::chrono::steady_clock::now()); } }
 {
     timer.set([this] { schedule_next(timeout); });
     // set lower than default priority; this makes this timeout trigger
@@ -76,7 +76,7 @@ void Slice::stop_current_process()
 
 void Slice::start_partition(Partition *part, time_point current_time, bool move_to_first_proc)
 {
-    assert(part != nullptr);
+    ASSERT(part != nullptr);
     running_partition = part;
     if (part) {
         part->reset(move_to_first_proc, cpus, completion_cb_cached);
