@@ -1,4 +1,5 @@
 # shows that BE partitions wait for completion of all SC partitions before starting
+# sleeps are used to repeat the window 2 times to check that the wait works consistently
 
 windows:
   - length: 150
@@ -12,15 +13,15 @@ windows:
 partitions:
   - name: SC1
     processes:
-      - cmd: sleep 0.1; echo SC1-1 done
+      - cmd: sleep 0.050; echo SC1-1 done
         budget: 50
-      - cmd: sleep 0.04; echo SC1-2 done
+      - cmd: sleep 0.020; echo SC1-2 done
         budget: 20
   - name: BE1
     processes:
-      - cmd: sleep 0.02; echo BE done
+      - cmd: sleep 0.010; echo BE done
         budget: 10
   - name: SC2
     processes:
-      - cmd: sleep 0.2; echo SC2 done
+      - cmd: sleep 0.100; echo SC2 done
         budget: 100
