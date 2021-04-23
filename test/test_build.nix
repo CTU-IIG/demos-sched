@@ -31,6 +31,6 @@ in {
   unstable = with pkgsUnstable; callPackage ../demos-sched.nix { };
   unstable-subprojects = with pkgsUnstable; callPackage ../demos-sched.nix { withSubmodules = true; };
   meson-0-49-2 = demosSchedWithCC { pkgs = pkgsMeson-0-49-2; cc = "gcc8"; overrideMesonCC = true; withSubmodules = true; };
-  gcc8 = demosSchedWithCC { pkgs = pkgsUnstable; cc= "gcc8"; };
-  gcc9 = demosSchedWithCC { pkgs = pkgsUnstable; cc= "gcc9"; };
+  gcc8 = demosSchedWithCC { pkgs = pkgsUnstable; cc= "gcc8"; withSubmodules = true; };
+  gcc9 = demosSchedWithCC { pkgs = pkgsUnstable; cc= "gcc9"; withSubmodules = true; };
 }
