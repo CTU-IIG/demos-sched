@@ -35,5 +35,5 @@ in stdenv.mkDerivation ({
   patchPhase = lib.optionalString (!withSubmodules) "rm -rf subprojects";
   nativeBuildInputs = [ meson ninja perl pkg-config ];
   buildInputs = []
-                ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp spdlog ];
+                ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp spdlog.dev ];
 } // extraAttrs)

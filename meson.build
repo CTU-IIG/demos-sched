@@ -34,10 +34,7 @@ spdlog_proj = subproject('spdlog', required: false, default_options: ['compile_l
 if spdlog_proj.found()
   spdlog_dep = spdlog_proj.get_variable('spdlog_dep')
 else
-  spdlog_dep = cpp.find_library('spdlog')
-  if not cpp.has_header('spdlog/spdlog.h', dependencies: spdlog_dep)
-    error('spdlog is not present as a subproject, and system library does not provide the <spdlog/spdlog.h> header')
-  endif
+  spdlog_dep = dependency('spdlog')
 endif
 
 
