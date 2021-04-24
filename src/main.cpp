@@ -1,163 +1,14 @@
+#include "cgroup_setup.hpp"
 #include "config.hpp"
 #include "demos_scheduler.hpp"
 #include "lib/check_lib.hpp"
-#include <iostream>
-
-#include <algorithm>
-#include <cerrno>
-#include <cstring>
 #include <power_policies/min_be.hpp>
 #include <power_policies/none.hpp>
 #include <sched.h>
-#include <unistd.h>
 
 using namespace std;
 
 static string opt_demos_cg_name = "demos";
-
-static void handle_cgroup_exc(stringstream &commands,
-                              stringstream &mount_cmds,
-                              const system_error &e,
-                              const string &sys_fs_cg_path)
-{
-    switch (e.code().value()) {
-        case EACCES:
-        case EPERM:
-            commands << "sudo mkdir " << sys_fs_cg_path << endl;
-            break;
-
-        case EROFS:
-        case ENOENT:
-            if (sys_fs_cg_path.find("/sys/fs/cgroup/") != 0) {
-                throw runtime_error("Unexpected cgroup path " + sys_fs_cg_path);
-            }
-
-            if (sys_fs_cg_path.find("freezer/", 15) != string::npos) {
-                mount_cmds << "mount -t cgroup -o freezer none /sys/fs/cgroup/freezer";
-            } else if (sys_fs_cg_path.find("cpuset/", 15) != string::npos) {
-                mount_cmds << "mount -t cgroup -o cpuset none /sys/fs/cgroup/cpuset";
-            } else if (sys_fs_cg_path.find("unified/", 15) != string::npos) {
-                mount_cmds << "mount -t cgroup2 none /sys/fs/cgroup/unified";
-            } else {
-                throw runtime_error("Unexpected cgroup controller path" + sys_fs_cg_path);
-            }
-            mount_cmds << endl;
-            break;
-
-        default:
-            throw;
-    }
-}
-
-static void create_toplevel_cgroups(Cgroup &unified,
-                                    Cgroup &freezer,
-                                    Cgroup &cpuset,
-                                    const std::string &demos_cg_name)
-{
-    string unified_path, freezer_path, cpuset_path;
-    string cpus, mems;
-
-    // Get information about our current cgroups
-    {
-        int num;
-        string path;
-        ifstream cgroup_f("/proc/" + to_string(getpid()) + "/cgroup");
-
-        while (cgroup_f >> num >> path) {
-            if (num == 0) {
-                unified_path = "/sys/fs/cgroup/unified" + path.substr(2) + "/" + demos_cg_name;
-            }
-            if (path.find(":freezer:") == 0) {
-                freezer_path = "/sys/fs/cgroup/freezer" + path.substr(9) + "/" + demos_cg_name;
-            }
-            if (path.find(":cpuset:") == 0) {
-                cpuset_path = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
-                // Read settings from correct cpuset cgroup
-                string cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
-                ifstream(cpuset_parent + "/cpuset.cpus") >> cpus;
-                ifstream(cpuset_parent + "/cpuset.mems") >> mems;
-            }
-        }
-    }
-
-    ASSERT(!unified_path.empty());
-    ASSERT(!freezer_path.empty());
-    ASSERT(!cpuset_path.empty());
-
-    stringstream commands, mount_cmds;
-
-    struct Child
-    {
-        const pid_t pid;
-        Child()
-            : pid(CHECK(fork()))
-        {
-            if (pid == 0) {
-                // Dummy child for cgroup permission testing
-                pause(); // wait for signal
-                exit(0);
-            }
-        }
-        ~Child() { kill(pid, SIGTERM); } // kill the process when going out of scope
-    } child;
-
-    // TODO: Verify that commands added to the commands variable still
-    //  make sense (after changing a bit cgroup structure).
-
-    try {
-        unified = Cgroup(unified_path, true);
-    } catch (system_error &e) {
-        handle_cgroup_exc(commands, mount_cmds, e, unified_path);
-    }
-    try {
-        unified.add_process(child.pid);
-    } catch (system_error &) {
-        commands << "sudo chown -R " << getuid() << " " << unified_path << endl;
-        // MS: Why is the below command needed for unified and not other controllers?
-        commands << "sudo echo " << getppid() << " > " << unified_path + "/cgroup.procs" << endl;
-    }
-
-    try {
-        freezer = Cgroup(freezer_path, true);
-    } catch (system_error &e) {
-        handle_cgroup_exc(commands, mount_cmds, e, freezer_path);
-    }
-    try {
-        freezer.add_process(child.pid);
-    } catch (system_error &) {
-        commands << "sudo chown -R " << getuid() << " " << freezer_path << endl;
-    }
-
-    try {
-        cpuset = Cgroup(cpuset_path, true);
-        ofstream(cpuset_path + "/cpuset.cpus") << cpus;
-        ofstream(cpuset_path + "/cpuset.mems") << mems;
-        ofstream(cpuset_path + "/cgroup.clone_children") << "1";
-    } catch (system_error &e) {
-        handle_cgroup_exc(commands, mount_cmds, e, cpuset_path);
-    }
-    try {
-        cpuset.add_process(child.pid);
-    } catch (system_error &e) {
-        commands << "sudo chown -R " << getuid() << " " << cpuset_path << endl;
-    }
-
-    if (!mount_cmds.str().empty()) {
-        cerr << "There is no cgroup controller. Run following commands:" << endl
-             << mount_cmds.str()
-             << "if it fails, check whether the controllers are available in the kernel" << endl
-             << "zcat /proc/config.gz | grep -E CONFIG_CGROUP_FREEZER|CONFIG_CPUSETS" << endl;
-        exit(1);
-    }
-
-    if (!commands.str().empty()) {
-        cerr << "Cannot create necessary cgroups. Run demos-sched as root or run the "
-                "following commands:"
-             << endl
-             << commands.str();
-        exit(1);
-    }
-}
 
 static string pluralize(unsigned long count, const string &noun)
 {
@@ -318,7 +169,11 @@ int main(int argc, char *argv[])
 
         // === ROOT CGROUP SETUP ===================================================================
         Cgroup unified_root, freezer_root, cpuset_root;
-        create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
+        if (!cgroup_setup::create_toplevel_cgroups(
+              unified_root, freezer_root, cpuset_root, opt_demos_cg_name)) {
+            // cgroup creation failed
+            return 1;
+        }
         logger->debug("Top level cgroups created");
 
 
