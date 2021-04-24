@@ -2,8 +2,8 @@
 #include "config_meson.h"
 
 #ifndef LOG_ALLOCATIONS
-void enable_allocation_logging() {}
-void disable_allocation_logging() {}
+void memory_tracker::enable() {}
+void memory_tracker::disable() {}
 #else
 
 #include "log.hpp"
@@ -12,13 +12,13 @@ void disable_allocation_logging() {}
 
 static bool log_allocations = false;
 
-void enable_allocation_logging()
+void memory_tracker::enable()
 {
     log_allocations = true;
     logger->info("Heap allocation logging enabled");
 }
 
-void disable_allocation_logging()
+void memory_tracker::disable()
 {
     log_allocations = false;
     logger->info("Heap allocation logging disabled");

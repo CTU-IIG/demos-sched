@@ -3,5 +3,7 @@
  */
 #pragma once
 
-void enable_allocation_logging();
-void disable_allocation_logging();
+namespace memory_tracker {
+void enable();
+void disable();
+}
