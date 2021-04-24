@@ -204,7 +204,8 @@ static void print_help()
             "  -c <CONFIG_FILE>    path to configuration file\n"
             "  -C <CONFIG>         inline configuration in YAML format\n"
             "  -g <CGROUP_NAME>    name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
-            "  -m <WINDOW_MESSAGE> print the passed message to stdout at the beginning of each window;\n"
+            "                       NOTE: this name must be unique for each running instance of DEmOS\n"
+            "  -m <WINDOW_MESSAGE> print WINDOW_MESSAGE to stdout at the beginning of each window;\n"
             "                       this may be useful for external synchronization with scheduler windows\n"
             "  -s                  rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
             "  -d                  dump config file without execution\n"
@@ -224,7 +225,7 @@ int main(int argc, char *argv[])
     bool dump_config = false;
     bool systemd_run = false;
 
-    while ((opt = getopt(argc, argv, "dhgm:c:C:s")) != -1) {
+    while ((opt = getopt(argc, argv, "sdhc:C:g:m:")) != -1) {
         switch (opt) {
             case 'g': // custom root cgroup name
                 opt_demos_cg_name = optarg;
@@ -241,7 +242,7 @@ int main(int argc, char *argv[])
             case 's': // rerun itself via systemd-run
                 systemd_run = true;
                 break;
-            case 'm': // synchronization message at the beginning of each window
+            case 'm': // window start sync message
                 window_sync_message = optarg;
                 break;
             case 'h':
