@@ -207,6 +207,7 @@ static void print_help()
             "                       NOTE: this name must be unique for each running instance of DEmOS\n"
             "  -m <WINDOW_MESSAGE> print WINDOW_MESSAGE to stdout at the beginning of each window;\n"
             "                       this may be useful for external synchronization with scheduler windows\n"
+            "  -M <MF_MESSAGE>     print MF_MESSAGE to stdout at the beginning of each major frame\n"
             "  -s                  rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
             "  -d                  dump config file without execution\n"
             "  -h                  print this message\n"
@@ -221,11 +222,11 @@ static void print_help()
 int main(int argc, char *argv[])
 {
     int opt;
-    string config_file, config_str, window_sync_message;
+    string config_file, config_str, window_sync_message, mf_sync_message;
     bool dump_config = false;
     bool systemd_run = false;
 
-    while ((opt = getopt(argc, argv, "sdhc:C:g:m:")) != -1) {
+    while ((opt = getopt(argc, argv, "sdhc:C:g:m:M:")) != -1) {
         switch (opt) {
             case 'g': // custom root cgroup name
                 opt_demos_cg_name = optarg;
@@ -244,6 +245,9 @@ int main(int argc, char *argv[])
                 break;
             case 'm': // window start sync message
                 window_sync_message = optarg;
+                break;
+            case 'M': // major frame start sync message
+                mf_sync_message = optarg;
                 break;
             case 'h':
                 print_help();
@@ -316,7 +320,7 @@ int main(int argc, char *argv[])
 
 
         // initialize the main scheduler instance
-        DemosScheduler sched(loop, move(partitions), move(windows), window_sync_message);
+        DemosScheduler sched(loop, move(partitions), move(windows), window_sync_message, mf_sync_message);
         // this spawns the underlying system processes
         sched.setup();
 

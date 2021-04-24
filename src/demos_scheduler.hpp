@@ -18,9 +18,13 @@ private:
     ev::sig sigterm{ loop };
 
 public:
-    DemosScheduler(ev::loop_ref ev_loop, Partitions &&partitions, Windows &&windows, const std::string &frame_sync_message)
+    DemosScheduler(ev::loop_ref ev_loop,
+                   Partitions &&partitions,
+                   Windows &&windows,
+                   const std::string &window_sync_message,
+                   const std::string &mf_sync_message)
         : loop(ev_loop)
-        , mf(loop, std::move(windows), frame_sync_message)
+        , mf(loop, std::move(windows), window_sync_message, mf_sync_message)
         , partition_manager(std::move(partitions))
     {
         // setup completion callback

@@ -15,23 +15,27 @@ is "$out" "hello" "hello is printed"
 
 okx demos-sched -C '{windows: [{length: 100, sc_partition: [ true ]}]}'
 
-# Tests that demos correctly prints synchronization message on each window start
-out=$(demos-sched -m "<SYNC>" -C '
+# Tests that demos correctly prints synchronization messages
+out=$(demos-sched -m "<WINDOW>" -M "<MF>" -C '
 windows:
   - length: 60
     slices: [{cpu: 0, sc_partition: SC1}]
   - length: 10
     slices: [{cpu: 0, sc_partition: SC1}]
-  - length: 60
+  - length: 10
     slices: [{cpu: 0, sc_partition: SC1}]
 
 partitions:
   - name: SC1
-    processes: [{budget: 1000, cmd: api-test -1 -2}]
+    processes: [{budget: 1000, cmd: api-test 1 2 3}]
 ')
-is "$out" '<SYNC>
--1
-<SYNC>
--2
-<SYNC>' \
+is "$out" '<MF>
+<WINDOW>
+1
+<WINDOW>
+2
+<WINDOW>
+3
+<MF>
+<WINDOW>' \
 "Synchronization messages are correctly printed"

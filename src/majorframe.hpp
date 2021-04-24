@@ -18,10 +18,15 @@ public:
     /**
      * @param loop - main ev loop
      * @param windows - scheduled windows
-     * @param sync_message - if not empty, this message is printed to stdout
+     * @param window_sync_message - if not empty, this message is printed to stdout
      *  at the beginning of each window
+     * @param mf_sync_message - if not empty, this message is printed to stdout
+     *  at the beginning of each major frame
      */
-    MajorFrame(ev::loop_ref loop, Windows &&windows, std::string sync_message);
+    MajorFrame(ev::loop_ref loop,
+               Windows &&windows,
+               std::string window_sync_message,
+               std::string mf_sync_message);
 
     void start(time_point start_time);
     void stop(time_point current_time);
@@ -38,7 +43,8 @@ private:
     Windows::iterator current_win;
     // will be overwritten in start(...), value is not important
     time_point timeout = time_point::min();
-    const std::string sync_message;
+    const std::string window_sync_message;
+    const std::string mf_sync_message;
 
     void move_to_next_window();
     void timeout_cb();

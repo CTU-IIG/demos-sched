@@ -4,11 +4,15 @@
 
 using namespace std;
 
-MajorFrame::MajorFrame(ev::loop_ref loop, Windows &&windows_, string sync_message_)
+MajorFrame::MajorFrame(ev::loop_ref loop,
+                       Windows &&windows_,
+                       string window_sync_message_,
+                       string mf_sync_message_)
     : timer(loop)
     , windows(std::move(windows_))
     , current_win(windows.begin())
-    , sync_message(std::move(sync_message_))
+    , window_sync_message(std::move(window_sync_message_))
+    , mf_sync_message(std::move(mf_sync_message_))
 {
     timer.set([this] { timeout_cb(); });
 }
@@ -22,9 +26,13 @@ void MajorFrame::move_to_next_window()
 
 void MajorFrame::start(time_point current_time)
 {
-    if (!sync_message.empty()) {
-        cout << sync_message << endl;
+    if (!mf_sync_message.empty() && current_win == windows.begin()) {
+        cout << mf_sync_message << endl;
         // flush to force correct synchronization with other stdout prints from scheduled programs
+        cout.flush();
+    }
+    if (!window_sync_message.empty()) {
+        cout << window_sync_message << endl;
         cout.flush();
     }
     current_win->start(current_time);
