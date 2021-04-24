@@ -1,6 +1,6 @@
-#include "lib/check_lib.hpp"
 #include "config.hpp"
 #include "demos_scheduler.hpp"
+#include "lib/check_lib.hpp"
 #include <iostream>
 
 #include <algorithm>
@@ -83,8 +83,6 @@ static void create_toplevel_cgroups(Cgroup &unified,
     ASSERT(!freezer_path.empty());
     ASSERT(!cpuset_path.empty());
 
-    logger->debug("Checking cgroup access permissions...");
-
     stringstream commands, mount_cmds;
 
     struct Child
@@ -158,8 +156,6 @@ static void create_toplevel_cgroups(Cgroup &unified,
              << commands.str();
         exit(1);
     }
-
-    logger->debug("Cgroup permission check passed");
 }
 
 static string pluralize(unsigned long count, const string &noun)
@@ -267,11 +263,8 @@ int main(int argc, char *argv[])
                       true,
                       getenv("DEMOS_FORCE_COLOR_LOG") != nullptr);
 
-    // demos is running in a libev event loop
-    ev::default_loop loop;
-    Config config;
-
     try {
+        Config config;
         // load config
         if (!config_file.empty()) {
             config.load_from_file(config_file);
@@ -296,6 +289,8 @@ int main(int argc, char *argv[])
         create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
         logger->debug("Top level cgroups created");
 
+        // demos is running in a libev event loop
+        ev::default_loop loop;
         // select power policy
         PowerPolicy_MinBE pp{};
 
@@ -308,7 +303,8 @@ int main(int argc, char *argv[])
         Partitions partitions;
         Windows windows;
 
-        config.create_demos_objects(cc, windows, partitions);
+        // load windows and partitions from config
+        config.create_scheduler_objects(cc, windows, partitions);
 
         logger->info("Parsed " + pluralize(partitions.size(), "partition") + " and " +
                      pluralize(windows.size(), "window"));

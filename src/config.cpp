@@ -305,7 +305,7 @@ static Partition *find_partition(const string &name, Partitions &partitions)
 }
 
 // TODO: Move this out of Config to new DemosSched class
-void Config::create_demos_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions)
+void Config::create_scheduler_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions)
 {
     optional<filesystem::path> process_cwd{};
     if (config["set_cwd"].as<bool>()) {

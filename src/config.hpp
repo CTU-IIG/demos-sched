@@ -26,7 +26,7 @@ public:
     void load_from_string(const std::string &config_str);
 
     void normalize();
-    void create_demos_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions);
+    void create_scheduler_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions);
 
     const YAML::Node &get() const { return config; }
 
