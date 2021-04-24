@@ -166,6 +166,8 @@ public: ////////////////////////////////////////////////////////////////////////
 
         logger->debug("Setting up `cpufreq` policy wrappers and configuring governors...");
         setup_policy_objects();
+
+        logger->info("Power management active");
     }
 
     ~PowerManager()
@@ -236,21 +238,23 @@ private: ///////////////////////////////////////////////////////////////////////
         } catch (IOError &err) {
             // does not exist
             if (err.errno_() == ENOENT) {
-                logger->warn("`cpufreq` seems not to be supported by your kernel. "
-                             "DEmOS will run without control over frequency of CPU cores, "
-                             "which may result in impaired predictability and thermal properties "
-                             "of the running configuration.");
+                logger->warn(
+                  "`cpufreq` seems not to be supported by your kernel."
+                  "\n\tDEmOS will run without control over CPU frequency scaling, which may result"
+                  "\n\tin impaired predictability and thermal properties of the running "
+                  "configuration.");
                 return false;
             }
             // exists, but we cannot write into it
             if (err.errno_() == EACCES) {
                 logger->warn(
-                  "DEmOS doesn't have permission to control CPU core frequencies - "
-                  "running without frequency scaling support, "
-                  "which may result in impaired predictability and thermal properties "
-                  "of the running configuration. To resolve, either run DEmOS as root, "
-                  "or use a more granular mechanism to provide read-write access to files "
-                  "under the `/sys/devices/system/cpu/` directory.");
+                  "DEmOS doesn't have permission to control CPU frequency scaling."
+                  "\n\tDEmOS will run without frequency scaling support, which may result in"
+                  "\n\timpaired predictability and thermal properties of the running configuration."
+                  "\n\t"
+                  "\n\tTo resolve, either run DEmOS as root, or use a more granular mechanism to"
+                  "\n\tprovide read-write access to files under the `/sys/devices/system/cpu/` "
+                  "directory.");
                 return false;
             }
 
