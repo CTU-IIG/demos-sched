@@ -16,6 +16,10 @@ Cgroup::Cgroup(const string &path, bool may_exist)
     } catch (system_error &e) {
         switch (e.code().value()) {
             case EEXIST:
+                // if user created the cgroups manually, we don't want to remove them
+                // there is also the possibility that this is a leftover cgroup
+                //  from a previously crashed instance, but we don't have
+                //  a simple way to differentiate between the two
                 if (may_exist) remove = false;
                 break;
             default:
