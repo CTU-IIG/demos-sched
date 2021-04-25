@@ -88,40 +88,28 @@ using std::string;
  *
  * ## Usage examples
  *
- * ### Set all cores to max frequency (this works even when cpufreq is not supported)
- * When cpufreq is not accessible, the iterator will be empty and this will be a no-op.
+ * ### Set all cores to max frequency
  * ```
  * for (auto &p : power_manager.policy_iter()) {
  *     p.write_frequency(p.max_frequency);
  * }
  * ```
  *
- * ### Set min frequency for A53 cluster on i.MX8
- * It's a good idea to first check if we can use the power manager (cpufreq is supported
- * and accessible), otherwise the policy lookup will fail (`power_manager.is_active()`)
+ * ### Set min frequency for the A53 cluster on i.MX8
  * ```
- * if (power_manager.is_active()) {
- *     auto &p = power_manager.get_policy("policy0");
- *     p.write_frequency(p.min_frequency);
- * }
+ * auto &p = power_manager.get_policy("policy0");
+ * p.write_frequency(p.min_frequency);
  * ```
  *
- * ### Set frequency for the 3rd core to 1.20 GHz (and for all other cores under the same policy)
- * NOTE: here, you have to know the supported frequency beforehand
+ * ### Set the A72 cluster on i.MX8 to fixed frequency
  * ```
- * if (power_manager.is_active()) {
- *     power_manager.set_core_frequency(3, 1200 * 1000000);
- * }
+ * auto &p = power_manager.get_policy("policy4");
+ * p.write_frequency(1296 * 1000000);
  * ```
  */
 class PowerManager
 {
 private: ///////////////////////////////////////////////////////////////////////////////////////////
-    /**
-     * Indicates if all required components are supported and we are able to control CPU
-     * frequency scaling manually. If false, all methods on this instance are no-ops.
-     */
-    bool active = true;
     string original_intel_pstate_status{};
     // use list over vector, because vector would require implementing move constructor
     //  for CpufreqPolicy, and for "random" access, there's already the `policy_by_name` map
@@ -143,10 +131,7 @@ public: ////////////////////////////////////////////////////////////////////////
     PowerManager()
     {
         logger->debug("Checking for `cpufreq` support and permissions");
-        if (!check_support()) {
-            active = false;
-            return;
-        }
+        check_support();
 
         // now we know cpufreq is supported and we have write access
 
@@ -156,10 +141,7 @@ public: ////////////////////////////////////////////////////////////////////////
         logger->trace("Checking for `intel_pstate` driver");
         if (system_has_intel_cpu()) {
             logger->debug("Detected `intel_pstate` driver");
-            if (!setup_intel_pstate_driver()) {
-                active = false;
-                return;
-            }
+            setup_intel_pstate_driver();
         } else {
             logger->trace("`intel_pstate` driver is not used");
         }
@@ -172,20 +154,12 @@ public: ////////////////////////////////////////////////////////////////////////
 
     ~PowerManager()
     {
-        if (!active) return;
-
         if (!original_intel_pstate_status.empty()) {
             reset_intel_pstate_driver();
         }
         // this is done automatically in CpufreqPolicy destructor
         logger->debug("Resetting cpufreq governors to original values");
     }
-
-    /**
-     * Returns true if we have control over CPU frequency scaling.
-     * If false, you should not call any methods on this instance.
-     */
-    [[nodiscard]] bool is_active() const { return active; }
 
     /**
      * Lookup policy by name.
@@ -195,16 +169,6 @@ public: ////////////////////////////////////////////////////////////////////////
     CpufreqPolicy &get_policy(const string &name) { return policy_by_name.at(name); }
     /** Returns policy object that controls the `core_i`-th CPU core. */
     CpufreqPolicy &get_core_policy(CpuIndex core_i) { return associated_policies.at(core_i); }
-
-    /** Sets core frequency of the cpufreq policy controlling `core_i`-th CPU core. */
-    void set_core_frequency(CpuIndex core_i, CpuFrequencyHz freq)
-    {
-        // TODO: is this a good API?
-        //  I think it might be better to remove it and keep
-        //  only `get_policy(name)` and `policy_iter()`
-        if (!active) return;
-        get_core_policy(core_i).write_frequency(freq);
-    }
 
     class PolicyIterator
     {
@@ -219,11 +183,10 @@ public: ////////////////////////////////////////////////////////////////////////
         PowerManager *pm;
     };
 
-    [[nodiscard]] size_t policy_count() const { return policies.size(); }
     PolicyIterator policy_iter() { return PolicyIterator(this); }
 
 private: ///////////////////////////////////////////////////////////////////////////////////////////
-    static bool check_support()
+    static void check_support()
     {
         // just checking .../cpufreq is not enough to detect usable cpufreq support; for example,
         // the Ubuntu environment in GitHub Actions has cpufreq dir, but it's empty;
@@ -234,28 +197,24 @@ private: ///////////////////////////////////////////////////////////////////////
         logger->trace("Using following path to test `cpufreq` support: `{}`", path.string());
         try {
             file_open<std::ofstream>(path);
-            return true;
         } catch (IOError &err) {
             // does not exist
             if (err.errno_() == ENOENT) {
-                logger->warn(
-                  "`cpufreq` seems not to be supported by your kernel."
-                  "\n\tDEmOS will run without control over CPU frequency scaling, which may result"
-                  "\n\tin impaired predictability and thermal properties of the running "
-                  "configuration.");
-                return false;
+                throw runtime_error("Cannot activate power management policy, as"
+                                    " `cpufreq` seems not to be supported by your kernel."
+                                    " Re-run DEmOS without explicitly setting power policy to"
+                                    " run without active power management.");
             }
             // exists, but we cannot write into it
             if (err.errno_() == EACCES) {
-                logger->warn(
-                  "DEmOS doesn't have permission to control CPU frequency scaling."
-                  "\n\tDEmOS will run without frequency scaling support, which may result in"
-                  "\n\timpaired predictability and thermal properties of the running configuration."
-                  "\n\t"
-                  "\n\tTo resolve, either run DEmOS as root, or use a more granular mechanism to"
-                  "\n\tprovide read-write access to files under the `/sys/devices/system/cpu/` "
-                  "directory.");
-                return false;
+                throw runtime_error(
+                  "Cannot activate power management policy, as DEmOS doesn't have permission"
+                  " to control CPU frequency scaling."
+                  " To provide access, either run DEmOS as root, or use a more granular mechanism "
+                  "to"
+                  " provide read-write access to files under the `/sys/devices/system/cpu/`"
+                  " directory. Alternatively, re-run DEmOS without explicitly setting power policy"
+                  " to run without active power management.");
             }
 
             // some other error
@@ -269,7 +228,7 @@ private: ///////////////////////////////////////////////////////////////////////
         return fs::exists("/sys/devices/system/cpu/intel_pstate");
     }
 
-    bool setup_intel_pstate_driver()
+    void setup_intel_pstate_driver()
     {
         auto fs_status = file_open<std::fstream>("/sys/devices/system/cpu/intel_pstate/status");
 
@@ -280,10 +239,11 @@ private: ///////////////////////////////////////////////////////////////////////
             // this probably means that someone already overridden their intel_pstate driver
             //  and is using some other driver
             // I don't wanna deal with this so lets just deactivate power management for demos
-            logger->warn("It seems your system has an Intel CPU, but a non-standard driver is used "
-                         "for CPU frequency scaling. DEmOS will run without custom CPU frequency "
-                         "scaling support. Switch to the `intel_pstate` driver to enable it.");
-            return false;
+            throw runtime_error(
+              "It seems your system has an Intel CPU, but a non-standard driver is used"
+              " for CPU frequency scaling. Switch to the `intel_pstate` driver to enable it."
+              " Alternatively, re-run DEmOS without explicitly setting power policy"
+              " to run without active power management.");
         }
 
         if (original_intel_pstate_status == "active") {
@@ -292,7 +252,6 @@ private: ///////////////////////////////////////////////////////////////////////
             logger->debug("Switching to `passive` mode for the `intel_pstate` driver");
             fs_status << "passive";
         }
-        return true;
     }
 
     void reset_intel_pstate_driver()
