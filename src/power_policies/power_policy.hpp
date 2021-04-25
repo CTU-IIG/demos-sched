@@ -7,7 +7,4 @@
  * changes CPU power states accordingly.
  */
 class PowerPolicy : public SchedulerEvents
-{
-protected:
-    PowerManager pm{};
-};
+{};

@@ -5,6 +5,9 @@
 
 class PowerPolicy_MinBE : public PowerPolicy
 {
+private:
+    PowerManager pm{};
+
 public:
     void on_sc_start(Window &) override
     {

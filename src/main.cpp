@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstring>
 #include <power_policies/min_be.hpp>
+#include <power_policies/none.hpp>
 #include <sched.h>
 #include <unistd.h>
 
@@ -185,6 +186,25 @@ static void reexec_via_systemd_run(int argc, char *argv[])
     CHECK(execvp(args[0], const_cast<char **>(args.data())));
 }
 
+// as this is user input parsing, I think it belongs here,
+//  rather than as a static method on PowerPolicy
+/** Constructs an instance of the selected power policy. */
+static unique_ptr<PowerPolicy> get_power_policy(string policy_name)
+{
+    // convert to lowercase
+    transform(policy_name.begin(), policy_name.end(), policy_name.begin(), ::tolower);
+
+    if (policy_name.empty() || policy_name == "none") {
+        logger->info(
+          "Power management disabled (to enable, select power policy using -p parameter)");
+        return make_unique<PowerPolicy_None>();
+    }
+    if (policy_name == "minbe") {
+        return make_unique<PowerPolicy_MinBE>();
+    }
+    throw runtime_error("Unknown power policy selected: " + policy_name);
+}
+
 static void log_exception(const std::exception &e)
 {
     logger->error("Exception: {}", e.what());
@@ -203,6 +223,9 @@ static void print_help()
     cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
             "  -c <CONFIG_FILE>    path to configuration file\n"
             "  -C <CONFIG>         inline configuration in YAML format\n"
+            // TODO: list supported policies and short descriptions, probably in a separate function
+            "  -p <POWER_POLICY>   name of selected power management policy; if multiple instances of DEmOS\n"
+            "                       are running in parallel, this parameter must not be passed to more than a single one\n"
             "  -g <CGROUP_NAME>    name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
             "                       NOTE: this name must be unique for each running instance of DEmOS\n"
             "  -m <WINDOW_MESSAGE> print WINDOW_MESSAGE to stdout at the beginning of each window;\n"
@@ -222,11 +245,11 @@ static void print_help()
 int main(int argc, char *argv[])
 {
     int opt;
-    string config_file, config_str, window_sync_message, mf_sync_message;
+    string config_file, config_str, window_sync_message, mf_sync_message, power_policy_name;
     bool dump_config = false;
     bool systemd_run = false;
 
-    while ((opt = getopt(argc, argv, "c:C:g:m:M:sdh")) != -1) {
+    while ((opt = getopt(argc, argv, "c:C:p:g:m:M:sdh")) != -1) {
         switch (opt) {
             case 'g': // custom root cgroup name
                 opt_demos_cg_name = optarg;
@@ -237,8 +260,8 @@ int main(int argc, char *argv[])
             case 'C': // inline YAML config string
                 config_str = optarg;
                 break;
-            case 'g': // custom root cgroup name
-                root_cgroup_name = optarg;
+            case 'p': // selected power policy
+                power_policy_name = optarg;
                 break;
             case 'm': // window start sync message
                 window_sync_message = optarg;
@@ -302,7 +325,7 @@ int main(int argc, char *argv[])
         // demos is running in a libev event loop
         ev::default_loop loop;
         // select power policy
-        PowerPolicy_MinBE pp{};
+        unique_ptr<PowerPolicy> pp = get_power_policy(power_policy_name);
 
 
         // === WINDOW & PARTITION INIT =============================================================
@@ -310,7 +333,7 @@ int main(int argc, char *argv[])
                             .cpuset_cg = cpuset_root,
                             .freezer_cg = freezer_root,
                             .loop = loop,
-                            .sched_events = pp };
+                            .sched_events = *pp };
         Partitions partitions;
         Windows windows;
 
