@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
     bool dump_config = false;
     bool systemd_run = false;
 
-    while ((opt = getopt(argc, argv, "sdhc:C:g:m:M:")) != -1) {
+    while ((opt = getopt(argc, argv, "c:C:g:m:M:sdh")) != -1) {
         switch (opt) {
             case 'g': // custom root cgroup name
                 opt_demos_cg_name = optarg;
@@ -237,17 +237,20 @@ int main(int argc, char *argv[])
             case 'C': // inline YAML config string
                 config_str = optarg;
                 break;
-            case 'd': // dump config file without execution
-                dump_config = true;
-                break;
-            case 's': // rerun itself via systemd-run
-                systemd_run = true;
+            case 'g': // custom root cgroup name
+                root_cgroup_name = optarg;
                 break;
             case 'm': // window start sync message
                 window_sync_message = optarg;
                 break;
             case 'M': // major frame start sync message
                 mf_sync_message = optarg;
+                break;
+            case 's': // rerun itself via systemd-run
+                systemd_run = true;
+                break;
+            case 'd': // dump config file without execution
+                dump_config = true;
                 break;
             case 'h':
                 print_help();
@@ -269,6 +272,7 @@ int main(int argc, char *argv[])
                       getenv("DEMOS_FORCE_COLOR_LOG") != nullptr);
 
     try {
+        // === CONFIG LOADING ======================================================================
         Config config;
         // load config
         if (!config_file.empty()) {
@@ -289,17 +293,19 @@ int main(int argc, char *argv[])
         }
 
 
-        // set up demos container cgroups
+        // === ROOT CGROUP SETUP ===================================================================
         Cgroup unified_root, freezer_root, cpuset_root;
         create_toplevel_cgroups(unified_root, freezer_root, cpuset_root, opt_demos_cg_name);
         logger->debug("Top level cgroups created");
+
 
         // demos is running in a libev event loop
         ev::default_loop loop;
         // select power policy
         PowerPolicy_MinBE pp{};
 
-        // load windows and partitions from config
+
+        // === WINDOW & PARTITION INIT =============================================================
         CgroupConfig cc = { .unified_cg = unified_root,
                             .cpuset_cg = cpuset_root,
                             .freezer_cg = freezer_root,
@@ -319,8 +325,10 @@ int main(int argc, char *argv[])
         }
 
 
+        // === SCHEDULER SETUP =====================================================================
         // initialize the main scheduler instance
-        DemosScheduler sched(loop, move(partitions), move(windows), window_sync_message, mf_sync_message);
+        DemosScheduler sched(
+          loop, move(partitions), move(windows), window_sync_message, mf_sync_message);
         // this spawns the underlying system processes
         sched.setup();
 

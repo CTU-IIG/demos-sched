@@ -10,4 +10,5 @@ PointerAlignment: Right
 ConstructorInitializerIndentWidth: 4
 ColumnLimit: 100
 AllowShortIfStatementsOnASingleLine: WithoutElse
+MaxEmptyLinesToKeep: 2
 ...
