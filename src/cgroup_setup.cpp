@@ -53,7 +53,7 @@ static void handle_cgroup_exc(stringstream &commands,
     {
         int num;
         string path;
-        ifstream cgroup_f("/proc/" + to_string(getpid()) + "/cgroup");
+        ifstream cgroup_f("/proc/self/cgroup");
 
         while (cgroup_f >> num >> path) {
             if (num == 0) {
