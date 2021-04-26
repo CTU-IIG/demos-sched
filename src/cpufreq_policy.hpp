@@ -29,6 +29,8 @@ class CpufreqPolicy
 private: ///////////////////////////////////////////////////////////////////////////////////////////
     const fs::path policy_dir;
     string current_governor;
+    // use direct `write(...)` calls over fstreams to improve performance
+    int fd_freq;
 
 public: ////////////////////////////////////////////////////////////////////////////////////////////
     const string name;
@@ -49,6 +51,7 @@ public: ////////////////////////////////////////////////////////////////////////
     explicit CpufreqPolicy(fs::path policy_dir_path)
         : policy_dir{ std::move(policy_dir_path) }
         , current_governor{ read_governor() }
+        , fd_freq{ 0 } // opened after governor is changed
         , name{ policy_dir.filename() }
         , original_governor{ current_governor }
         , min_frequency{ read_freq_file(policy_dir / "scaling_min_freq") }
@@ -70,6 +73,10 @@ public: ////////////////////////////////////////////////////////////////////////
         }
 
         write_governor("userspace");
+
+        fs::path freq_path(policy_dir / "scaling_setspeed");
+        fd_freq = CHECK(open(freq_path.string().c_str(), O_RDWR | O_NONBLOCK));
+
         logger->trace("Initialized cpufreq policy object `{}`; (frequencies: min=`{}`, max=`{}`, "
                       "available: `{}`)",
                       name,
@@ -80,15 +87,10 @@ public: ////////////////////////////////////////////////////////////////////////
 
     ~CpufreqPolicy()
     {
+        close(fd_freq);
         // reset governor to original value
         // if governor was not manually changed, this is a noop
         write_governor(original_governor);
-    }
-
-    /** Retrieves core frequency of cores under this cpufreq policy. */
-    CpuFrequencyHz read_frequency()
-    {
-        return read_freq_file(policy_dir / "scaling_cur_freq");
     }
 
     /** Sets core frequency for all cores under this cpufreq policy. */
@@ -100,12 +102,10 @@ public: ////////////////////////////////////////////////////////////////////////
         validate_frequency(freq);
 
         TRACE("Changing CPU frequency to `{}` for `{}`", freq_to_str(freq), name);
-        try {
-            write_freq_file(policy_dir / "scaling_setspeed", freq);
-        } catch (...) {
-            std::throw_with_nested(
-              runtime_error("Could not set frequency for cpufreq policy `" + name + "`"));
-        }
+        // cpufreq uses kHz, we have Hz
+        auto freq_str = std::to_string(freq / 1000);
+        CHECK_MSG(write(fd_freq, freq_str.c_str(), freq_str.size()),
+                  "Could not set frequency for cpufreq policy `" + name + "`");
     }
 
 private: ///////////////////////////////////////////////////////////////////////////////////////////
@@ -222,12 +222,5 @@ private: ///////////////////////////////////////////////////////////////////////
         is >> freq;
         // cpufreq uses kHz, we want Hz
         return freq * 1000;
-    }
-
-    static void write_freq_file(const fs::path &path, CpuFrequencyHz freq)
-    {
-        auto os = file_open<std::ofstream>(path);
-        // cpufreq uses kHz, we have Hz
-        os << (freq / 1000);
     }
 };
