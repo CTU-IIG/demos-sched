@@ -1,26 +1,30 @@
 #pragma once
 
 #include <cstring>
-#include <err.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 
-class IOError : public std::runtime_error
+class IOError : public std::system_error
 {
 private:
     const int _errno_;
 
 public:
-    explicit IOError(int errno_, const std::string &msg)
-        : std::runtime_error(msg + ": errno `" + std::to_string(errno_) + "` - `" +
-                             strerror(errno_) + "`")
+    IOError(int errno_, const std::string &msg)
+        : std::system_error(errno_,
+                            std::generic_category(),
+                            msg + ": errno `" + std::to_string(errno_) + "` - `" +
+                              strerror(errno_) + "`")
         , _errno_(errno_)
     {}
 
-    [[nodiscard]] int errno_() const { return _errno_; }
+    explicit IOError(const std::string &msg)
+        : IOError(errno, msg)
+    {}
 
+    [[nodiscard]] int errno_() const { return _errno_; }
     [[nodiscard]] std::string err_str() const { return std::string(strerror(_errno_)); }
 };
 
