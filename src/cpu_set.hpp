@@ -6,8 +6,8 @@
 #include <stdexcept>
 extern "C"
 {
-#include "cpuset.h"
 #include "config_meson.h"
+#include "cpuset.h"
 }
 
 // C++ wrapper over C's cpu_set_t
@@ -51,7 +51,7 @@ public:
     cpu_set operator &(const cpu_set& o) const { return cpu_set(*this) &= o; }
     cpu_set operator |(const cpu_set& o) const { return cpu_set(*this) |= o; }
     cpu_set operator ^(const cpu_set& o) const { return cpu_set(*this) ^= o; }
-    // clang-format off
+    // clang-format on
 
     unsigned highest() const
     {
