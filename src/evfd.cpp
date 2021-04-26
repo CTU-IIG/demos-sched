@@ -22,7 +22,7 @@ ev::evfd::~evfd()
 void ev::evfd::write(const uint64_t val)
 {
     if (::write(fd, &val, sizeof(uint64_t)) == -1)
-        throw std::system_error(errno, std::generic_category(), std::string(__PRETTY_FUNCTION__));
+        throw IOError(std::string(__PRETTY_FUNCTION__));
 }
 
 void ev::evfd::set(std::function<void(ev::evfd &)> callback_)
