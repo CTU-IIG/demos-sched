@@ -57,6 +57,18 @@ public: ////////////////////////////////////////////////////////////////////////
         , affected_cores{ read_affected_cpus() }
         , active{ !affected_cores.empty() }
     {
+        if (original_governor == "userspace") {
+            logger->warn(
+              "`cpufreq` governor is already set to 'userspace'."
+              "\n\tThis typically means that another program (or another instance of DEmOS)"
+              "\n\tis already actively managing CPU frequency scaling from userspace. This DEmOS"
+              "\n\tinstance was started with power management enabled, and it will overwrite"
+              "\n\tCPU frequencies the other program may have set up."
+              "\n\t"
+              "\n\tNote that running multiple DEmOS instances with an active power policy"
+              "\n\tis NOT supported, and later instances may crash when the first one exits.");
+        }
+
         write_governor("userspace");
         logger->trace("Initialized cpufreq policy object `{}`; (frequencies: min=`{}`, max=`{}`, "
                       "available: `{}`)",
