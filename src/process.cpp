@@ -7,7 +7,6 @@
 #include <functional>
 #include <lib/assert.hpp>
 #include <sys/eventfd.h>
-#include <system_error>
 
 using namespace std::placeholders;
 using milliseconds = std::chrono::milliseconds;
