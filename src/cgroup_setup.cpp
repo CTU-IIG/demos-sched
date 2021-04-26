@@ -66,8 +66,8 @@ static void handle_cgroup_exc(stringstream &commands,
                 cpuset_path = "/sys/fs/cgroup/cpuset" + path.substr(8) + "/" + demos_cg_name;
                 // Read settings from correct cpuset cgroup
                 string cpuset_parent = "/sys/fs/cgroup/cpuset" + path.substr(8);
-                ifstream(cpuset_parent + "/cpuset.cpus") >> cpus;
-                ifstream(cpuset_parent + "/cpuset.mems") >> mems;
+                ifstream(cpuset_parent + "/cpuset.effective_cpus") >> cpus;
+                ifstream(cpuset_parent + "/cpuset.effective_mems") >> mems;
             }
         }
     }
