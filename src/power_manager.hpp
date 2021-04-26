@@ -45,7 +45,7 @@ using std::string;
  * ## Governors
  * There are multiple CPU governors in the Linux kernel. We will be using the "userspace"
  * governor that lets us control the CPU speed manually from userspace.
- * After governor is configured, we can control the CPU core frequency by writing to
+ * After the governor is configured, we can control the CPU core frequency by writing to
  * `/sys/devices/system/cpu/cpufreq/policy<n>/scaling_setspeed`. The closest supported
  * frequency is selected.
  *
@@ -75,7 +75,7 @@ using std::string;
  * TODO: would it be useful to create read-only CpufreqPolicy objects for monitoring
  *  even when we don't have write access to cpufreq dir?
  *
- * TODO: in case DEmOS is killed or crashes without stack unwinding, the CPU governors will not
+ * TODO: in case DEmOS is killed or crashes without stack unwinding, CPU governors will not
  *  be reset to original values; fundamentally, the only "reliable" solutions are:
  *   1) let the user manually change the governors before running DEmOS and then change it back
  *      after he's done, but that's not really reliable, it just lets us say "hey, it's your fault
