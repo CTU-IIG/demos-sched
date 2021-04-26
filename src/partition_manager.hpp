@@ -18,7 +18,7 @@ private:
 
 public:
     explicit PartitionManager(Partitions &&partitions)
-      : partitions(std::move(partitions))
+        : partitions(std::move(partitions))
     {
         set_exit_cb(&PartitionManager::process_exit_cb);
     }
@@ -35,12 +35,13 @@ public:
     void run_process_init(MajorFrame &mf, std::function<void()> init_cb_)
     {
         logger->debug("Process initialization started");
-        this->init_cb = std::move(init_cb_);
+        init_cb = std::move(init_cb_);
 
         // used when partition is not contained in any slice, not really important
         const cpu_set default_cpu_set{};
         const cpu_set *cpus_ptr;
-        std::function<void()> part_completion_cb = [this] { process_init_completion_cb(); };
+        auto part_completion_cb = [this](Process &p) { process_init_completion_cb(p); };
+
         for (auto &p : partitions) {
             // we want to run init for each partition in the widest
             //  cpu_set it will ever run in; otherwise, multi-threaded
@@ -93,17 +94,17 @@ public:
 
 private:
     /** Sets up passed process exit callback, bound to `this`. */
-    void set_exit_cb(void (PartitionManager::* cb_method)(bool))
+    void set_exit_cb(void (PartitionManager::*cb_method)(Process &, bool))
     {
         using namespace std::placeholders;
-        auto proc_exit_cb = std::bind(cb_method, this, _1); // NOLINT(modernize-avoid-bind)
+        auto proc_exit_cb = std::bind(cb_method, this, _1, _2); // NOLINT(modernize-avoid-bind)
         for (auto &p : partitions) {
             p.set_process_exit_cb(proc_exit_cb);
         }
     }
 
     /** Called when a process exits in one of the managed partitions. */
-    void process_exit_cb(bool partition_empty)
+    void process_exit_cb(Process &, bool partition_empty)
     {
         if (!partition_empty) return;
         for (auto &p : partitions) {
@@ -164,7 +165,7 @@ private:
     }
 
     /** Called as a completion callback from process. */
-    void process_init_completion_cb()
+    void process_init_completion_cb(Process &)
     {
         initialized_proc->suspend();
         initialized_proc->mark_completed();
@@ -172,16 +173,15 @@ private:
     }
 
     /** Called when a process exits during initialization. */
-    void process_init_exit_cb(bool partition_empty)
+    void process_init_exit_cb(Process &proc, bool partition_empty)
     {
         // if this is false, it means some other process exited,
         //  this may happen for example on receiving SIGINT
         if (!initialized_proc->is_running()) {
             // end initialization of this process and move on to the next one
-            process_init_completion_cb();
+            process_init_completion_cb(proc);
         }
-
         // call original callback
-        process_exit_cb(partition_empty);
+        process_exit_cb(proc, partition_empty);
     }
 };

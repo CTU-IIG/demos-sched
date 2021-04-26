@@ -163,7 +163,7 @@ void Process::reset_budget()
 void Process::handle_end()
 {
     running = false;
-    part.proc_exit_cb();
+    part.proc_exit_cb(*this);
 }
 
 /**
@@ -199,10 +199,8 @@ void Process::completed_cb()
 {
     TRACE("Process '{}' completed (cmd: '{}')", pid, argv);
 
-    // switch to next process
-    completed = true;
     demos_completed = true;
-    part.completed_cb();
+    part.completed_cb(*this);
 }
 
 /** Called when our spawned child process terminates. */
