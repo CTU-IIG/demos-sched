@@ -54,7 +54,6 @@ void Cgroup::add_process(pid_t pid)
 {
     logger->trace("Adding PID {} to cgroup {}", pid, path);
 
-    // ofstream( path + "/cgroup.procs" ) << pid; // WHY THIS DOESNT THROW?
     int fd = CHECK(open((path + "/cgroup.procs").c_str(), O_NONBLOCK | O_RDWR));
     string s = to_string(pid);
     CHECK(write(fd, s.c_str(), s.size()));
