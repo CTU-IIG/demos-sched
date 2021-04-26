@@ -11,5 +11,5 @@ tests = '''
 bats = find_program('bats', required: false)
 
 foreach t: tests
-	test(t, bats, args: [ t ], protocol: 'tap', workdir: meson.current_source_dir(), is_parallel: false)
+	test(t, bats, args: [ t ], protocol: 'tap', workdir: meson.current_source_dir(), is_parallel: true)
 endforeach
