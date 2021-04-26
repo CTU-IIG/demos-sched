@@ -114,8 +114,6 @@ private: ///////////////////////////////////////////////////////////////////////
     // use list over vector, because vector would require implementing move constructor
     //  for CpufreqPolicy, and for "random" access, there's already the `policy_by_name` map
     std::list<CpufreqPolicy> policies{};
-    /** Maps from core index to associated cpufreq policy. */
-    std::map<uint32_t, std::reference_wrapper<CpufreqPolicy>> associated_policies{};
     /** Maps from policy name to matching cpufreq policy. */
     std::map<string, std::reference_wrapper<CpufreqPolicy>> policy_by_name{};
 
@@ -167,8 +165,6 @@ public: ////////////////////////////////////////////////////////////////////////
      *  representing given policy; e.g. "policy0", "policy4",...
      */
     CpufreqPolicy &get_policy(const string &name) { return policy_by_name.at(name); }
-    /** Returns policy object that controls the `core_i`-th CPU core. */
-    CpufreqPolicy &get_core_policy(CpuIndex core_i) { return associated_policies.at(core_i); }
 
     class PolicyIterator
     {
@@ -273,14 +269,8 @@ private: ///////////////////////////////////////////////////////////////////////
                 continue;
             }
 
-            policies.emplace_back(path);
-            CpufreqPolicy &policy = policies.back();
-
+            CpufreqPolicy &policy = policies.emplace_back(path);
             policy_by_name.insert({ policy.name, std::ref(policy) });
-
-            for (CpuIndex cpu_i : policy.affected_cores) {
-                associated_policies.insert({ cpu_i, std::ref(policy) });
-            }
         }
     }
 };
