@@ -21,15 +21,15 @@ your distribution has an older version, you can install a new one by:
 
 Then build everything by running:
 
-    make
+    make release && make
 
 Output binary will be created in `./build/src/demos-sched` for native build.
 
 ### Cross compilation
 
 DEmOS scheduler can be easily cross compiled thanks to [Meson cross
-compilation support][cross]. We support cross compilation for 64bit
-ARM out of the box:
+compilation support][https://mesonbuild.com/Cross-compilation.html].
+We support cross compilation for 64bit ARM out of the box:
 
     sudo apt install g++-aarch64-linux-gnu
     make aarch64
@@ -37,9 +37,17 @@ ARM out of the box:
 The resulting binary `build-aarch64/src/demos-sched` can be copied to
 the target ARM system.
 
-[cross]: https://mesonbuild.com/Cross-compilation.html
+## Runtime requirements
 
-## Usage
+DEmOS **needs `cgroup` kernel support**, set up in
+**[hybrid mode](https://github.com/systemd/systemd/blob/main/docs/CGROUP_DELEGATION.md#three-different-tree-setups-)**
+to control the scheduled processes. Support for unified mode is on our roadmap. 
+Currently, the following `cgroup` hierarchies are required:
+ - /sys/fs/cgroup/**freezer**
+ - /sys/fs/cgroup/**cpuset**
+ - /sys/fs/cgroup/**unified**
+
+# Usage
 
     Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]
       -c <CONFIG_FILE>    path to configuration file
@@ -56,12 +64,11 @@ the target ARM system.
       -h                  print this message
     To control logger output, use the following environment variables:
       DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time
-      DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, 
+      DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs,
           even when it is convinced that the attached terminal doesn't support it
       SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)
 
-
-Format of configuration files is documented in the section [Guide for writing configurations](#Guide-for-writing-configurations).
+Format of the configuration files is documented in the section [Guide for writing configurations](#Guide-for-writing-configurations).
 
 ## Project terminology
 
@@ -189,7 +196,11 @@ by using the simplified form. Both forms are described bellow.
 ### Canonical form of configuration file
 
 Configuration file is a mapping with the following keys:
-`partitions` and `windows`.
+`set_cwd`, `partitions` and `windows`.
+
+- `set_cwd` (optional, default: true) is a boolean specifying whether all scheduled
+  processes should have their working directory set to the directory of the configuration file; 
+  this allows you to safely use relative paths inside the configuration file and scheduled programs
 - `partitions` is an array of partition definitions.
   - *Partition definition* is a mapping with `name` and `processes` keys.
   - `processes` is an array of process definitions.
@@ -212,6 +223,8 @@ Configuration file is a mapping with the following keys:
 
 Example canonical configuration can look like this:
 ``` yaml
+set_cwd: yes
+
 partitions:
   - name: SC1
     processes:
