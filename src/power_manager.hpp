@@ -62,6 +62,7 @@ using std::string;
  *
  *
  * ## intel_pstate
+ * https://www.kernel.org/doc/html/v4.14/admin-guide/pm/intel_pstate.html
  * Intel CPUs have custom driver, which has an "active" and "passive" mode. In active mode,
  * the driver manages core p-states internally and only allows setting the max and min frequency.
  *
@@ -71,9 +72,9 @@ using std::string;
  * individually.
  *
  * TODO: sleep states, and what about them?
- *
- * TODO: would it be useful to create read-only CpufreqPolicy objects for monitoring
- *  even when we don't have write access to cpufreq dir?
+ *  managing sleep states would require a kernel module
+ *  https://www.kernel.org/doc/html/latest/admin-guide/pm/cpuidle.html
+ *  https://www.kernel.org/doc/html/latest/admin-guide/pm/intel_idle.html
  *
  * TODO: in case DEmOS is killed or crashes without stack unwinding, CPU governors will not
  *  be reset to original values; fundamentally, the only "reliable" solutions are:
