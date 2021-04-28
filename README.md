@@ -42,11 +42,23 @@ the target ARM system.
 ## Usage
 
     Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]
-      -c <CONFIG_FILE>   path to configuration file
-      -C <CONFIG>        in-line configuration in YAML format
-      -g <CGROUP_NAME>   name of root cgroups, default "demos"
-      -d                 dump config file without execution
-      -h                 print this message
+      -c <CONFIG_FILE>    path to configuration file
+      -C <CONFIG>         inline configuration in YAML format
+      -p <POWER_POLICY>   name of selected power management policy; if multiple instances of DEmOS
+                           are running in parallel, this parameter must not be passed to more than a single one
+      -g <CGROUP_NAME>    name of root cgroups, default "demos"
+                           NOTE: this name must be unique for each running instance of DEmOS
+      -m <WINDOW_MESSAGE> print WINDOW_MESSAGE to stdout at the beginning of each window;
+                           this may be useful for external synchronization with scheduler windows
+      -M <MF_MESSAGE>     print MF_MESSAGE to stdout at the beginning of each major frame
+      -s                  rerun itself via systemd-run to get access to unified cgroup hierarchy
+      -d                  dump config file without execution
+      -h                  print this message
+    To control logger output, use the following environment variables:
+      DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time
+      DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, 
+          even when it is convinced that the attached terminal doesn't support it
+      SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)
 
 
 Format of configuration files is documented in the section [Guide for writing configurations](#Guide-for-writing-configurations).
