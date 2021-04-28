@@ -251,9 +251,6 @@ int main(int argc, char *argv[])
 
     while ((opt = getopt(argc, argv, "c:C:p:g:m:M:sdh")) != -1) {
         switch (opt) {
-            case 'g': // custom root cgroup name
-                opt_demos_cg_name = optarg;
-                break;
             case 'c': // config file path
                 config_file = optarg;
                 break;
@@ -262,6 +259,9 @@ int main(int argc, char *argv[])
                 break;
             case 'p': // selected power policy
                 power_policy_name = optarg;
+                break;
+            case 'g': // custom root cgroup name
+                opt_demos_cg_name = optarg;
                 break;
             case 'm': // window start sync message
                 window_sync_message = optarg;
