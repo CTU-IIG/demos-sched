@@ -18,6 +18,10 @@ aarch64: build-aarch64/build.ninja
 release: export MESON_OPTS=
 release: build/BUILD_TYPE_release
 
+# release build with trace logs
+release_logs: export MESON_OPTS=-Dtrace_logs=true
+release_logs: build/BUILD_TYPE_release_logs
+
 # this is quite slow (startup time goes from 50 ms to 270 ms on my laptop)
 # (most visible for tests, which take quite a bit longer to run, as they start DEmOS from scratch a lot)
 debug: export MESON_OPTS=--debug -Db_sanitize=address,undefined --optimization=g -Dlib_verbose=true -Dtrace_logs=true
