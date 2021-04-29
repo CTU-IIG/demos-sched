@@ -1,3 +1,6 @@
-# -*-sh-*-
-. "$(dirname "$0")/tap-functions"
-PATH="$(dirname "$0")/../build/src":"$(dirname "$0")/../build/src/tests":$PATH
+#!/usr/bin/env bash
+TEST_DIR="$(dirname ${BASH_SOURCE[0]})"
+BUILD_DIR="$TEST_DIR/../build"
+
+. "$TEST_DIR/tap-functions"
+PATH="$BUILD_DIR/src":"$BUILD_DIR/src/tests":"$BUILD_DIR/lib":$PATH
