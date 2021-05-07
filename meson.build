@@ -6,10 +6,13 @@ project('demos-sched', ['cpp', 'c'],
 	meson_version : '>=0.49.2',
        )
 add_project_arguments(['-Weffc++'], language : 'cpp')
-# without this, std::filesystem is not present for some compilers
-add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
 
 cpp = meson.get_compiler('cpp')
+
+if cpp.find_library('stdc++fs', required : false).found()
+  # without this, std::filesystem is not present for some compilers
+  add_project_link_arguments(['-lstdc++fs'], language : 'cpp')
+endif
 
 libev_proj = subproject('libev', required : false)
 if libev_proj.found()
