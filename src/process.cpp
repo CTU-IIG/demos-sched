@@ -40,6 +40,9 @@ Process::Process(ev::loop_ref loop,
     , actual_budget(budget)
     , has_initialization(has_initialization)
 {
+    // check that randomized budget cannot be negative
+    // actual budget is `budget +- (jitter / 2)`
+    ASSERT(2 * budget >= budget_jitter);
     suspend();
     completed_w.set(std::bind(&Process::completed_cb, this)); // NOLINT(modernize-avoid-bind)
     completed_w.start();
@@ -73,6 +76,9 @@ void Process::exec()
         // PARENT PROCESS
         logger->debug("Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
         child_w.start(pid, 0);
+        // TODO: shouldn't we do this in the child process, so that we know the process
+        //  is frozen before we start the command? as it is now, I think there's a possible
+        //  race condition where the started command could run before we move it into the freezer
         // add process to cgroup (echo PID > cgroup.procs)
         cge.add_process(pid);
         cgf.add_process(pid);
@@ -111,9 +117,13 @@ void Process::resume()
 
 milliseconds Process::get_actual_budget()
 {
+    if (budget != actual_budget) {
+        // a modified budget was stored, which should already be randomized, keep it
+        return actual_budget;
+    }
     auto b = actual_budget + milliseconds(jitter_distribution_ms(gen));
-    // ensure budget is not negative
-    return b >= b.zero() ? b : b.zero();
+    ASSERT(b >= b.zero());
+    return b;
 }
 
 bool Process::needs_initialization() const
@@ -200,6 +210,7 @@ void Process::completed_cb()
     TRACE("Process '{}' completed (cmd: '{}')", pid, argv);
 
     demos_completed = true;
+    // TODO: wouldn't it be better to call `suspend()` here?
     part.completed_cb(*this);
 }
 
