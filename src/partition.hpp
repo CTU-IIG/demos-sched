@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cgroup.hpp"
-#include "cpu_set.hpp"
+#include "lib/cpu_set.hpp"
 #include "process.hpp"
 #include <chrono>
 #include <functional>
