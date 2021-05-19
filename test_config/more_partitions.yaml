@@ -1,10 +1,7 @@
 # two slices with safety critical and best effort tasks within one window
 
-# all times in ms
-# Major frame
-#period: 100 # not used, do we need this?
 windows:
-  - length: 1500
+  - length: 200
     slices:
       - cpu: 0
         sc_partition: SC1
@@ -15,15 +12,15 @@ windows:
 partitions:
   - name: SC1
     processes:
-      - cmd: yes > /dev/null
-        budget: 500
-      - cmd: yes > /dev/null
-        budget: 500
+      - cmd: ../build/src/tests/cpu-stress-test-single
+        budget: 100
+      - cmd: ../build/src/tests/cpu-stress-test-single
+        budget: 50
   - name: BE1
     processes:
-      - cmd: yes > /dev/null
-        budget: 500
+      - cmd: ../build/src/tests/cpu-stress-test-single
+        budget: 25
   - name: SC2
     processes:
-      - cmd: yes > /dev/null
-        budget: 1000
+      - cmd: ../build/src/tests/cpu-stress-test-single
+        budget: 175
