@@ -9,7 +9,6 @@
 
 class Partition;
 
-using namespace std::placeholders;
 using Partitions = std::list<Partition>;
 using Processes = std::list<Process>;
 
@@ -22,6 +21,8 @@ using Processes = std::list<Process>;
  * In safety-critical partitions, execution in each window restarts from the first
  * process, even if not all processes had chance to run in the last window;
  * in best-effort partitions, execution is continued from last unfinished process.
+ *
+ * TODO: split off SCPartition and BEPartition as subclasses
  */
 class Partition
 {
@@ -45,8 +46,8 @@ private:
 
 public:
     // cgf and cge are read by Process constructor in process.cpp
-    CgroupFreezer cgf;
-    // does not need to be CgroupEvents, we only use it to create child cgroups for processes
+    // both are only used to create child cgroups, don't need the specialized subclasses
+    Cgroup cgf;
     Cgroup cge;
     // public, to allow iterating over all processes from outside (but should not be mutated)
     // Note: `processes` MUST be located after all cgroups (cgc, cgf, cge) - Process destructors
@@ -58,9 +59,6 @@ public:
               Cgroup &cpuset_parent,
               Cgroup &events_parent,
               const std::string &name = "");
-
-    /** Kills all system processes from this partition. */
-    void kill_all();
 
     /**
      * Adds a new process to the partition,
@@ -75,10 +73,11 @@ public:
                      std::chrono::milliseconds budget_jitter,
                      bool has_initialization);
 
-    /**
-     * Spawns system processes for added Process instances.
-     */
+    /** Spawns system processes for all added Process instances. */
     void create_processes();
+
+    /** Kills all system processes from this partition. */
+    void kill_all();
 
     /**
      * Prepare partition for running under a new owner (currently either Slice or PartitionManager).
