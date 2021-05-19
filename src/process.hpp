@@ -100,9 +100,15 @@ private:
     //  able to correctly handle some delayed events
     /** Indicates if the process or any of its (possibly detached) children are running. */
     bool running = false;
-    /** Indicates if the explicitly spawned process is running */
-    bool original_process_running = false;
-    /** Indicates if the process was killed using `Process::kill()`. */
+    /**
+     * Indicates if the original spawned process exited and
+     * we are waiting until all child processes also exit.
+     */
+    bool waiting_for_empty_cgroup = false;
+    /**
+     * Indicates if the process was killed using `Process::kill()`.
+     * Used to print a warning when process ends unexpectedly.
+     */
     bool killed = false;
     pid_t pid = -1;
 

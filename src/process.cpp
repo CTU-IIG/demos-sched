@@ -54,7 +54,6 @@ void Process::exec()
     // create new process
     pid = CHECK(fork());
     running = true;
-    original_process_running = true;
     killed = false;
 
     // launch new process
@@ -177,28 +176,6 @@ void Process::handle_end()
 }
 
 /**
- * Called when the population of cgroup changes
- * (either it is now empty, or new process was added).
- *
- * @param populated - true if the cgroup currently contains any processes
- */
-void Process::populated_cb(bool populated)
-{
-    if (populated) return;
-    if (original_process_running) {
-        /* child_terminated_cb was not called yet; given that the
-           cgroup is now empty, it means that the termination event
-           should be pending; the callback will have more information
-           about how the process ended, so we'll not call proc_exit_cb
-           yet and leave that to the termination callback */
-        return;
-    }
-
-    logger->trace("Cgroup for process '{}' is empty", pid);
-    handle_end();
-}
-
-/**
  * Called when the process signalizes completion in the current window
  * by calling demos_completed().
  *
@@ -212,6 +189,23 @@ void Process::completed_cb()
     demos_completed = true;
     // TODO: wouldn't it be better to call `suspend()` here?
     part.completed_cb(*this);
+}
+
+/**
+ * Called when the population of cgroup changes
+ * (either it is now empty, or new process was added).
+ *
+ * @param populated - true if the cgroup currently contains any processes
+ */
+void Process::populated_cb(bool populated)
+{
+    if (populated) return;
+
+    if (waiting_for_empty_cgroup) {
+        waiting_for_empty_cgroup = false;
+        logger->trace("Cgroup for process '{}' is empty", pid);
+        handle_end();
+    }
 }
 
 /** Called when our spawned child process terminates. */
@@ -232,13 +226,12 @@ void Process::child_terminated_cb(ev::child &w, [[maybe_unused]] int revents)
     }
     // clang-format on
 
-    original_process_running = false;
-
     if (cge.read_populated_status()) {
         // direct child exited, but the cgroup is not empty
         // most probably, the child process left behind an orphaned child
         logger->trace("Original process '{}' ended, but it has orphaned children", pid);
         // we'll let `populated_cb` call `handle_end()` when the cgroup is emptied
+        waiting_for_empty_cgroup = true;
     } else {
         handle_end(); // cgroup is empty
     }
