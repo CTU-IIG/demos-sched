@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cpu_set.hpp"
+#include "lib/cpu_set.hpp"
 #include "partition.hpp"
 #include "timerfd.hpp"
 #include <chrono>

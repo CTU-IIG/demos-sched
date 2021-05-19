@@ -1,27 +1,20 @@
-#ifndef CGROUP_HPP
-#define CGROUP_HPP
+#pragma once
 
-// mkdir, open
-#include <sys/stat.h>
-#include <sys/types.h>
-// open
-#include <fcntl.h>
-// write
-#include <unistd.h>
-
+#include "lib/cpu_set.hpp"
 #include <bitset>
 #include <cerrno>
 #include <csignal>
 #include <err.h>
 #include <ev++.h>
+#include <fcntl.h>
 #include <functional>
 #include <iostream>
 #include <list>
 #include <memory>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <vector>
-
-#include "cpu_set.hpp"
 
 class Cgroup
 {
@@ -117,5 +110,3 @@ private:
     std::function<void(bool)> populated_cb;
     void event_cb();
 };
-
-#endif // CGROUP_HPP

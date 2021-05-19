@@ -1,5 +1,4 @@
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
+#pragma once
 
 #include "majorframe.hpp"
 #include <ev++.h>
@@ -46,5 +45,3 @@ private:
                                                   float total_budget,
                                                   YAML::Node &partitions);
 };
-
-#endif // CONFIG_HPP
