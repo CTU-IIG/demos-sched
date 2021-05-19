@@ -23,7 +23,7 @@ Then build everything by running:
 
     make release && make
 
-Output binary will be created in `./build/src/demos-sched` for native build.
+Output binary will be created in `build/src/demos-sched` for native build.
 
 ### Cross compilation
 
@@ -47,7 +47,7 @@ Currently, the following `cgroup` hierarchies are required:
  - /sys/fs/cgroup/**cpuset**
  - /sys/fs/cgroup/**unified**
 
-# Usage
+## Usage
 
     Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]
       -c <CONFIG_FILE>    path to configuration file
@@ -75,6 +75,7 @@ Format of the configuration files is documented in the section [Guide for writin
 This section reviews the terminology used in later parts of this README.
 
 ### Process
+
 Single system process (currently started as a shell command, might change in
 the future), with a fixed time budget. In each window, each process from the
 scheduled partition can run until it exhausts its time budget for the given
@@ -95,6 +96,7 @@ Example config:
 - cmd: ./app1 args...
   budget: 300
   init: yes
+  jitter: 10
 ```
 
 ### Partition

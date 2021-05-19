@@ -26,8 +26,8 @@ using std::string;
  * ## CPU frequencies
  * Most CPUs have multiple supported pairs of frequencies and voltages.
  * Switching between these states allows the system to balance higher performance with lower
- * power consumption and thermal output. CPUs usually don't allow setting frequency to any value,
- * but only to discrete predefined values.
+ * power consumption and thermal output. CPUs usually don't allow setting frequency to any desired value,
+ * but only to a set of discrete predefined values.
  *
  * For example, the ARM Cortex-A53 cluster in an i.MX 8 CPU supports 4 frequencies:
  * 0.6 GHz, 0.896 GHz, 1.104 GHz and 1.2GHz, with voltage varying accordingly.
