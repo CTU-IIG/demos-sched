@@ -63,7 +63,7 @@ public: ////////////////////////////////////////////////////////////////////////
               "`cpufreq` governor is already set to 'userspace'."
               "\n\tThis typically means that another program (or another instance of DEmOS)"
               "\n\tis already actively managing CPU frequency scaling from userspace. This DEmOS"
-              "\n\tinstance was started with power management enabled, and it will overwrite"
+              "\n\tinstance was started with power management enabled, and it will overwrite the"
               "\n\tCPU frequencies the other program may have set up."
               "\n\t"
               "\n\tNote that running multiple DEmOS instances with an active power policy"
@@ -75,7 +75,7 @@ public: ////////////////////////////////////////////////////////////////////////
         fs::path freq_path(policy_dir / "scaling_setspeed");
         fd_freq = CHECK(open(freq_path.string().c_str(), O_RDWR | O_NONBLOCK));
 
-        logger->trace("Initialized cpufreq policy object `{}`; (frequencies: min=`{}`, max=`{}`, "
+        logger->debug("Initialized a cpufreq policy object `{}`; (frequencies: min=`{}`, max=`{}`, "
                       "available: `{}`)",
                       name,
                       freq_to_str(min_frequency),
@@ -179,7 +179,7 @@ private: ///////////////////////////////////////////////////////////////////////
         try {
             file_open(is_freq, policy_dir / "scaling_available_frequencies", false);
         } catch (...) {
-            logger->debug("Used CPU frequency scaling driver does not support listing "
+            logger->trace("Used CPU frequency scaling driver does not support listing "
                           "available CPU scaling frequencies (probably the `intel_pstate` driver)");
             return std::nullopt;
         }

@@ -47,7 +47,7 @@ static unique_ptr<PowerPolicy> get_power_policy(string policy_name)
 
     if (policy_name.empty() || policy_name == "none") {
         logger->info(
-          "Power management disabled (to enable, select power policy using -p parameter)");
+          "Power management disabled (to enable, select a power policy using the -p parameter)");
         return make_unique<PowerPolicy_None>();
     }
     if (policy_name == "minbe") {

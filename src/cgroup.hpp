@@ -19,7 +19,9 @@
 class Cgroup
 {
 public:
-    Cgroup() : path{} {}
+    Cgroup()
+        : path{}
+    {}
 
     explicit Cgroup(const std::string &path, bool may_exist = false);
     Cgroup(const std::string &parent_path, const std::string &name);
