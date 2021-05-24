@@ -338,6 +338,8 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
         }
     }
 
+    logger->trace("Initialized partitions and processes");
+
     // Read current CPU affinity mask.
     cpu_set allowed_cpus;
     sched_getaffinity(0, allowed_cpus.size(), allowed_cpus.ptr());

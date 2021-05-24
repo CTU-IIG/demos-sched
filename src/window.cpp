@@ -20,7 +20,7 @@ bool Window::has_sc_finished() const
 
 void Window::start(time_point current_time)
 {
-    logger->trace("Starting window");
+    TRACE("Starting window");
     sched_events.on_window_start(*this);
     sched_events.on_sc_start(*this);
     finished_sc_partitions = 0;
@@ -55,7 +55,7 @@ void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_t
 
     // option 2) wait until all SC partitions finish
     if (has_sc_finished()) {
-        logger->trace("Starting BE partitions");
+        TRACE("Starting BE partitions");
         sched_events.on_be_start(*this);
         for (auto &sp : slices) {
             sp.start_be(current_time);

@@ -33,7 +33,7 @@ public:
      */
     void run_process_init(MajorFrame &mf, std::function<void()> init_cb_)
     {
-        logger->debug("Process initialization started");
+        logger->debug("Starting process initialization");
         init_cb = std::move(init_cb_);
 
         // used when partition is not contained in any slice, not really important

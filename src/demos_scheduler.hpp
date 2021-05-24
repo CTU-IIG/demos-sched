@@ -83,7 +83,7 @@ private:
      */
     void completion_cb()
     {
-        logger->debug("All processes exited");
+        logger->info("All processes exited, stopping scheduler");
         // there might be some interesting events pending,
         //  we'll use another zero-length timer to let
         //  ev process them before breaking the event loop

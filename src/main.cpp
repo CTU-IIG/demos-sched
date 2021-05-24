@@ -79,20 +79,20 @@ static void log_exception(const std::exception &e)
 static void print_help()
 {
     // clang-format off
-    cout << "Usage: demos-sched -c <CONFIG_FILE> [-h] [-g <CGROUP_NAME>]\n"
-            "  -c <CONFIG_FILE>    path to configuration file\n"
-            "  -C <CONFIG>         inline configuration in YAML format\n"
+    cout << "Usage: demos-sched <OPTIONS>\n"
+            "  -c <CONFIG_FILE>      path to configuration file\n"
+            "  -C <CONFIG>           inline configuration in YAML format\n"
             // TODO: list supported policies and short descriptions, probably in a separate function
-            "  -p <POWER_POLICY>   name of selected power management policy; if multiple instances of DEmOS\n"
-            "                       are running in parallel, this parameter must not be passed to more than a single one\n"
-            "  -g <CGROUP_NAME>    name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
-            "                       NOTE: this name must be unique for each running instance of DEmOS\n"
-            "  -m <WINDOW_MESSAGE> print WINDOW_MESSAGE to stdout at the beginning of each window;\n"
-            "                       this may be useful for external synchronization with scheduler windows\n"
-            "  -M <MF_MESSAGE>     print MF_MESSAGE to stdout at the beginning of each major frame\n"
-            "  -s                  rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
-            "  -d                  dump config file without execution\n"
-            "  -h                  print this message\n"
+            "  [-p <POWER_POLICY>]   name of selected power management policy; if multiple instances of DEmOS\n"
+            "                         are running in parallel, this parameter must not be passed to more than a single one\n"
+            "  [-g <CGROUP_NAME>]    name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
+            "                         NOTE: this name must be unique for each running instance of DEmOS\n"
+            "  [-m <WINDOW_MESSAGE>] print WINDOW_MESSAGE to stdout at the beginning of each window;\n"
+            "                         this may be useful for external synchronization with scheduler windows\n"
+            "  [-M <MF_MESSAGE>]     print MF_MESSAGE to stdout at the beginning of each major frame\n"
+            "  [-s]                  rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
+            "  [-d]                  dump config file without execution\n"
+            "  [-h]                  print this message\n"
             "To control logger output, use the following environment variables:\n"
             "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
             "  DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, \n"
@@ -155,8 +155,10 @@ int main(int argc, char *argv[])
 
     try {
         // === CONFIG LOADING ======================================================================
+        // this print is useful to roughly measure startup times
+        logger->debug("Starting DEmOS");
+        logger->trace("Loading configuration");
         Config config;
-        // load config
         if (!config_file.empty()) {
             config.load_from_file(config_file);
         } else if (!config_str.empty()) {
@@ -167,7 +169,9 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
+        logger->trace("Converting configuration to normal form");
         config.normalize();
+        logger->debug("Configuration loaded");
 
         if (dump_config) {
             cout << config.get() << endl;
@@ -176,6 +180,7 @@ int main(int argc, char *argv[])
 
 
         // === ROOT CGROUP SETUP ===================================================================
+        logger->trace("Creating top-level cgroups");
         Cgroup unified_root, freezer_root, cpuset_root;
         if (!cgroup_setup::create_toplevel_cgroups(
               unified_root, freezer_root, cpuset_root, opt_demos_cg_name)) {

@@ -2,6 +2,10 @@
 . testlib
 plan_tests 16
 
+# set fixed log level for config tests; otherwise if user would run something
+#  like `SPDLOG_LEVEL=trace make test`, the output would include the logs and the tests would fail
+export SPDLOG_LEVEL=warning
+
 test_normalization() {
     local test_name=$1
     local cfg_in=$2
