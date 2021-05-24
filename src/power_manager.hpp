@@ -45,7 +45,7 @@ using std::string;
  * ## Governors
  * There are multiple CPU governors in the Linux kernel. We will be using the "userspace"
  * governor that lets us control the CPU speed manually from userspace.
- * After governor is configured, we can control the CPU core frequency by writing to
+ * After the governor is configured, we can control the CPU core frequency by writing to
  * `/sys/devices/system/cpu/cpufreq/policy<n>/scaling_setspeed`. The closest supported
  * frequency is selected.
  *
@@ -62,6 +62,7 @@ using std::string;
  *
  *
  * ## intel_pstate
+ * https://www.kernel.org/doc/html/v4.14/admin-guide/pm/intel_pstate.html
  * Intel CPUs have custom driver, which has an "active" and "passive" mode. In active mode,
  * the driver manages core p-states internally and only allows setting the max and min frequency.
  *
@@ -71,11 +72,11 @@ using std::string;
  * individually.
  *
  * TODO: sleep states, and what about them?
+ *  managing sleep states would require a kernel module
+ *  https://www.kernel.org/doc/html/latest/admin-guide/pm/cpuidle.html
+ *  https://www.kernel.org/doc/html/latest/admin-guide/pm/intel_idle.html
  *
- * TODO: would it be useful to create read-only CpufreqPolicy objects for monitoring
- *  even when we don't have write access to cpufreq dir?
- *
- * TODO: in case DEmOS is killed or crashes without stack unwinding, the CPU governors will not
+ * TODO: in case DEmOS is killed or crashes without stack unwinding, CPU governors will not
  *  be reset to original values; fundamentally, the only "reliable" solutions are:
  *   1) let the user manually change the governors before running DEmOS and then change it back
  *      after he's done, but that's not really reliable, it just lets us say "hey, it's your fault
@@ -114,8 +115,6 @@ private: ///////////////////////////////////////////////////////////////////////
     // use list over vector, because vector would require implementing move constructor
     //  for CpufreqPolicy, and for "random" access, there's already the `policy_by_name` map
     std::list<CpufreqPolicy> policies{};
-    /** Maps from core index to associated cpufreq policy. */
-    std::map<uint32_t, std::reference_wrapper<CpufreqPolicy>> associated_policies{};
     /** Maps from policy name to matching cpufreq policy. */
     std::map<string, std::reference_wrapper<CpufreqPolicy>> policy_by_name{};
 
@@ -167,8 +166,6 @@ public: ////////////////////////////////////////////////////////////////////////
      *  representing given policy; e.g. "policy0", "policy4",...
      */
     CpufreqPolicy &get_policy(const string &name) { return policy_by_name.at(name); }
-    /** Returns policy object that controls the `core_i`-th CPU core. */
-    CpufreqPolicy &get_core_policy(CpuIndex core_i) { return associated_policies.at(core_i); }
 
     class PolicyIterator
     {
@@ -273,14 +270,8 @@ private: ///////////////////////////////////////////////////////////////////////
                 continue;
             }
 
-            policies.emplace_back(path);
-            CpufreqPolicy &policy = policies.back();
-
+            CpufreqPolicy &policy = policies.emplace_back(path);
             policy_by_name.insert({ policy.name, std::ref(policy) });
-
-            for (CpuIndex cpu_i : policy.affected_cores) {
-                associated_policies.insert({ cpu_i, std::ref(policy) });
-            }
         }
     }
 };

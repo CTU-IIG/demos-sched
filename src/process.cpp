@@ -7,7 +7,6 @@
 #include <functional>
 #include <lib/assert.hpp>
 #include <sys/eventfd.h>
-#include <system_error>
 
 using namespace std::placeholders;
 using milliseconds = std::chrono::milliseconds;
@@ -25,8 +24,8 @@ Process::Process(ev::loop_ref loop,
                  milliseconds budget,
                  milliseconds budget_jitter,
                  bool has_initialization)
-    // `budget +- jitter` seems more intuitive than `budget +- (jitter / 2)
-    : jitter_distribution_ms(-budget_jitter.count(), budget_jitter.count())
+    // budget +- (jitter / 2)
+    : jitter_distribution_ms(-budget_jitter.count() / 2, budget_jitter.count() - budget_jitter.count() / 2)
     , loop(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
     , part(partition)
@@ -164,7 +163,7 @@ void Process::reset_budget()
 void Process::handle_end()
 {
     running = false;
-    part.proc_exit_cb();
+    part.proc_exit_cb(*this);
 }
 
 /**
@@ -200,10 +199,8 @@ void Process::completed_cb()
 {
     TRACE("Process '{}' completed (cmd: '{}')", pid, argv);
 
-    // switch to next process
-    completed = true;
     demos_completed = true;
-    part.completed_cb();
+    part.completed_cb(*this);
 }
 
 /** Called when our spawned child process terminates. */

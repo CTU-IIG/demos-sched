@@ -8,11 +8,11 @@ Partition::Partition(Cgroup &freezer_parent,
                      Cgroup &cpuset_parent,
                      Cgroup &events_parent,
                      const string &name)
-    : cgc(cpuset_parent, name)
+    : name(name)
+    , current_proc(nullptr)
+    , cgc(cpuset_parent, name)
     , cgf(freezer_parent, name)
     , cge(events_parent, name)
-    , current_proc(nullptr)
-    , name(name)
 {}
 
 void Partition::kill_all()
@@ -52,7 +52,7 @@ void Partition::create_processes()
 
 void Partition::reset(bool move_to_first_proc,
                       const cpu_set &cpus,
-                      const function<void()> &process_completion_cb)
+                      const function<void(Process &)> &process_completion_cb)
 {
     // must be non-empty
     // MK: this is not due to technical reasons, but I don't have any use-case
@@ -71,12 +71,12 @@ void Partition::reset(bool move_to_first_proc,
 
 void Partition::disconnect()
 {
-    _completed_cb = NOOP;
+    _completed_cb = [](Process &) {};
 }
 
-void Partition::completed_cb()
+void Partition::completed_cb(Process &completed_process)
 {
-    _completed_cb();
+    _completed_cb(completed_process);
 }
 
 // cyclic queue
@@ -117,17 +117,17 @@ bool Partition::is_empty() const
     return empty;
 }
 
-void Partition::set_process_exit_cb(function<void(bool)> new_exit_cb)
+void Partition::set_process_exit_cb(ExitCb new_exit_cb)
 {
     _proc_exit_cb = move(new_exit_cb);
 }
 
-void Partition::proc_exit_cb()
+void Partition::proc_exit_cb(Process &proc)
 {
     empty = true;
     for (auto &p : processes) {
         if (p.is_running()) empty = false;
     }
     // notify that a process exited
-    _proc_exit_cb(empty);
+    _proc_exit_cb(proc, empty);
 }

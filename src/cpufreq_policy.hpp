@@ -17,8 +17,6 @@ using std::string;
 
 /** CPU core frequency, in Hz. */
 using CpuFrequencyHz = uint64_t;
-/** Index of CPU core. */
-using CpuIndex = uint32_t;
 
 /**
  * NOTE: This class assumes that cpufreq is supported and write-able,
@@ -29,6 +27,8 @@ class CpufreqPolicy
 private: ///////////////////////////////////////////////////////////////////////////////////////////
     const fs::path policy_dir;
     string current_governor;
+    // use direct `write(...)` calls over fstreams to improve performance
+    int fd_freq;
 
 public: ////////////////////////////////////////////////////////////////////////////////////////////
     const string name;
@@ -36,7 +36,7 @@ public: ////////////////////////////////////////////////////////////////////////
     const CpuFrequencyHz min_frequency;
     const CpuFrequencyHz max_frequency;
     const std::optional<std::set<CpuFrequencyHz>> available_frequencies;
-    const std::set<CpuIndex> affected_cores;
+    const cpu_set affected_cores;
     const bool active;
 
 public: ////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,13 +49,14 @@ public: ////////////////////////////////////////////////////////////////////////
     explicit CpufreqPolicy(fs::path policy_dir_path)
         : policy_dir{ std::move(policy_dir_path) }
         , current_governor{ read_governor() }
+        , fd_freq{ 0 } // opened after governor is changed
         , name{ policy_dir.filename() }
         , original_governor{ current_governor }
         , min_frequency{ read_freq_file(policy_dir / "scaling_min_freq") }
         , max_frequency{ read_freq_file(policy_dir / "scaling_max_freq") }
         , available_frequencies{ read_available_frequencies() }
         , affected_cores{ read_affected_cpus() }
-        , active{ !affected_cores.empty() }
+        , active{ affected_cores.count() > 0 }
     {
         if (original_governor == "userspace") {
             logger->warn(
@@ -70,6 +71,10 @@ public: ////////////////////////////////////////////////////////////////////////
         }
 
         write_governor("userspace");
+
+        fs::path freq_path(policy_dir / "scaling_setspeed");
+        fd_freq = CHECK(open(freq_path.string().c_str(), O_RDWR | O_NONBLOCK));
+
         logger->trace("Initialized cpufreq policy object `{}`; (frequencies: min=`{}`, max=`{}`, "
                       "available: `{}`)",
                       name,
@@ -80,15 +85,10 @@ public: ////////////////////////////////////////////////////////////////////////
 
     ~CpufreqPolicy()
     {
+        close(fd_freq);
         // reset governor to original value
         // if governor was not manually changed, this is a noop
         write_governor(original_governor);
-    }
-
-    /** Retrieves core frequency of cores under this cpufreq policy. */
-    CpuFrequencyHz read_frequency()
-    {
-        return read_freq_file(policy_dir / "scaling_cur_freq");
     }
 
     /** Sets core frequency for all cores under this cpufreq policy. */
@@ -100,12 +100,10 @@ public: ////////////////////////////////////////////////////////////////////////
         validate_frequency(freq);
 
         TRACE("Changing CPU frequency to `{}` for `{}`", freq_to_str(freq), name);
-        try {
-            write_freq_file(policy_dir / "scaling_setspeed", freq);
-        } catch (...) {
-            std::throw_with_nested(
-              runtime_error("Could not set frequency for cpufreq policy `" + name + "`"));
-        }
+        // cpufreq uses kHz, we have Hz
+        auto freq_str = std::to_string(freq / 1000);
+        CHECK_MSG(write(fd_freq, freq_str.c_str(), freq_str.size()),
+                  "Could not set frequency for cpufreq policy `" + name + "`");
     }
 
 private: ///////////////////////////////////////////////////////////////////////////////////////////
@@ -186,33 +184,26 @@ private: ///////////////////////////////////////////////////////////////////////
             return std::nullopt;
         }
 
-        auto freqs_khz = read_set_from_file_stream<CpuFrequencyHz>(is_freq);
-        // convert from kHz (used by cpufreq) to Hz
-        std::set<CpuFrequencyHz> freqs_hz;
-        for (auto f : freqs_khz) {
-            freqs_hz.insert(f * 1000);
+        std::set<CpuFrequencyHz> freqs;
+        CpuFrequencyHz freq_khz;
+        while (is_freq >> freq_khz) {
+            // convert from kHz (used by cpufreq) to Hz
+            freqs.insert(freq_khz * 1000);
         }
-        return std::make_optional(freqs_hz);
+        ASSERT(is_freq.eof());
+        return std::make_optional(freqs);
     }
 
-    std::set<CpuIndex> read_affected_cpus()
+    cpu_set read_affected_cpus()
     {
         auto is_cpus = file_open<std::ifstream>(policy_dir / "affected_cpus", false);
-        return read_set_from_file_stream<CpuIndex>(is_cpus);
-    }
-
-    template<typename T>
-    static std::set<T> read_set_from_file_stream(std::ifstream &stream)
-    {
-        // we don't want to set failbait, otherwise the last read at EOF would throw exception
-        stream.exceptions(std::ios::badbit);
-        std::set<T> items;
-        T item;
-        while (stream >> item) {
-            items.insert(item);
+        cpu_set cpuset;
+        uint32_t i;
+        while (is_cpus >> i) {
+            cpuset.set(i);
         }
-        ASSERT(stream.eof());
-        return items;
+        ASSERT(is_cpus.eof());
+        return cpuset;
     }
 
     static CpuFrequencyHz read_freq_file(const fs::path &path)
@@ -222,12 +213,5 @@ private: ///////////////////////////////////////////////////////////////////////
         is >> freq;
         // cpufreq uses kHz, we want Hz
         return freq * 1000;
-    }
-
-    static void write_freq_file(const fs::path &path, CpuFrequencyHz freq)
-    {
-        auto os = file_open<std::ofstream>(path);
-        // cpufreq uses kHz, we have Hz
-        os << (freq / 1000);
     }
 };

@@ -26,6 +26,34 @@ using Processes = std::list<Process>;
 class Partition
 {
 public:
+    using CompletionCb = std::function<void(Process &)>;
+    using ExitCb = std::function<void(Process &, bool)>;
+
+private:
+    const std::string name;
+    Processes::iterator current_proc;
+    CgroupCpuset cgc;
+    size_t proc_count = 0;
+
+    /** Indicates if this partition is empty.
+     *  Cached property to speed up exit checks in PartitionManager. */
+    bool empty = true;
+
+    CompletionCb _completed_cb = nullptr;
+    // invoked when a process in this partition exits
+    ExitCb _proc_exit_cb = nullptr;
+
+public:
+    // cgf and cge are read by Process constructor in process.cpp
+    CgroupFreezer cgf;
+    // does not need to be CgroupEvents, we only use it to create child cgroups for processes
+    Cgroup cge;
+    // public, to allow iterating over all processes from outside (but should not be mutated)
+    // Note: `processes` MUST be located after all cgroups (cgc, cgf, cge) - Process destructors
+    //  must run before the cgroup destructors to cleanup child cgroups in correct order
+    Processes processes{};
+
+public:
     Partition(Cgroup &freezer_parent,
               Cgroup &cpuset_parent,
               Cgroup &events_parent,
@@ -65,7 +93,7 @@ public:
      */
     void reset(bool move_to_first_proc,
                const cpu_set &cpus,
-               const std::function<void()> &process_completion_cb);
+               const CompletionCb &process_completion_cb);
 
     /**
      * Clears process completion callback set in `bind_to_slice(...)`.
@@ -90,38 +118,18 @@ public:
      *
      * The single boolean parameter to the callback indicates if the partition is empty.
      */
-    void set_process_exit_cb(std::function<void(bool)> new_exit_cb);
+    void set_process_exit_cb(ExitCb new_exit_cb);
 
     /** Returns true if there are no running processes inside this partition. */
     [[nodiscard]] bool is_empty() const;
     [[nodiscard]] std::string get_name() const;
 
-    CgroupCpuset cgc;
-    // cgf and cge are read by Process constructor in process.cpp
-    CgroupFreezer cgf;
-    // does not need to be CgroupEvents, we only use it to create child cgroups for processes
-    Cgroup cge;
-    void proc_exit_cb();
-    void completed_cb();
+    // both called by Process
+    void proc_exit_cb(Process &proc);
+    void completed_cb(Process &proc);
 
 private:
-    Processes processes = {};
-    Processes::iterator current_proc;
-    std::string name;
-    size_t proc_count = 0;
-
-    /** Indicates if this partition is empty.
-     *  Cached property to speed up exit checks in PartitionManager. */
-    bool empty = true;
-
     // cyclic queue
     void move_to_next_proc();
     void clear_completed_flag();
-
-    // TODO: is this the right place for this definition?
-    // cached so that we don't recreate new std::function each time
-    inline static const std::function<void()> NOOP = [] {};
-    std::function<void()> _completed_cb = NOOP;
-    // invoked when a process in this partition exits
-    std::function<void(bool)> _proc_exit_cb = [](bool) {};
 };

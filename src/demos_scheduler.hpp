@@ -70,7 +70,7 @@ private:
 
     void start_scheduler()
     {
-        logger->debug("Starting scheduler");
+        logger->info("Starting scheduler");
         memory_tracker::enable();
         mf.start(std::chrono::steady_clock::now());
     }

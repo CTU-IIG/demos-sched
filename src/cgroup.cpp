@@ -13,8 +13,8 @@ Cgroup::Cgroup(const string &path, bool may_exist)
     logger->trace("Creating cgroup {}", path);
     try {
         CHECK_MSG(mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), "mkdir " + path);
-    } catch (system_error &e) {
-        switch (e.code().value()) {
+    } catch (IOError &e) {
+        switch (e.errno_()) {
             case EEXIST:
                 // if user created the cgroups manually, we don't want to remove them
                 // there is also the possibility that this is a leftover cgroup
@@ -54,7 +54,6 @@ void Cgroup::add_process(pid_t pid)
 {
     logger->trace("Adding PID {} to cgroup {}", pid, path);
 
-    // ofstream( path + "/cgroup.procs" ) << pid; // WHY THIS DOESNT THROW?
     int fd = CHECK(open((path + "/cgroup.procs").c_str(), O_NONBLOCK | O_RDWR));
     string s = to_string(pid);
     CHECK(write(fd, s.c_str(), s.size()));

@@ -62,7 +62,7 @@ public:
     void unfreeze();
 
 private:
-    int fd_state;
+    const int fd_state;
 };
 
 class CgroupCpuset : public Cgroup

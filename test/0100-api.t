@@ -55,7 +55,7 @@ partitions:
 ')
 is "$out" \
 "init start
-init done
 init start
+init done
 init done
 <test>"

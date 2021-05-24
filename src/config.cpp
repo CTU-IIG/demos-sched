@@ -80,8 +80,11 @@ static Node normalize_process(const Node &proc, float default_budget)
               "Jitter must be a non-negative time duration in milliseconds, got '" +
               to_string(jitter) + "'");
         }
-        if (jitter > budget) {
-            throw runtime_error("Jitter must not be greater than process budget");
+        // budget +- (jitter/2)
+        if (jitter > 2 * budget) {
+            throw runtime_error("`budget - jitter / 2` must be >= 0, otherwise jitter "
+                                "could result in a negative budget, got budget: '" +
+                                to_string(budget) + " ms', jitter: '" + to_string(jitter) + " ms'");
         }
     }
 
@@ -305,7 +308,9 @@ static Partition *find_partition(const string &name, Partitions &partitions)
 }
 
 // TODO: Move this out of Config to new DemosSched class
-void Config::create_scheduler_objects(const CgroupConfig &c, Windows &windows, Partitions &partitions)
+void Config::create_scheduler_objects(const CgroupConfig &c,
+                                      Windows &windows,
+                                      Partitions &partitions)
 {
     optional<filesystem::path> process_cwd{};
     if (config["set_cwd"].as<bool>()) {

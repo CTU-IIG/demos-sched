@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 14
+plan_tests 16
 
 test_normalization() {
     local test_name=$1
@@ -24,6 +24,12 @@ tmp_config=$(mktemp)
 echo "{}" > "$tmp_config"
 out=$(demos-sched -d -c "$tmp_config")
 like "$out" "set_cwd: true" "set_cwd defaults to true for config file"
+
+out=$(demos-sched -C "{
+    windows: [ {length: 500, sc_partition: SC} ],
+    partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 250}]} ]
+}" 2>&1)
+is $? 1 "jitter > 2 * budget causes error"
 
 test_normalization "missing slice definition" \
 "{
@@ -140,6 +146,25 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: anonymous_0"
+
+test_normalization "short-form jitter" \
+"{
+    windows: [ {length: 100, sc_partition: SC} ],
+    partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 50}] }]
+}" \
+"set_cwd: false
+partitions:
+  - name: SC
+    processes:
+      - cmd: echo
+        budget: 100
+        jitter: 50
+        init: false
+windows:
+  - length: 100
+    slices:
+      - cpu: 0-63
+        sc_partition: SC"
 
 export DEMOS_PLAIN_LOG=1
 test_normalization "missing budget in canonical config" \
