@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <lib/assert.hpp>
+#include <lib/check_lib.hpp>
 #include <optional>
 #include <set>
 #include <string>

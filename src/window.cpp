@@ -1,7 +1,7 @@
 #include "window.hpp"
 #include "log.hpp"
 
-Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_, SchedulerEvents &events)
+Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_, PowerPolicy &events)
     : loop(loop_)
     , sched_events(events)
     , length(length_)

@@ -2,10 +2,6 @@
 #include "config.hpp"
 #include "demos_scheduler.hpp"
 #include "lib/check_lib.hpp"
-#include <power_policies/fixed_high.hpp>
-#include <power_policies/fixed_low.hpp>
-#include <power_policies/min_be.hpp>
-#include <power_policies/none.hpp>
 #include <sched.h>
 
 using namespace std;
@@ -37,31 +33,6 @@ static void reexec_via_systemd_run(int argc, char *argv[])
     }
 
     CHECK(execvp(args[0], const_cast<char **>(args.data())));
-}
-
-// as this is user input parsing, I think it belongs here,
-//  rather than as a static method on PowerPolicy
-/** Constructs an instance of the selected power policy. */
-static unique_ptr<PowerPolicy> get_power_policy(string policy_name)
-{
-    // convert to lowercase
-    transform(policy_name.begin(), policy_name.end(), policy_name.begin(), ::tolower);
-
-    if (policy_name.empty() || policy_name == "none") {
-        logger->info(
-          "Power management disabled (to enable, select a power policy using the -p parameter)");
-        return make_unique<PowerPolicy_None>();
-    }
-    if (policy_name == "minbe") {
-        return make_unique<PowerPolicy_MinBE>();
-    }
-    if (policy_name == "low") {
-        return make_unique<PowerPolicy_FixedLow>();
-    }
-    if (policy_name == "high") {
-        return make_unique<PowerPolicy_FixedHigh>();
-    }
-    throw runtime_error("Unknown power policy selected: " + policy_name);
 }
 
 static void log_exception(const std::exception &e)
@@ -193,7 +164,7 @@ int main(int argc, char *argv[])
         // demos is running in a libev event loop
         ev::default_loop loop;
         // select power policy
-        unique_ptr<PowerPolicy> pp = get_power_policy(power_policy_name);
+        unique_ptr<PowerPolicy> pp = PowerPolicy::setup_power_policy(power_policy_name);
 
 
         // === WINDOW & PARTITION INIT =============================================================

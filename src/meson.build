@@ -1,7 +1,7 @@
 cxx = meson.get_compiler('cpp')
 
 executable('demos-sched',
-	['main.cpp', 'memory_tracker.cpp',
+	['main.cpp', 'memory_tracker.cpp', 'power_policy/_power_policy.cpp',
 	 'process.cpp', 'partition.cpp',
 	 'slice.cpp', 'window.cpp', 'majorframe.cpp',
 	 'cgroup.cpp', 'cgroup_setup.cpp', 'timerfd.cpp', 'evfd.cpp',
