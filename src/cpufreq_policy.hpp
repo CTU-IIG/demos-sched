@@ -49,7 +49,7 @@ public: ////////////////////////////////////////////////////////////////////////
     explicit CpufreqPolicy(fs::path policy_dir_path)
         : policy_dir{ std::move(policy_dir_path) }
         , current_governor{ read_governor() }
-        , fd_freq{ 0 } // opened after governor is changed
+        , fd_freq{ -1 } // opened after governor is changed
         , name{ policy_dir.filename() }
         , original_governor{ current_governor }
         , min_frequency{ read_freq_file(policy_dir / "scaling_min_freq") }
