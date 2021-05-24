@@ -16,8 +16,8 @@ class SchedulerEvents
 public:
     virtual ~SchedulerEvents() = default;
 
-    virtual void on_window_start(Window &) = 0;
-    virtual void on_sc_start(Window &) = 0;
-    virtual void on_be_start(Window &) = 0;
-    virtual void on_window_end(Window &) = 0;
+    virtual void on_window_start(Window &) {}
+    virtual void on_sc_start(Window &) {}
+    virtual void on_be_start(Window &) {}
+    virtual void on_window_end(Window &) {}
 };

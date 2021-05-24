@@ -32,7 +32,4 @@ public:
             p.write_frequency(p.min_frequency);
         }
     }
-
-    void on_window_start(Window &) override {}
-    void on_window_end(Window &) override {}
 };
