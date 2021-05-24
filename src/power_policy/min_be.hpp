@@ -1,6 +1,7 @@
 #pragma once
 
-#include "power_policies/power_policy.hpp"
+#include "_power_policy.hpp"
+#include "power_manager.hpp"
 #include "window.hpp"
 
 class PowerPolicy_MinBE : public PowerPolicy

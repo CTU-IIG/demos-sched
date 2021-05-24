@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scheduler_events.hpp"
+#include "power_policy/_power_policy.hpp"
 #include "slice.hpp"
 #include <chrono>
 #include <ev++.h>
@@ -20,7 +20,7 @@ class Window
 private:
     ev::loop_ref loop;
     uint64_t finished_sc_partitions = 0;
-    SchedulerEvents &sched_events;
+    PowerPolicy &sched_events;
     bool stopping = false;
 
 public:
@@ -28,7 +28,7 @@ public:
     // use std::list as Slice doesn't have move and copy constructors
     std::list<Slice> slices{};
 
-    Window(ev::loop_ref loop, std::chrono::milliseconds length, SchedulerEvents &events);
+    Window(ev::loop_ref loop, std::chrono::milliseconds length, PowerPolicy &events);
 
     Slice &add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
     [[nodiscard]] bool has_sc_finished() const;
