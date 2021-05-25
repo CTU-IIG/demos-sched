@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 5
+plan_tests 7
 
 api-test
 is $? 1 "Running outside of demos-sched fails"
@@ -17,7 +17,7 @@ is "${lines[1]}" "second" "second iteration"
 
 # Check that demos doesn't hang when process exits during initialization
 # 3 seconds should be long enough, but fundamentally, it's a race condition
-timeout 3s demos-sched -C '
+out=$(timeout 3s demos-sched -C '
 windows:
   - length: 1
     slices:
@@ -32,7 +32,7 @@ partitions:
         init: yes
       - cmd: exit
         budget: 100
-'
+')
 ok $? "Does not hang on process exit during initialization"
 
 
@@ -59,3 +59,17 @@ init start
 init done
 init done
 <test>"
+
+
+out=$(timeout 3s demos-sched -m "<win>" -C '
+windows:
+  - length: 100
+    slices:
+      - {cpu: 0, sc_processes: {init: yes,
+            cmd: "echo init && demos-signal-completion && echo done"}}
+')
+ok $? "Calling 'demos-signal-completion' ends initialization"
+is "$out" \
+"init
+<win>
+done" "Calling 'demos-signal-completion' ends initialization"
