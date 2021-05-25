@@ -20,7 +20,7 @@
 #endif
 
 static int fd_completed, fd_new_period;
-// indicates if demos_init_ran was already called
+// indicates if `demos_init` was already called
 static bool demos_init_ran = false;
 static bool initialization_pending;
 
