@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 16
+plan_tests 19
 
 # set fixed log level for config tests; otherwise if user would run something
 #  like `SPDLOG_LEVEL=trace make test`, the output would include the logs and the tests would fail
@@ -17,7 +17,11 @@ test_normalization() {
 
 out=$(demos-sched -C "{ windows: [], partitions: [], garbage: garbage}" 2>&1)
 is $? 1 "garbage causes failure"
-like "$out" garbage "garbage reported"
+like "$out" "garbage" "garbage reported"
+
+out=$(demos-sched -C '-d' 2>&1)
+is $? 1 "non-map config causes failure"
+like "$out" "must be a map object" "non-map config reported"
 
 out=$(demos-sched -d -C "{}")
 like "$out" "set_cwd: false" "set_cwd defaults to false for inline config"
@@ -33,7 +37,7 @@ out=$(demos-sched -C "{
     windows: [ {length: 500, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 250}]} ]
 }" 2>&1)
-is $? 1 "jitter > 2 * budget causes error"
+is $? 1 "'jitter > 2 * budget' causes error"
 
 test_normalization "missing slice definition" \
 "{
@@ -172,10 +176,13 @@ windows:
 
 export DEMOS_PLAIN_LOG=1
 test_normalization "missing budget in canonical config" \
-		   "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
-		   ">>> [error] Exception: Missing budget"
+        "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
+		">>> [error] Exception: Missing budget in process definition"
+test_normalization "missing cpu set for slice" \
+        "windows: [{length: 100, slices: [{}]}]" \
+        ">>> [error] Exception: Missing cpu set in slice definition (\`cpu\` property)"
 test_normalization "set_cwd: yes for inline config string fails" \
-		   "set_cwd: yes" \
-		   ">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
+		"set_cwd: yes" \
+		">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
 out=$(demos-sched -d -c <(echo "{}"))
 is $? 1 "config from FIFO file is not accepted without 'set_cwd: false'"

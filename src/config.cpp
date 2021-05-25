@@ -59,7 +59,7 @@ static Node normalize_process(const Node &proc, float default_budget)
 
     if (!norm_proc["budget"]) {
         if (isnan(default_budget)) {
-            throw runtime_error("Missing budget");
+            throw runtime_error("Missing budget in process definition");
         }
         norm_proc["budget"] = int(default_budget);
     }
@@ -190,9 +190,9 @@ Node Config::normalize_slice(const Node &slice,
         if (k == "cpu")
             norm_slice[k] = slice[k].as<string>();
         else if (k == "sc_partition")
-            // if process budget is not set, 0.6 * window length is used as a default for SC
-            // partition otherwise, SC partition would use up the whole budget, not leaving any
-            // space for BE partition
+            // if process budget is not set, `0.6 * window length` is used as a default for SC
+            //  partition; otherwise, SC partition would use up the whole budget, not leaving any
+            //  space for BE partition
             norm_slice[k] =
               process_xx_partition_and_get_name(slice[k], win_length * 0.6f, partitions);
         else if (k == "be_partition")
@@ -205,7 +205,11 @@ Node Config::normalize_slice(const Node &slice,
             norm_slice["be_partition"] =
               process_xx_processes_and_get_name(slice[k], win_length * 1.0f, partitions);
         else
-            throw runtime_error("Unexpected config key: " + k);
+            throw runtime_error("Unexpected config key in slice definition: " + k);
+    }
+
+    if (!norm_slice["cpu"]) {
+        throw runtime_error("Missing cpu set in slice definition (`cpu` property)");
     }
     return norm_slice;
 }
@@ -217,12 +221,12 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
     int win_length = win["length"].as<int>();
 
     if (win["slices"] && (win["sc_partition"] || win["be_partition"]))
-        throw runtime_error("Cannot have both 'slices' and '*_partition' in windows definition.");
+        throw runtime_error("Cannot have both 'slices' and '*_partition' in window definition");
     if (win["slices"] && (win["sc_processes"] || win["be_processes"]))
-        throw runtime_error("Cannot have both 'slices' and '*_processes' in windows definition.");
+        throw runtime_error("Cannot have both 'slices' and '*_processes' in window definition");
     if ((win["sc_partition"] && win["sc_processes"]) ||
         (win["be_partition"] && win["be_processes"]))
-        throw runtime_error("Cannot have both '*_partition' and '*_processes' in the same window.");
+        throw runtime_error("Cannot have both '*_partition' and '*_processes' in the same window");
 
     for (auto key : win) {
         auto k = key.first.as<string>();
@@ -243,7 +247,7 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
         else if (k == "be_processes")
             ;
         else
-            throw runtime_error("Unexpected config key: " + k);
+            throw runtime_error("Unexpected config key in window definition: " + k);
     }
 
     if (!norm_win["slices"]) {
@@ -261,6 +265,12 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
 
 void Config::normalize()
 {
+    if (!config.IsMap()) {
+        // this also catches cases like `demos-sched -C -d '...'`,
+        //  where `-d` is interpreted as config string
+        throw runtime_error("Config must be a map object");
+    }
+
     // clang-format off
     bool set_cwd = config["set_cwd"]
         ? config_file_path
@@ -362,7 +372,7 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
             cpu_set cpus(yslice["cpu"].as<string>());
             if ((cpus & allowed_cpus).count() == 0) {
                 logger->warn("Slice is supposed to run on CPU cores `{}`, but DEmOS cannot "
-                             "run on any these cores (either they are not present on current "
+                             "run on any of these cores (either they are not present on current "
                              "system or DEmOS has restricted CPU affinity); slice will "
                              "run on the lowest allowed CPU core instead",
                              cpus.as_list());
