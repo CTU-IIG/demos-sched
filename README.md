@@ -258,7 +258,7 @@ windows:
 
   ``` yaml
   {
-    partitions: [ {name: SC, processes: [{cmd: echo, budget:100}] }],
+    partitions: [ {name: SC, processes: [{cmd: echo, budget: 100}] }],
     windows: [ {length: 500, sc_partition: SC} ]
   }
   ```
