@@ -70,7 +70,7 @@ public:
     [[nodiscard]] std::chrono::milliseconds get_actual_budget();
     [[nodiscard]] pid_t get_pid() const;
     [[nodiscard]] bool needs_initialization() const;
-    [[nodiscard]] bool is_running() const;
+    [[nodiscard]] bool is_spawned() const;
     [[nodiscard]] bool is_pending() const;
 
     void mark_completed();
@@ -99,7 +99,7 @@ private:
     //  to keep pid even after process exits, to be
     //  able to correctly handle some delayed events
     /** Indicates if the process or any of its (possibly detached) children are running. */
-    bool running = false;
+    bool system_process_spawned = false;
     /**
      * Indicates if the original spawned process exited and
      * we are waiting until all child processes also exit.

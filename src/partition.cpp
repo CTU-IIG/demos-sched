@@ -126,7 +126,7 @@ void Partition::proc_exit_cb(Process &proc)
 {
     empty = true;
     for (auto &p : processes) {
-        if (p.is_running()) empty = false;
+        if (p.is_spawned()) empty = false;
     }
     // notify that a process exited
     _proc_exit_cb(proc, empty);
