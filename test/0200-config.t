@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 19
+plan_tests 20
 
 # set fixed log level for config tests; otherwise if user would run something
 #  like `SPDLOG_LEVEL=trace make test`, the output would include the logs and the tests would fail
@@ -76,6 +76,13 @@ windows:
     slices:
       - cpu: 0-63
         sc_partition: anonymous_0"
+
+test_normalization "empty window with only 'length' is kept empty" \
+"{windows: [{length: 1000}]}" \
+"set_cwd: false
+partitions: ~
+windows:
+  - length: 1000"
 
 test_normalization "partition definition in window with one process" \
 "{
