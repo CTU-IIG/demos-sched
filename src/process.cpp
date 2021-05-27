@@ -53,7 +53,7 @@ void Process::exec()
 {
     // create new process
     pid = CHECK(fork());
-    running = true;
+    system_process_spawned = true;
     killed = false;
 
     // launch new process
@@ -87,7 +87,7 @@ void Process::exec()
 
 void Process::kill()
 {
-    if (!is_running()) return;
+    if (!is_spawned()) return;
     cgf.freeze();
     cgf.kill_all();
     cgf.unfreeze();
@@ -97,14 +97,14 @@ void Process::kill()
 void Process::suspend()
 {
     cgf.freeze();
-    if (is_running()) {
+    if (is_spawned()) {
         TRACE("Suspended process '{}' (partition '{}')", pid, part.get_name());
     }
 }
 
 void Process::resume()
 {
-    ASSERT(is_running());
+    ASSERT(is_spawned());
     TRACE("Resuming process '{}' (partition '{}')", pid, part.get_name());
     uint64_t buf = 1;
     if (demos_completed) {
@@ -132,7 +132,7 @@ bool Process::needs_initialization() const
 
 bool Process::is_pending() const
 {
-    return is_running() && !completed;
+    return is_spawned() && !completed;
 }
 
 void Process::mark_completed()
@@ -145,9 +145,9 @@ void Process::mark_uncompleted()
     completed = false;
 }
 
-bool Process::is_running() const
+bool Process::is_spawned() const
 {
-    return running;
+    return system_process_spawned;
 }
 
 pid_t Process::get_pid() const
@@ -171,7 +171,7 @@ void Process::reset_budget()
 /** Called when the cgroup is empty and we want to signal it to the parent partition. */
 void Process::handle_end()
 {
-    running = false;
+    system_process_spawned = false;
     part.proc_exit_cb(*this);
 }
 
