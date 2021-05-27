@@ -136,8 +136,7 @@ Node Config::normalize_partition(
         norm_part["name"] = name;
     }
 
-    // Matej Kafka: imo, this shouldn't be supported;
-    //  it's needless duplication which saves 1 line in config file
+    // use a single process in place of a partition definition
     if (!norm_part["processes"]) {
         if (processes.IsNull()) {
             Node process;
@@ -250,7 +249,13 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
             throw runtime_error("Unexpected config key in window definition: " + k);
     }
 
+    if (win.size() == 1 && win["length"]) {
+        // if a window only has `length` defined, keep it empty without creating a slice
+        return norm_win;
+    }
+
     if (!norm_win["slices"]) {
+        // support inline slice definition inside window
         Node slice;
         slice["cpu"] = "0-" + to_string(MAX_CPUS - 1);
         for (const string &key :
