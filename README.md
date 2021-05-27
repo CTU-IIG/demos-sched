@@ -43,6 +43,7 @@ DEmOS **needs `cgroup` kernel support**, set up in
 **[hybrid mode](https://github.com/systemd/systemd/blob/main/docs/CGROUP_DELEGATION.md#three-different-tree-setups-)**
 to control the scheduled processes. Support for unified mode is on our roadmap. 
 Currently, the following `cgroup` hierarchies are required:
+
  - /sys/fs/cgroup/**freezer**
  - /sys/fs/cgroup/**cpuset**
  - /sys/fs/cgroup/**unified**
@@ -206,11 +207,13 @@ Configuration file is a mapping with the following keys:
 - `partitions` is an array of partition definitions.
   - *Partition definition* is a mapping with `name` and `processes` keys.
   - `processes` is an array of process definitions.
-  - *Process definition* is mapping with `cmd`, `budget` and `init` keys.
+  - *Process definition* is mapping with `cmd`, `budget`, `jitter` and `init` keys.
     - `cmd` is a string with a command to be executed (passed to `/bin/sh -c`).
     - `budget` specifies process budget in milliseconds.
+    - `jitter` (optional, default: 0) specifies jitter in milliseconds that is applied
+      to the budget whenever the process is scheduled.
     - `init` (optional, default: false) is a boolean specifying if process
-      should be allowed to initialize before scheduler starts
+      should be allowed to initialize before scheduler starts.
 - `windows` is an array of window definitions.
   - *Window definition* is a mapping with `length` and `slices` keys.
     - `length` defined length of the window in milliseconds.
