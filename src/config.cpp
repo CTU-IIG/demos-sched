@@ -1,5 +1,4 @@
 #include "config.hpp"
-#include "config_meson.h"
 #include "log.hpp"
 #include <cmath>
 #include <exception>
@@ -257,7 +256,7 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
     if (!norm_win["slices"]) {
         // support inline slice definition inside window
         Node slice;
-        slice["cpu"] = "0-" + to_string(MAX_CPUS - 1);
+        slice["cpu"] = "all";
         for (const string &key :
              { "sc_partition", "be_partition", "sc_processes", "be_processes" }) {
             if (win[key]) slice[key] = win[key];
@@ -374,7 +373,12 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
                 be_part_ptr = find_partition(yslice["be_partition"].as<string>(), partitions);
             }
 
-            cpu_set cpus(yslice["cpu"].as<string>());
+            // "all" = use all available CPUs
+            //  MK: imo, it would be nicer to use *, but that (along with most other
+            //   special characters) has special meaning in YAML, and must be quoted
+            auto cpu_str = yslice["cpu"].as<string>();
+            cpu_set cpus = cpu_str == "all" ? cpu_set(allowed_cpus) : cpu_set(cpu_str);
+
             if ((cpus & allowed_cpus).count() == 0) {
                 logger->warn("Slice is supposed to run on CPU cores `{}`, but DEmOS cannot "
                              "run on any of these cores (either they are not present on current "

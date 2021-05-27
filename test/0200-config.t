@@ -55,7 +55,7 @@ partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-63
+      - cpu: all
         sc_partition: SC"
 
 
@@ -74,7 +74,7 @@ partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-63
+      - cpu: all
         sc_partition: anonymous_0"
 
 test_normalization "empty window with only 'length' is kept empty" \
@@ -99,7 +99,7 @@ partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-63
+      - cpu: all
         sc_partition: anonymous_0"
 
 test_normalization "default budget" \
@@ -117,7 +117,7 @@ partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-63
+      - cpu: all
         sc_partition: anonymous_0"
 
 # This is the case, why we need sc_processes and cannot reuse
@@ -137,7 +137,7 @@ partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-63
+      - cpu: all
         sc_partition: anonymous_0"
 
 test_normalization "Processes as string" \
@@ -159,7 +159,7 @@ partitions:
 windows:
   - length: 500
     slices:
-      - cpu: 0-63
+      - cpu: all
         sc_partition: anonymous_0"
 
 test_normalization "short-form jitter" \
@@ -178,7 +178,7 @@ partitions:
 windows:
   - length: 100
     slices:
-      - cpu: 0-63
+      - cpu: all
         sc_partition: SC"
 
 export DEMOS_PLAIN_LOG=1
