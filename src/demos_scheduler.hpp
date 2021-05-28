@@ -16,6 +16,8 @@ private:
     PartitionManager partition_manager;
     ev::sig sigint{ loop };
     ev::sig sigterm{ loop };
+    std::optional<std::chrono::milliseconds> timeout{};
+    ev::timerfd timeout_timer{ loop };
 
 public:
     DemosScheduler(ev::loop_ref ev_loop,
@@ -32,17 +34,17 @@ public:
         // setup signal handlers
         sigint.set<DemosScheduler, &DemosScheduler::signal_cb>(this);
         sigterm.set<DemosScheduler, &DemosScheduler::signal_cb>(this);
+        timeout_timer.set([this] { timeout_cb(); });
     }
 
     /** Sets up scheduler for running. Currently only spawns system processes. */
     void setup() { partition_manager.create_processes(); }
 
     /**
-     * Run demos scheduler in the event loop passed in constructor.
+     * Runs the scheduler in the event loop passed in constructor.
      * Returns either after all processes exit, or SIGTERM/SIGINT is received.
      *
      * It is guaranteed that all processes are ended before this function returns.
-     *
      * Assumes that system processes are already created.
      */
     void run()
@@ -62,6 +64,32 @@ public:
         logger->debug("Event loop stopped");
     }
 
+    /**
+     * Runs the scheduler, stopping after `timeout`,
+     * unless stopped earlier in another way (see `run()`).
+     */
+    void run(std::chrono::milliseconds timeout_)
+    {
+        timeout = timeout_;
+        run();
+    }
+
+    /** Asynchronously terminates all scheduled processes and stops the scheduler. */
+    void initiate_shutdown()
+    {
+        // do not log anything, as we don't know the reason why this was called;
+        //  let the caller log the reason
+
+        // stop window scheduling, otherwise it would interfere with process termination
+        //  (`kill_all` call below unfreezes all processes, and if scheduler was running,
+        //  they would get frozen again at the end of the window, potentially before exiting)
+        mf.stop(std::chrono::steady_clock::now());
+
+        // this should trigger completion_cb() when scheduler is running,
+        //  and at the same time allows for graceful async cleanup
+        partition_manager.kill_all();
+    }
+
 private:
     void startup_fn()
     {
@@ -70,9 +98,22 @@ private:
 
     void start_scheduler()
     {
+        if (timeout && timeout.value() == timeout->zero()) {
+            // useful for measuring startup time
+            logger->info("Zero timeout set, stopping immediately");
+            initiate_shutdown();
+            return;
+        }
+
         logger->info("Starting scheduler");
         memory_tracker::enable();
-        mf.start(std::chrono::steady_clock::now());
+        auto start_time = std::chrono::steady_clock::now();
+        mf.start(start_time);
+        if (timeout) {
+            logger->debug("Scheduler will timeout in '{} ms'", timeout->count());
+            timeout_timer.start(start_time + timeout.value());
+            timeout = std::nullopt;
+        }
     }
 
     /**
@@ -97,14 +138,13 @@ private:
     void signal_cb()
     {
         logger->info("Received stop signal (SIGTERM or SIGINT), stopping all processes");
+        initiate_shutdown();
+    }
 
-        // stop window scheduling, otherwise it would interfere with process termination
-        //  (`kill_all` call below unfreezes all processes, and if scheduler was running,
-        //  they would get frozen again at the end of the window, potentially before exiting)
-        mf.stop(std::chrono::steady_clock::now());
-
-        // this should trigger completion_cb() when scheduler is running,
-        //  and at the same time allows for graceful async cleanup
-        partition_manager.kill_all();
+    /** Called on expiration of the timeout configured by the user. Stops the scheduler. */
+    void timeout_cb()
+    {
+        logger->info("Timed out, stopping all processes");
+        initiate_shutdown();
     }
 };
