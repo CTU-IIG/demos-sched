@@ -52,7 +52,7 @@ Cgroup::~Cgroup()
 
 void Cgroup::add_process(pid_t pid)
 {
-    logger->trace("Adding PID {} to cgroup {}", pid, path);
+    logger_process->trace("Adding process '{}' to cgroup '{}'", pid, path);
 
     int fd = CHECK(open((path + "/cgroup.procs").c_str(), O_NONBLOCK | O_RDWR));
     string s = to_string(pid);
@@ -65,7 +65,7 @@ void Cgroup::kill_all()
     ifstream procs(path + "/cgroup.procs");
     pid_t pid;
     while (procs >> pid) {
-        logger->debug("Killing process {} in {}", pid, path);
+        logger_process->debug("Killing process '{}' in '{}'", pid, path);
         CHECK(kill(pid, SIGKILL));
     }
 }
@@ -90,13 +90,13 @@ CgroupFreezer::~CgroupFreezer()
     close(fd_state);
 }
 
-void CgroupFreezer::freeze()
+void CgroupFreezer::freeze() // NOLINT(readability-make-member-function-const)
 {
     const char buf[] = "FROZEN";
     CHECK(write(fd_state, buf, strlen(buf)));
 }
 
-void CgroupFreezer::unfreeze()
+void CgroupFreezer::unfreeze() // NOLINT(readability-make-member-function-const)
 {
     const char buf[] = "THAWED";
     CHECK(write(fd_state, buf, strlen(buf)));
