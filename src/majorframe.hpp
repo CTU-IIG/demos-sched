@@ -29,6 +29,7 @@ public:
                std::string mf_sync_message);
 
     void start(time_point start_time);
+    /** Stops the window scheduler. If not running, this is a noop. */
     void stop(time_point current_time);
 
     /**
