@@ -14,14 +14,18 @@ static bool log_allocations = false;
 
 void memory_tracker::enable()
 {
-    log_allocations = true;
-    logger->info("Heap allocation logging enabled");
+    if (!log_allocations) {
+        log_allocations = true;
+        logger->info("Heap allocation logging enabled");
+    }
 }
 
 void memory_tracker::disable()
 {
-    log_allocations = false;
-    logger->info("Heap allocation logging disabled");
+    if (log_allocations) {
+        log_allocations = false;
+        logger->info("Heap allocation logging disabled");
+    }
 }
 
 void *operator new(size_t size)
