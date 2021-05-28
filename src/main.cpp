@@ -68,10 +68,12 @@ static void print_help()
             "  [-d]                  dump config file without execution\n"
             "  [-h]                  print this message\n"
             "To control logger output, use the following environment variables:\n"
+            "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n"
+            "    2 loggers are defined: 'main' and 'process'; to set a different log level for process logger,\n"
+            "    use e.g. 'SPDLOG_LEVEL=debug,process=info'\n"
             "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
             "  DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, \n"
-            "      even when it is convinced that the attached terminal doesn't support it\n"
-            "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n";
+            "    even when it is convinced that the attached terminal doesn't support it\n";
     // clang-format on
 }
 

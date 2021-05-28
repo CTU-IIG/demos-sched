@@ -85,9 +85,11 @@ public:
     /** Spawns suspended processes from all partitions. */
     void create_processes()
     {
+        logger_process->info("Spawning scheduled processes");
         for (auto &p : partitions) {
             p.create_processes();
         }
+        logger_process->info("Scheduled processes spawned");
     }
 
     /**

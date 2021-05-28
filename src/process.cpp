@@ -73,7 +73,7 @@ void Process::exec()
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        logger->debug("Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
+        logger_process->debug("Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
         child_w.start(pid, 0);
         // TODO: shouldn't we do this in the child process, so that we know the process
         //  is frozen before we start the command? as it is now, I think there's a possible
@@ -98,14 +98,14 @@ void Process::suspend()
 {
     cgf.freeze();
     if (is_spawned()) {
-        TRACE("Suspended process '{}' (partition '{}')", pid, part.get_name());
+        TRACE_PROCESS("Suspended process '{}' (partition '{}')", pid, part.get_name());
     }
 }
 
 void Process::resume()
 {
     ASSERT(is_spawned());
-    TRACE("Resuming process '{}' (partition '{}')", pid, part.get_name());
+    TRACE_PROCESS("Resuming process '{}' (partition '{}')", pid, part.get_name());
     uint64_t buf = 1;
     if (demos_completed) {
         CHECK(write(efd_continue, &buf, sizeof(buf)));
@@ -160,7 +160,7 @@ void Process::set_remaining_budget(milliseconds next_budget)
     ASSERT(next_budget > next_budget.zero());
     ASSERT(next_budget < budget);
     actual_budget = next_budget;
-    TRACE("Next budget for process '{}' shortened to '{} milliseconds'.", pid, next_budget.count());
+    TRACE_PROCESS("Next budget for process '{}' shortened to '{} milliseconds'.", pid, next_budget.count());
 }
 
 void Process::reset_budget()
@@ -184,7 +184,7 @@ void Process::handle_end()
  */
 void Process::completed_cb()
 {
-    TRACE("Process '{}' completed (cmd: '{}')", pid, argv);
+    TRACE_PROCESS("Process '{}' completed (cmd: '{}')", pid, argv);
 
     demos_completed = true;
     // TODO: wouldn't it be better to call `suspend()` here?
@@ -203,7 +203,7 @@ void Process::populated_cb(bool populated)
 
     if (waiting_for_empty_cgroup) {
         waiting_for_empty_cgroup = false;
-        logger->trace("Cgroup for process '{}' is empty", pid);
+        logger_process->trace("Cgroup for process '{}' is empty", pid);
         handle_end();
     }
 }
@@ -215,21 +215,21 @@ void Process::child_terminated_cb(ev::child &w, [[maybe_unused]] int revents)
     int wstatus = w.rstatus;
     // clang-format off
     if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus) != 0) {
-        logger->warn("Process '{}' exited with status {} (partition: '{}', cmd: '{}')",
-                     pid, WEXITSTATUS(wstatus), part.get_name(), argv);
+        logger_process->warn("Process '{}' exited with status {} (partition: '{}', cmd: '{}')",
+                             pid, WEXITSTATUS(wstatus), part.get_name(), argv);
     } else if (WIFSIGNALED(wstatus) && !killed) { // don't warn if killed by scheduler
-        logger->warn("Process '{}' terminated by signal {} (partition: '{}', cmd: '{}')",
-                     pid, WTERMSIG(wstatus), part.get_name(), argv);
+        logger_process->warn("Process '{}' terminated by signal {} (partition: '{}', cmd: '{}')",
+                             pid, WTERMSIG(wstatus), part.get_name(), argv);
     } else {
-        logger->debug("Process '{}' exited (partition '{}', cmd: '{}')",
-                      pid, part.get_name(), argv);
+        logger_process->debug("Process '{}' exited (partition '{}', cmd: '{}')",
+                              pid, part.get_name(), argv);
     }
     // clang-format on
 
     if (cge.read_populated_status()) {
         // direct child exited, but the cgroup is not empty
         // most probably, the child process left behind an orphaned child
-        logger->trace("Original process '{}' ended, but it has orphaned children", pid);
+        logger_process->trace("Original process '{}' ended, but it has orphaned children", pid);
         // we'll let `populated_cb` call `handle_end()` when the cgroup is emptied
         waiting_for_empty_cgroup = true;
     } else {

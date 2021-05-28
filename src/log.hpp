@@ -21,8 +21,14 @@
 
 /** A global spdlog logger instance, initialized by `initialize_logger(...)`. */
 extern std::shared_ptr<spdlog::logger> logger;
+/**
+ * Logger used by Process. For a larger number of processes,
+ * it is quite talkative, which is why it was separated to a new logger.
+ */
+extern std::shared_ptr<spdlog::logger> logger_process;
 
 #define TRACE(...) SPDLOG_LOGGER_TRACE(logger, __VA_ARGS__)
+#define TRACE_PROCESS(...) SPDLOG_LOGGER_TRACE(logger_process, __VA_ARGS__)
 
 /**
  * Sets up a global spdlog logger stored in the global `logger` variable.
