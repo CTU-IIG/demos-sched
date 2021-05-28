@@ -80,19 +80,16 @@ private:
      *
      * NOTE: this may get called before `start_scheduler()`,
      *  in case all processes exit during initialization.
+     *
+     * TODO: "completion" is confusing (with yielding), find better name
      */
     void completion_cb()
     {
         logger->info("All processes exited, stopping scheduler");
-        // there might be some interesting events pending,
-        //  we'll use another zero-length timer to let
-        //  ev process them before breaking the event loop
-        loop.once<DemosScheduler, &DemosScheduler::stop_scheduler>(-1, 0, 0, this);
-    }
-
-    void stop_scheduler()
-    {
+        memory_tracker::disable();
+        // stop the scheduler
         mf.stop(std::chrono::steady_clock::now());
+        // stop the event loop; ev automatically handles all pending events before stopping
         loop.break_loop(ev::ALL);
     }
 
@@ -100,7 +97,12 @@ private:
     void signal_cb()
     {
         logger->info("Received stop signal (SIGTERM or SIGINT), stopping all processes");
-        memory_tracker::disable();
+
+        // stop window scheduling, otherwise it would interfere with process termination
+        //  (`kill_all` call below unfreezes all processes, and if scheduler was running,
+        //  they would get frozen again at the end of the window, potentially before exiting)
+        mf.stop(std::chrono::steady_clock::now());
+
         // this should trigger completion_cb() when scheduler is running,
         //  and at the same time allows for graceful async cleanup
         partition_manager.kill_all();
