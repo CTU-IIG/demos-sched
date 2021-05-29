@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <functional>
 #include <lib/assert.hpp>
+#include <spawn.h>
 #include <sys/eventfd.h>
 
 using namespace std::placeholders;
@@ -59,41 +60,76 @@ Process::Process(ev::loop_ref loop,
     child_w.set<Process, &Process::child_terminated_cb>(this);
 }
 
+/** Creates a copy of environ, with `offset` null pointers at the beginning for custom use. */
+static const char **copy_environ(size_t offset)
+{
+    // count environ size
+    char **env = environ;
+    size_t size = 1; // 1 to include the terminating nullptr
+    for (; *env != nullptr; env++)
+        size++;
+
+    // create new environment block with offset
+    const char **env_copy = new const char *[size + offset];
+    std::memcpy(env_copy + offset, environ, sizeof(char *) * size);
+    return env_copy;
+}
+
 void Process::exec()
 {
-    // create new process
-    pid = CHECK(fork());
+    // create new environment block that can be modified and passed to posix_spawn for each process
+    static const char **copied_envp = copy_environ(1);
+    // kept to reset after each child process spawn
+    static const char *original_cwd = getcwd(nullptr, 0);
+
+    // pass configuration to the process library
+    // passed descriptors are used for communication with the library:
+    //  - completed_fd is used to read completion messages from process
+    //  - efd_continue is used to signal continuation to process
+    char parameter_str[100];
+    sprintf(parameter_str,
+            "DEMOS_PARAMETERS=%d,%d,%d",
+            completed_w.get_fd(),
+            efd_continue,
+            has_initialization);
+    copied_envp[0] = parameter_str;
+
+    if (working_dir) {
+        // posix_spawn currently doesn't have any way to set working directory
+        //  for the child process; we hack around it by setting working directory
+        //  for the main DEmOS process, calling posix_spawn, and then changing
+        //  it back to the original value
+        CHECK(chdir(working_dir->c_str()));
+    }
+
+    // use /bin/sh to start the process; this lets us avoid custom argument parsing
+    // in the future, it would be nicer to start the process directly
+    const char *const spawn_argv[] = { "/bin/sh", "-c", argv.c_str(), nullptr };
+    // posix_spawn argv and envp arguments are not const, but according to POSIX,
+    //  they should not be modified by posix_spawn, so we just const_cast them
+    CHECK(posix_spawn(&pid,
+                      "/bin/sh",
+                      nullptr,
+                      nullptr,
+                      const_cast<char *const *>(spawn_argv),
+                      const_cast<char *const *>(copied_envp)));
+
+    if (working_dir) {
+        // reset the working directory back to original
+        CHECK(chdir(original_cwd));
+    }
+
     system_process_spawned = true;
     killed = false;
 
-    // launch new process
-    if (pid == 0) {
-        // CHILD PROCESS
-        char val[100];
-        // pass configuration to the process library
-        // passed descriptors are used for communication with the library:
-        //  - completed_fd is used to read completion messages from process
-        //  - efd_continue is used to signal continuation to process
-        sprintf(val, "%d,%d,%d", completed_w.get_fd(), efd_continue, has_initialization);
-        CHECK(setenv("DEMOS_PARAMETERS", val, 1));
-        if (working_dir) {
-            CHECK(chdir(working_dir->c_str()));
-        }
-        CHECK(execl("/bin/sh", "/bin/sh", "-c", argv.c_str(), nullptr));
-        // END CHILD PROCESS
-    } else {
-        // PARENT PROCESS
-        logger_process->debug(
-          "Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
-        child_w.start(pid, 0);
-        // TODO: shouldn't we do this in the child process, so that we know the process
-        //  is frozen before we start the command? as it is now, I think there's a possible
-        //  race condition where the started command could run before we move it into the freezer
-        // add process to cgroup (echo PID > cgroup.procs)
-        cge.add_process(pid);
-        cgf.add_process(pid);
-        // END PARENT PROCESS
-    }
+    logger_process->debug("Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
+    child_w.start(pid, 0);
+    // TODO: shouldn't we do this in the child process, so that we know the process
+    //  is frozen before we start the command? as it is now, I think there's a possible
+    //  race condition where the started command could run before we move it into the freezer
+    // add process to cgroup (echo PID > cgroup.procs)
+    cge.add_process(pid);
+    cgf.add_process(pid);
 }
 
 void Process::kill()
