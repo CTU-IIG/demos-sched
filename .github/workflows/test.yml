@@ -3,38 +3,49 @@ on:
   pull_request:
   push:
   schedule:
-    - cron:  '0 0 * * Mon'
+    - cron: '0 0 * * Mon'
 jobs:
-  tests:
+
+  basic:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-        fetch-depth: 0
-    - uses: cachix/install-nix-action@v12
-      with:
-        nix_path: nixpkgs=channel:nixos-unstable
-    - uses: cachix/cachix-action@v8
-      with:
-        name: thermac
-        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-    - name: Configure
-      run: nix-shell --run "make release"
-    - name: Build subprojects
-      run: nix-shell --run "ninja -C build subprojects/libev/libev.a subprojects/yaml-cpp/libyaml-cpp.a subprojects/spdlog/src/libspdlog.a"
-    - name: Register gcc problem matcher # After subprojects to not see their warnings
-      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Build demos-sched
-      run: nix-shell --run "make"
-    - name: Tests
-      run: nix-shell --run "cd build && meson test --wrapper=sudo --print-errorlogs"
-    - name: Other builds
-      run: nix-build test/test_build.nix --arg pkgsUnstable 'import <nixpkgs> {}'
-    - name: Aarch64
-      run: nix-build --argstr crossSystem aarch64-linux
-    - name: Tests with unified cgroup hierarchy
-      run:
-        cd test
-        nix-shell -p nixos-shell ansifilter --command "nixos-shell vm-tests.nix | tee >(ansifilter > log)"
-        grep '[  OK  ] Finished Run demos-sched test suite.' log
+      - {uses: actions/checkout@v2, with: {submodules: true, fetch-depth: 0}}
+      - {uses: cachix/install-nix-action@v12, with: {nix_path: "nixpkgs=channel:nixos-unstable"}}
+      - {uses: cachix/cachix-action@v8, with: {name: thermac, signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'}}
+      - name: Configure
+        run: nix-shell --run "make release"
+      - name: Build subprojects
+        run: nix-shell --run "ninja -C build subprojects/libev/libev.a subprojects/yaml-cpp/libyaml-cpp.a subprojects/spdlog/src/libspdlog.a"
+      - name: Register gcc problem matcher  # After subprojects to not see their warnings
+        run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+      - name: Build demos-sched
+        run: nix-shell --run "make"
+      - name: Tests
+        run: nix-shell --run "cd build && meson test --wrapper=sudo --print-errorlogs"
+      - name: Aarch64
+        run: nix-build --argstr crossSystem aarch64-linux
+
+  other_builds:
+    runs-on: ubuntu-latest
+    steps:
+      - {uses: actions/checkout@v2, with: {submodules: true, fetch-depth: 0}}
+      - {uses: cachix/install-nix-action@v12, with: {nix_path: "nixpkgs=channel:nixos-unstable"}}
+      - {uses: cachix/cachix-action@v8, with: {name: thermac, signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'}}
+      - name: Register gcc problem matcher  # After subprojects to not see their warnings
+        run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+      - name: Other builds
+        run: nix-build test/test_build.nix --arg pkgsUnstable 'import <nixpkgs> {}'
+
+  tests-unified-cgroup:
+    runs-on: ubuntu-latest
+    steps:
+      - {uses: actions/checkout@v2, with: {submodules: true, fetch-depth: 0}}
+      - {uses: cachix/install-nix-action@v12, with: {nix_path: "nixpkgs=channel:nixos-unstable"}}
+      - {uses: cachix/cachix-action@v8, with: {name: thermac, signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'}}
+      - name: Build demos-sched
+        run: nix-shell --run "rm -rf subprojects/*/ && make"
+      - name: Run tests in VM with unified cgroup hierarchy
+        working-directory: ./test
+        run: |
+          nix-shell -p nixos-shell ansifilter --command "nixos-shell vm-tests.nix | tee >(ansifilter > log)"
+          grep 'demos-sched-tests-start\[[0-9]*\]: All tests successful.' log
