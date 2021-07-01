@@ -33,3 +33,8 @@ jobs:
       run: nix-build test/test_build.nix --arg pkgsUnstable 'import <nixpkgs> {}'
     - name: Aarch64
       run: nix-build --argstr crossSystem aarch64-linux
+    - name: Tests with unified cgroup hierarchy
+      run:
+        cd test
+        nix-shell -p nixos-shell ansifilter --command "nixos-shell vm-tests.nix | tee >(ansifilter > log)"
+        grep '[  OK  ] Finished Run demos-sched test suite.' log

@@ -6,8 +6,11 @@
 #     nix-shell -p nixos-shell --command nixos-shell
 #
 { pkgs, ... }: {
+  nixpkgs.overlays = [ (self: super: {
+    demos-sched = super.callPackage ../demos-sched.nix {};
+  }) ];
   services.openssh.enable = true;
   environment.systemPackages = with pkgs; [
-    (callPackage ../demos-sched.nix {})
+    demos-sched
   ];
 }
