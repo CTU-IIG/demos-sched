@@ -6,15 +6,15 @@ partitions:
   - name: SC1
     processes:
       - cmd: yes >/dev/null
-        budget: 20
+        budget: 10
         jitter: 20
 
 windows:
-  - length: 40
+  - length: 20
     slices:
       - cpu: 0
         sc_partition: SC1
-  - length: 50
+  - length: 25
     slices:
       - cpu: 0
         sc_partition: SC1

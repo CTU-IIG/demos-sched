@@ -118,6 +118,7 @@ milliseconds Process::get_actual_budget()
 {
     if (budget != actual_budget) {
         // a modified budget was stored, which should already be randomized, keep it
+        ASSERT(actual_budget > actual_budget.zero());
         return actual_budget;
     }
     auto b = actual_budget + milliseconds(jitter_distribution_ms(gen));

@@ -52,7 +52,8 @@ void Slice::start_next_process(time_point current_time)
 
     auto budget = running_process->get_actual_budget();
     if (budget == budget.zero()) {
-        // probably due to combination of jitter and reduced leftover budget
+        // if 2 * budget == jitter, the budget will occasionally be zero
+        //  this may simulate a process that occasionally has no work to do
         TRACE("Skipping process with empty effective budget");
         running_process->mark_completed();
         return start_next_process(current_time);
