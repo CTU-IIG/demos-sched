@@ -1544,6 +1544,7 @@ test_is_tracer_present_(void)
 }
 #endif
 
+// TODO: move to a new "external" (or similar) dir
 int
 main(int argc, char** argv)
 {
