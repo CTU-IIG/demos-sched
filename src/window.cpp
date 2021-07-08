@@ -21,16 +21,23 @@ bool Window::has_sc_finished() const
 void Window::start(time_point current_time)
 {
     TRACE("Starting window");
-    power_policy.on_window_start(*this);
-    power_policy.on_sc_start(*this);
     finished_sc_partitions = 0;
     for (auto &s : slices) {
         s.start_sc(current_time);
     }
+    // call power policy handlers after we start the slices;
+    //  this way, even if the CPU frequency switching is slow, the processes are
+    //  still executing, although at an incorrect frequency;
+    //  see `CpufreqPolicy::write_frequency` for more info
+    power_policy.on_window_start(*this);
+    power_policy.on_sc_start(*this);
 }
 
 void Window::stop(time_point current_time)
 {
+    // this way, the previous window will run a bit longer
+    //  if this call takes a long time to complete
+    power_policy.on_window_end(*this);
     // when SC partition inside a slice completes at the same moment Window::stop is called
     //  (typically due to 2 timeouts firing at the same time), `stopping = true` prevents
     //  the next partition from starting execution and then getting immediately stopped
@@ -40,7 +47,6 @@ void Window::stop(time_point current_time)
         s.stop(current_time);
     }
     stopping = false;
-    power_policy.on_window_end(*this);
 }
 
 void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_time)
@@ -58,9 +64,10 @@ void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_t
     // option 2) wait until all SC partitions finish
     if (has_sc_finished()) {
         TRACE("Starting BE partitions");
-        power_policy.on_be_start(*this);
         for (auto &sp : slices) {
             sp.start_be(current_time);
         }
+        // see `Window::start` for reasoning on why this is called AFTER partition start
+        power_policy.on_be_start(*this);
     }
 }

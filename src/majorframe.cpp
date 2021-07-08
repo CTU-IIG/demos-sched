@@ -24,6 +24,8 @@ void MajorFrame::move_to_next_window()
     }
 }
 
+// TODO: add optimization to keep processes running if their
+//  partition immediately continues in the next window
 void MajorFrame::start(time_point current_time)
 {
     if (!mf_sync_message.empty() && current_win == windows.begin()) {
@@ -35,6 +37,8 @@ void MajorFrame::start(time_point current_time)
         cout << window_sync_message << endl;
         cout.flush();
     }
+    // this call make take 100-200 µs due to the blocking
+    //  cpufreq write in case frequency is changed here
     current_win->start(current_time);
     timeout = current_time + current_win->length;
     timer.start(timeout);

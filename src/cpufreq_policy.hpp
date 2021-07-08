@@ -97,7 +97,14 @@ public: ////////////////////////////////////////////////////////////////////////
         write_governor(original_governor);
     }
 
-    /** Sets core frequency for all cores under this cpufreq policy. */
+    /**
+     * Sets core frequency for all cores under this cpufreq policy.
+     *
+     * NOTE: this call seems to be blocking, and on our i.MX8 board, it apparently takes
+     *  on the order of 100µs to complete; the code in window.cpp is structured so that
+     *  the PowerPolicy handlers are called in moments where the resulting performance
+     *  impact is minimized, but it's still not negligible
+     */
     void write_frequency(CpuFrequencyHz freq)
     {
         if (!active) return;
