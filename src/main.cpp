@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
                             .cpuset_cg = cpuset_root,
                             .freezer_cg = freezer_root,
                             .loop = loop,
-                            .sched_events = *pp };
+                            .power_policy = *pp };
         Partitions partitions;
         Windows windows;
 

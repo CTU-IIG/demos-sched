@@ -362,7 +362,7 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
         int length = ywindow["length"].as<int>();
 
         auto budget = chrono::milliseconds(length);
-        Window &w = windows.emplace_back(c.loop, budget, c.sched_events);
+        Window &w = windows.emplace_back(c.loop, budget, c.power_policy);
 
         for (auto yslice : ywindow["slices"]) {
             Partition *sc_part_ptr = nullptr, *be_part_ptr = nullptr;

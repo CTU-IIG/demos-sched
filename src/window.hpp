@@ -20,7 +20,7 @@ class Window
 private:
     ev::loop_ref loop;
     uint64_t finished_sc_partitions = 0;
-    PowerPolicy &sched_events;
+    PowerPolicy &power_policy;
     bool stopping = false;
 
 public:
@@ -28,7 +28,7 @@ public:
     // use std::list as Slice doesn't have move and copy constructors
     std::list<Slice> slices{};
 
-    Window(ev::loop_ref loop, std::chrono::milliseconds length, PowerPolicy &events);
+    Window(ev::loop_ref loop, std::chrono::milliseconds length, PowerPolicy &power_policy);
 
     Slice &add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
     [[nodiscard]] bool has_sc_finished() const;

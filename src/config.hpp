@@ -15,7 +15,7 @@ typedef struct
     Cgroup &cpuset_cg;
     Cgroup &freezer_cg;
     ev::default_loop &loop;
-    PowerPolicy &sched_events;
+    PowerPolicy &power_policy;
 } CgroupConfig;
 
 class Config

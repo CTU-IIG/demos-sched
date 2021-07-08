@@ -1,9 +1,9 @@
 #include "window.hpp"
 #include "log.hpp"
 
-Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_, PowerPolicy &events)
+Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_, PowerPolicy &power_policy)
     : loop(loop_)
-    , sched_events(events)
+    , power_policy(power_policy)
     , length(length_)
 {}
 
@@ -21,8 +21,8 @@ bool Window::has_sc_finished() const
 void Window::start(time_point current_time)
 {
     TRACE("Starting window");
-    sched_events.on_window_start(*this);
-    sched_events.on_sc_start(*this);
+    power_policy.on_window_start(*this);
+    power_policy.on_sc_start(*this);
     finished_sc_partitions = 0;
     for (auto &s : slices) {
         s.start_sc(current_time);
@@ -38,7 +38,7 @@ void Window::stop(time_point current_time)
         s.stop(current_time);
     }
     stopping = false;
-    sched_events.on_window_end(*this);
+    power_policy.on_window_end(*this);
 }
 
 void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_time)
@@ -56,7 +56,7 @@ void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_t
     // option 2) wait until all SC partitions finish
     if (has_sc_finished()) {
         TRACE("Starting BE partitions");
-        sched_events.on_be_start(*this);
+        power_policy.on_be_start(*this);
         for (auto &sp : slices) {
             sp.start_be(current_time);
         }
