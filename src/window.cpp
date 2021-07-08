@@ -31,8 +31,10 @@ void Window::start(time_point current_time)
 
 void Window::stop(time_point current_time)
 {
-    // when SC partition inside a slice completes at the same moment Window::stop is called,
-    //
+    // when SC partition inside a slice completes at the same moment Window::stop is called
+    //  (typically due to 2 timeouts firing at the same time), `stopping = true` prevents
+    //  the next partition from starting execution and then getting immediately stopped
+    //  by Window::stop (see slice.cpp for more details)
     stopping = true;
     for (auto &s : slices) {
         s.stop(current_time);
