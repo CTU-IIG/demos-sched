@@ -1,7 +1,9 @@
 #pragma once
 
+#include "lib/cpu_set.hpp"
 #include "lib/file_lib.hpp"
 #include "log.hpp"
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -10,6 +12,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unistd.h>
 #include <utility>
 
 namespace fs = std::filesystem;

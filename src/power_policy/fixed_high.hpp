@@ -2,7 +2,6 @@
 
 #include "_power_policy.hpp"
 #include "power_manager.hpp"
-#include "window.hpp"
 
 class PowerPolicy_FixedHigh : public PowerPolicy
 {
