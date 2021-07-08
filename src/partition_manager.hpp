@@ -41,6 +41,7 @@ public:
         const cpu_set *cpus_ptr;
         auto part_completion_cb = [this](Process &p) { process_init_completion_cb(p); };
 
+        // TODO: apparently, this is quite slow, investigate why
         for (auto &p : partitions) {
             // we want to run init for each partition in the widest
             //  cpu_set it will ever run in; otherwise, multi-threaded

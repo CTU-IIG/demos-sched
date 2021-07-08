@@ -181,6 +181,9 @@ void Process::handle_end()
  *
  * This either means that initialization finished (if 'init' param in config was set to true),
  * or that the work for current window is done.
+ *
+ * TODO: shouldn't we rename the whole concept to yield,
+ *  to be more consistent with POSIX terminology?
  */
 void Process::completed_cb()
 {

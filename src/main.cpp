@@ -69,7 +69,7 @@ static void print_help()
             "  [-h]                  print this message\n"
             "To control logger output, use the following environment variables:\n"
             "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n"
-            "    2 loggers are defined: 'main' and 'process'; to set a different log level for process logger,\n"
+            "    2 loggers are defined: 'main' and 'process'; to set a different log level for the process logger,\n"
             "    use e.g. 'SPDLOG_LEVEL=debug,process=info'\n"
             "  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time\n"
             "  DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, \n"
@@ -210,6 +210,9 @@ int main(int argc, char *argv[])
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
             logger->warn("Running demos without rt priority, consider running as root");
         }
+
+        // TODO: document that DEmOS cannot reliably schedule under 1 millisecond,
+        //  because libev doesn't guarantee it
 
         // everything is set up now, start the event loop
         // the event loop terminates either on timeout (if set),

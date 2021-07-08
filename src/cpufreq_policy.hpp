@@ -39,6 +39,8 @@ public: ////////////////////////////////////////////////////////////////////////
     const string original_governor;
     const CpuFrequencyHz min_frequency;
     const CpuFrequencyHz max_frequency;
+    // TODO: check how this is ordered
+    // TODO: allow random access
     const std::optional<std::set<CpuFrequencyHz>> available_frequencies;
     const cpu_set affected_cores;
     const bool active;
@@ -100,6 +102,7 @@ public: ////////////////////////////////////////////////////////////////////////
     {
         if (!active) return;
 
+        // TODO: toggle this using a macro
         // check that freq is between min-max and is one of the supported frequencies
         validate_frequency(freq);
 

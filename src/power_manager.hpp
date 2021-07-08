@@ -148,11 +148,13 @@ public: ////////////////////////////////////////////////////////////////////////
         logger->debug("Setting up `cpufreq` policy wrappers and configuring governors...");
         setup_policy_objects();
 
-        logger->info("Power management active");
+        logger->debug("Power manager set up");
     }
 
     ~PowerManager()
     {
+        // FIXME: we should first restore governors and THEN reset intel_pstate driver;
+        //  also investigate if the way it currently is breaks anything
         if (!original_intel_pstate_status.empty()) {
             reset_intel_pstate_driver();
         }

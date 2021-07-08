@@ -42,6 +42,7 @@ void Partition::add_process(ev::loop_ref loop,
     empty = false;
 }
 
+// TODO: "spawn" instead of "create"?
 void Partition::create_processes()
 {
     for (auto &p : processes) {

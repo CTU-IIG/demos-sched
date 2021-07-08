@@ -11,6 +11,9 @@ class Window;
  * This class simplifies the event propagation and handling, and centralizes it
  * into a single class. The components call the event handlers directly (through vtable),
  * which minimizes the performance impact.
+ *
+ * NOTE: file name is prefixed with '_', to distinguish it from the actual
+ *  implementations, which are in the same directory
  */
 class PowerPolicy
 {

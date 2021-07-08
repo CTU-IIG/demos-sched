@@ -33,9 +33,6 @@ int demos_initialization_completed(void);
  * Blocks until the process is scheduled again by demos-sched.
  *
  * @return 0 if successful, -1 otherwise and `errno` is set appropriately.
- *
- * @todo make sure, that process cannot be scheduled multiple times in one window
- * @todo set errno
  */
 int demos_completed(void);
 
