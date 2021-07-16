@@ -25,11 +25,13 @@ public:
     }
 };
 
-#ifdef NDEBUG
-#define ASSERT(expr) (static_cast<void>(0))
-#else
+#ifdef DEBUG
 #define ASSERT(expr)                                                                               \
     (static_cast<bool>(expr)                                                                       \
        ? void(0)                                                                                   \
        : throw assertion_error(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#define RUN_DEBUG(expr) void(expr)
+#else
+#define ASSERT(expr) (static_cast<void>(0))
+#define RUN_DEBUG(expr) void(0)
 #endif

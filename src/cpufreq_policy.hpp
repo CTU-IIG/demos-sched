@@ -102,9 +102,8 @@ public: ////////////////////////////////////////////////////////////////////////
     {
         if (!active) return;
 
-        // TODO: toggle this using a macro
         // check that freq is between min-max and is one of the supported frequencies
-        validate_frequency(freq);
+        RUN_DEBUG(validate_frequency(freq));
 
         TRACE("Changing CPU frequency to `{}` for `{}`", freq_to_str(freq), name);
         // cpufreq uses kHz, we have Hz
