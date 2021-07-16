@@ -10,7 +10,6 @@
 #include <lib/assert.hpp>
 #include <lib/check_lib.hpp>
 #include <optional>
-#include <set>
 #include <string>
 #include <unistd.h>
 #include <utility>
@@ -39,9 +38,10 @@ public: ////////////////////////////////////////////////////////////////////////
     const string original_governor;
     const CpuFrequencyHz min_frequency;
     const CpuFrequencyHz max_frequency;
-    // TODO: check how this is ordered
-    // TODO: allow random access
-    const std::optional<std::set<CpuFrequencyHz>> available_frequencies;
+    // for small numbers of frequencies (under 12, on my machine), std::vector with linear search
+    //  is faster than both std::set and std::unordered_set when checking if a frequency is valid
+    // it also supports random access, which is convenient for writing power policies
+    const std::optional<std::vector<CpuFrequencyHz>> available_frequencies;
     const cpu_set affected_cores;
     const bool active;
 
@@ -153,7 +153,9 @@ private: ///////////////////////////////////////////////////////////////////////
                                 "` Hz, which is more than the supported maximum of `" +
                                 std::to_string(max_frequency) + "` Hz");
         }
-        if (available_frequencies && available_frequencies->count(freq) == 0) {
+        if (available_frequencies &&
+            std::find(available_frequencies->begin(), available_frequencies->end(), freq) ==
+              available_frequencies->end()) {
             throw runtime_error("Attempted to set CPU frequency for `" + name + "` to `" +
                                 std::to_string(freq) +
                                 "` Hz, which is not listed as an available frequency for this CPU");
@@ -186,7 +188,7 @@ private: ///////////////////////////////////////////////////////////////////////
         current_governor = governor;
     }
 
-    std::optional<std::set<CpuFrequencyHz>> read_available_frequencies()
+    std::optional<std::vector<CpuFrequencyHz>> read_available_frequencies()
     {
         std::ifstream is_freq;
         try {
@@ -197,11 +199,11 @@ private: ///////////////////////////////////////////////////////////////////////
             return std::nullopt;
         }
 
-        std::set<CpuFrequencyHz> freqs;
+        std::vector<CpuFrequencyHz> freqs;
         CpuFrequencyHz freq_khz;
         while (is_freq >> freq_khz) {
             // convert from kHz (used by cpufreq) to Hz
-            freqs.insert(freq_khz * 1000);
+            freqs.push_back(freq_khz * 1000);
         }
         ASSERT(is_freq.eof());
         return std::make_optional(freqs);
