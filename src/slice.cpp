@@ -20,7 +20,7 @@ Slice::Slice(ev::loop_ref loop,
     , cpus(std::move(cpus))
     , sc_done_cb(std::move(sc_done_cb))
     , timer(loop)
-    , completion_cb_cached{ [this] (Process &) { schedule_next(std::chrono::steady_clock::now()); } }
+    , completion_cb_cached{ [this](Process &) { schedule_next(std::chrono::steady_clock::now()); } }
 {
     timer.set([this] { schedule_next(timeout); });
     // set lower than default priority; this makes this timeout trigger

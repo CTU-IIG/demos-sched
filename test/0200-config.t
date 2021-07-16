@@ -37,7 +37,7 @@ out=$(demos-sched -C "{
     windows: [ {length: 500, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 250}]} ]
 }" 2>&1)
-is $? 1 "'jitter > 2 * budget' causes error"
+is $? 1 "'jitter > 2 * budget' causes an error"
 
 test_normalization "missing slice definition" \
 "{

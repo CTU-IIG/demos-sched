@@ -45,6 +45,8 @@ static Node normalize_process(const Node &proc, float default_budget)
             } else if (k == "budget" || k == "jitter") {
                 // budget: how long can the process run in each window cycle
                 // jitter: variance in budget for each window cycle
+                // we're casting to int instead of unsigned int, as yaml-cpp error messages
+                //  are quite bad, and so it's better if we check ourselves (below)
                 norm_proc[k] = proc[k].as<int>();
             } else if (k == "init") {
                 // if true, we wait until the process completes initialization
