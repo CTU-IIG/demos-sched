@@ -11,7 +11,7 @@ cpp = 'aarch64-linux-gnu-g++'
 ar = 'aarch64-linux-gnu-ar'
 strip = 'aarch64-linux-gnu-strip'
 
-[properties]
+[built-in options]
 cpp_link_args = ['-static']
 
 [host_machine]

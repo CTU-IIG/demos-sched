@@ -1,45 +1,55 @@
-# FIXME: currently, if meson was not configured yet, `all` and `clean` targets don't
-#  invoke `release`, but build/build.ninja directly, and BUILD_TYPE_release is not created
+# there are 3 groups of rules in this Makefile:
+#  1) native build type selection - when building DEmOS natively, you must first select
+#     the build type - one of $(BUILD_TYPES) (defined below)
+#  2) then, you can run `make all/clean/test` which builds DEmOS using the configured build type
+#  3) ARM64 cross-compilation in release mode - `make aarch64`
 
-# this actually builds DEmOS, defaulting to release build if not previously configured otherwise
+# available build types for the native build
+BUILD_TYPES = release release_logs debug alloc_test
+
+
 all: build/build.ninja
 	ninja -C $(<D) 1>&2	# Redirect everything to stderr so that QtCreator sees the error messages
-
-.PHONY: all clean test aarch64   release debug alloc_test
+# if build/build.ninja is not present, default to release build
+build/build.ninja:
+	$(MAKE) release
 
 clean test: build/build.ninja
 	ninja -C $(<D) $@
 
-aarch64: export MESON_OPTS=--cross-file aarch64.txt
+
+.PHONY: all clean test aarch64 $(BUILD_TYPES)
+
+
+aarch64: MESON_OPTS=--buildtype release --cross-file meson_aarch64.txt
 aarch64: build-aarch64/build.ninja
 	ninja -C $(<D)
+build-aarch64/build.ninja:
+	meson ./build-aarch64 $(MESON_OPTS)
+
 
 # configures release build
-release: export MESON_OPTS=
+release: MESON_OPTS=--buildtype release
 release: build/BUILD_TYPE_release
 
 # release build with trace logs
-release_logs: export MESON_OPTS=-Dtrace_logs=true
+release_logs: MESON_OPTS=--buildtype release -Dtrace_logs=true
 release_logs: build/BUILD_TYPE_release_logs
 
 # this is quite slow (startup time goes from 50 ms to 270 ms on my laptop)
 # (most visible for tests, which take quite a bit longer to run, as they start DEmOS from scratch a lot)
-debug: export MESON_OPTS=--debug -Db_sanitize=address,undefined --optimization=g -Dlib_verbose=true -Dtrace_logs=true
+debug: MESON_OPTS=--debug -Db_sanitize=address,undefined --optimization=g -Dlib_verbose=true -Dtrace_logs=true
 debug: build/BUILD_TYPE_debug
 
 # configures DEmOS to log all heap allocations after initialization finishes
 # we cannot combine this with `debug`, because AddressSanitizer also overrides `new` and `delete`
-alloc_test: export MESON_OPTS=--debug --optimization=g -Dtrace_logs=true -Dlog_allocations=true
+alloc_test: MESON_OPTS=--debug --optimization=g -Dtrace_logs=true -Dlog_allocations=true
 alloc_test: build/BUILD_TYPE_alloc_test
 
 
-# this target is used so that e.g. `make debug` actually reconfigures the build
-#  when it's currently a different type; if build/build.ninja was used directly,
-#  `make` would just say it's up to date and do nothing
+# configure meson for the desired build type and leave a tag file that
+#  indicates the currently configured build type
 build/BUILD_TYPE_%:
 	rm -rf build/
-	$(MAKE) build/build.ninja
+	meson ./build $(MESON_OPTS)
 	touch $@
-
-%/build.ninja:
-	meson $(@D) $(MESON_OPTS)

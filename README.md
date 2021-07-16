@@ -21,9 +21,12 @@ your distribution has an older version, you can install a new one by:
 
 Then build everything by running:
 
-    make release && make
+    make
 
-Output binary will be created in `build/src/demos-sched` for native build.
+Output binary will be created in `build/src/demos-sched` for the native build.
+
+To compile a debug build of DEmOS, run `make debug` (this configures
+the build type), followed by `make`.
 
 ### Cross compilation
 

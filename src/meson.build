@@ -7,7 +7,9 @@ executable('demos-sched',
 	 'cgroup.cpp', 'cgroup_setup.cpp', 'timerfd.cpp', 'evfd.cpp',
 	 'config.cpp', 'lib/cpuset.c', 'log.cpp'],
 	cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']) +
-		[ '-DHAVE_DECL_CPU_ALLOC' ], # See cpuset.h
+		[ '-DHAVE_DECL_CPU_ALLOC' ] + # see cpuset.h
+		(get_option('buildtype').startswith('debug') ? [ '-DDEBUG' ] : []),
+		# /\ if compiling a debug build, set a global DEBUG preprocessor flag
 	dependencies : [libev_dep, yaml_cpp_dep, spdlog_dep],
 	install : true)
 
