@@ -27,6 +27,11 @@ public:
 
     // it seems a bit weird to have what's essentially an input parsing function here,
     //  but imo it is still cleaner than including all defined policies in main.cpp
-    /** Instantiates a power policy by the name. */
-    static std::unique_ptr<PowerPolicy> setup_power_policy(std::string policy_name);
+    /**
+     * Instantiates a power policy by the name.
+     *
+     * Policies may accept extra arguments, which are passed in the format
+     * `<policy_name>:<arg1>,<arg2>,...`
+     */
+    static std::unique_ptr<PowerPolicy> setup_power_policy(const std::string &policy_str);
 };
