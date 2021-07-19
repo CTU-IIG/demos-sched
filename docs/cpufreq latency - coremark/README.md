@@ -8,7 +8,7 @@ When the Linux kernel requests a CPU frequency change from the hardware, the cha
 
 Previous measurements suggested that the frequency switch is blocking, and the CPU core does not execute instructions until the new frequency is set.
 
-<mark>Add a time diagram illustrating the switch</mark>
+![timeline diagram illustrating the measured interval](charts/switch_time_diagram.svg)
 
 **Idea:** Run a CPU-intensive benchmark under DEmOS, periodically change the CPU frequency, measure the overhead and use it to estimate the switching latency.
 
