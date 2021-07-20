@@ -268,7 +268,7 @@ void Config::normalize()
     if (!config.IsMap()) {
         // this also catches cases like `demos-sched -C -d '...'`,
         //  where `-d` is interpreted as config string
-        throw runtime_error("Config must be a map object");
+        throw runtime_error("Config must be YAML mapping node");
     }
 
     // clang-format off

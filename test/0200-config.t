@@ -21,7 +21,7 @@ like "$out" "garbage" "garbage reported"
 
 out=$(demos-sched -C '-d' 2>&1)
 is $? 1 "non-map config causes failure"
-like "$out" "must be a map object" "non-map config reported"
+like "$out" "must be YAML mapping node" "non-map config reported"
 
 out=$(demos-sched -d -C "{}")
 like "$out" "set_cwd: false" "set_cwd defaults to false for inline config"
