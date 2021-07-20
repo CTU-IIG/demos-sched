@@ -2,6 +2,8 @@
 #include "log.hpp"
 #include <algorithm>
 
+// TODO: MK: possibly create a meson build step that lists power policies
+//  inside this directory, and generates both includes and PP(...) calls
 #include "power_policy/high.hpp"
 #include "power_policy/imx8_alternating.hpp"
 #include "power_policy/imx8_fixed.hpp"
@@ -15,7 +17,9 @@
 
 #define ARR_ARGS_0(arr_name)
 #define ARR_ARGS_1(arr_name) arr_name[0]
-#define ARR_ARGS_2(arr_name) arr_name[0], arr_name[1]
+#define ARR_ARGS_2(arr_name) ARR_ARGS_1(arr_name), arr_name[1]
+#define ARR_ARGS_3(arr_name) ARR_ARGS_2(arr_name), arr_name[2]
+#define ARR_ARGS_4(arr_name) ARR_ARGS_3(arr_name), arr_name[3]
 #define PP(name, class_, arg_count)                                                                \
     do {                                                                                           \
         if (policy_name == name) {                                                                 \
@@ -52,7 +56,7 @@ static std::unique_ptr<PowerPolicy> instantiate_power_policy(
     PP("minbe", PowerPolicy_MinBE, 0);
     PP("low", PowerPolicy_FixedLow, 0);
     PP("high", PowerPolicy_FixedHigh, 0);
-    PP("imx8_alternating", PowerPolicy_Imx8_AlternatingA53, 2);
+    PP("imx8_alternating", PowerPolicy_Imx8_Alternating, 4);
     PP("imx8_fixed", PowerPolicy_Imx8_Fixed, 2);
 
     throw std::runtime_error("Unknown power policy selected: " + policy_name);
