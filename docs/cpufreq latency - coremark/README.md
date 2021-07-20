@@ -12,18 +12,24 @@ Previous measurements suggested that the frequency switch is blocking, and the C
 
 **Idea:** Run a CPU-intensive benchmark under DEmOS, periodically change the CPU frequency, measure the overhead and use it to estimate the switching latency.
 
-The multi-threaded version of the [CoreMark](https://www.eembc.org/coremark/) benchmark was used for this measurement, which is part of the benchmark suite included with [Thermobench](https://github.com/CTU-IIG/thermobench). CoreMark result is the number of iterations per second on a set of computations.
+The multi-threaded version of the [CoreMark](https://www.eembc.org/coremark/) benchmark was used for this measurement, which is part of the benchmark suite included with [Thermobench](https://github.com/CTU-IIG/thermobench). Output of the benchmark ("CoreMark score") is the number of iterations per second on a set of computations.
 
 The benchmark ran on the 4 cores in the A53 cluster of the CPU. A DEmOS configuration was used, with 1 ms time windows, and a frequency switch at the beginning of each time window.
 
-For each pair of measured frequencies, an idealized CoreMark score was computed as an average of the scores reached when running on each of the two frequencies individually. The overhead on each iteration was then computed for each data point as `overhead = 1 / reached_score - 1 / expected_score`. Then, the frequency switching latency was estimated as `latency = overhead / number_of_switches_per_iteration`. In the evaluation script written in Python, the latency is computed as follows:
+For each pair of measured frequencies, an idealized CoreMark score was computed as an average of the scores reached when running on each of the two frequencies individually. This idealized score was used to calculate the overhead and from it, estimate the switching latency:
 
 ```python
-expected_iters = (FIXED_AVG_ITERS_PER_SEC[cpu_frequency_1] + FIXED_AVG_ITERS_PER_SEC[cpu_frequency_2) / 2
-expected_period = 1 / expected_iters
-iterations_per_second = # ... read from the benchmark output
-periods = [1/i for i in iterations_per_second]
-latencies = [(p - expected_period) / (p / WINDOW_LENGTH) for p in periods]
+WINDOW_LENGTH = 1/1000  # 1 millisecond
+
+# if there was no switching overhead, the measured score should be the average of scores for the 2 CPU frequencies we are switching between
+expected_coremark_score = (AVG_SCORE[frequency1] + AVG_SCORE[frequency2]) / 2
+
+iteration_period = 1 / reached_coremark_score
+expected_period = 1 / expected_coremark_score
+
+total_overhead = iteration_period - expected_period
+switches_per_iteration = iteration_period / WINDOW_LENGTH
+latency = total_overhead / switches_per_iteration
 ```
 
 ## Implementation
