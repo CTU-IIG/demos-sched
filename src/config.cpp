@@ -210,6 +210,9 @@ Node Config::normalize_slice(const Node &slice,
 
     if (!norm_slice["cpu"]) {
         throw runtime_error("Missing cpu set in slice definition (`cpu` property)");
+    } else if (norm_slice["cpu"].as<string>() != "all") {
+        // validate that the cpulist is in correct format
+        cpu_set{ norm_slice["cpu"].as<string>() };
     }
     return norm_slice;
 }
