@@ -205,7 +205,7 @@ Configuration files are written in the YAML format. They can have
 either canonical or simplified form, with the latter being
 automatically converted to the former. Canonical form is most
 flexible, but for same cases a bit verbose. Verbosity can be reduced
-by using the simplified form. Both forms are described bellow.
+by using the simplified form. Both forms are described below.
 
 ### Canonical form of configuration file
 

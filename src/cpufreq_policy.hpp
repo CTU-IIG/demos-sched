@@ -110,6 +110,7 @@ public: ////////////////////////////////////////////////////////////////////////
         if (!active) return;
 
         // check that freq is between min-max and is one of the supported frequencies
+        // this check is only called in debug builds, because cpufreq does its own checking
         RUN_DEBUG(validate_frequency(freq));
 
         TRACE("Changing CPU frequency to `{}` for `{}`", freq_to_str(freq), name);
