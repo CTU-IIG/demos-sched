@@ -222,7 +222,8 @@ Configuration file is a mapping with the following keys:
     `sc_partition` and `be_partition` keys.
     - `cpu` is a string defining scheduling CPU constraints. The value can
       specify a single CPU by its zero-based number (e.g. `cpu: 1`), or a
-      range of CPUs (`cpu: 0-2`), or combination of both (`cpu: 0,2,5-7`).
+      range of CPUs (`cpu: 0-2`), or combination of both (`cpu:
+      0,2,5-7`) or string `all`, which means all available CPUs.
     - `sc_partition` and `be_partition` are strings referring to
       partition definitions by their `name`s.
 
