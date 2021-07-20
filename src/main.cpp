@@ -1,6 +1,7 @@
 #include "cgroup_setup.hpp"
 #include "config.hpp"
 #include "demos_scheduler.hpp"
+#include "lib/assert.hpp"
 #include "lib/check_lib.hpp"
 #include <sched.h>
 
@@ -137,6 +138,7 @@ int main(int argc, char *argv[])
         // === CONFIG LOADING ======================================================================
         // this print is useful to roughly measure startup times
         logger->debug("Starting DEmOS");
+        RUN_DEBUG(TRACE("Compiled in debug mode"));
         logger->trace("Loading configuration");
         Config config;
         if (!config_file.empty()) {
