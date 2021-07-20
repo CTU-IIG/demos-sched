@@ -48,6 +48,7 @@ test_normalization "missing slice definition" \
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100}] }]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: SC
     processes:
@@ -67,6 +68,7 @@ test_normalization "partition definition in window" \
     windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -83,6 +85,7 @@ windows:
 test_normalization "empty window with only 'length' is kept empty" \
 "{windows: [{length: 1000}]}" \
 "set_cwd: false
+demos_cpu: all
 partitions: ~
 windows:
   - length: 1000"
@@ -92,6 +95,7 @@ test_normalization "partition definition in window with one process" \
     windows: [ {length: 500, sc_partition: {cmd: proc1, budget: 500} } ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -110,6 +114,7 @@ test_normalization "default budget" \
     windows: [ {length: 500, sc_partition: [{cmd: proc1}] } ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -130,6 +135,7 @@ test_normalization "process as string" \
     windows: [ {length: 500, sc_processes: proc} ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -148,6 +154,7 @@ test_normalization "Processes as string" \
     windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -171,6 +178,7 @@ test_normalization "short-form jitter" \
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 50}] }]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: SC
     processes:

@@ -292,6 +292,13 @@ void Config::normalize()
                             "'set_cwd' must be set to 'false'");
     }
 
+    string demos_cpu = config["demos_cpu"] ? config["demos_cpu"].as<string>() : "all";
+    if (demos_cpu != "all") {
+        // validate that the cpulist is in correct format
+        cpu_set{ demos_cpu };
+    }
+    config.remove("demos_cpu");
+
     Node norm_partitions;
     for (const auto &part : config["partitions"]) {
         norm_partitions.push_back(normalize_partition(part, NAN));
@@ -310,6 +317,7 @@ void Config::normalize()
 
     Node norm_config;
     norm_config["set_cwd"] = set_cwd;
+    norm_config["demos_cpu"] = demos_cpu;
     norm_config["partitions"] = norm_partitions;
     norm_config["windows"] = norm_windows;
 
@@ -326,6 +334,7 @@ static Partition *find_partition(const string &name, Partitions &partitions)
 
 // TODO: Move this out of Config to new DemosSched class
 void Config::create_scheduler_objects(const CgroupConfig &c,
+                                      cpu_set &demos_cpuset,
                                       Windows &windows,
                                       Partitions &partitions)
 {
@@ -360,6 +369,9 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
     // Read current CPU affinity mask.
     cpu_set allowed_cpus;
     sched_getaffinity(0, allowed_cpus.size(), allowed_cpus.ptr());
+
+    auto demos_cpu_str = config["demos_cpu"].as<string>();
+    demos_cpuset = demos_cpu_str == "all" ? cpu_set(allowed_cpus) : cpu_set(demos_cpu_str);
 
     for (auto ywindow : config["windows"]) {
         int length = ywindow["length"].as<int>();

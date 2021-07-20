@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
                 mf_sync_message = optarg;
                 break;
             case 't': // scheduler timeout
-                scheduler_timeout = std::chrono::milliseconds{std::stoll(optarg)};
+                scheduler_timeout = std::chrono::milliseconds{ std::stoll(optarg) };
                 break;
             case 's': // rerun itself via systemd-run
                 systemd_run = true;
@@ -188,9 +188,10 @@ int main(int argc, char *argv[])
                             .power_policy = *pp };
         Partitions partitions;
         Windows windows;
+        cpu_set demos_cpu; // cpuset DEmOS process itself runs on
 
-        // load windows and partitions from config
-        config.create_scheduler_objects(cc, windows, partitions);
+        // load demos cpuset, windows and partitions from config
+        config.create_scheduler_objects(cc, demos_cpu, windows, partitions);
 
         logger->info("Parsed " + pluralize(partitions.size(), "partition") + " and " +
                      pluralize(windows.size(), "window"));
@@ -212,8 +213,14 @@ int main(int argc, char *argv[])
         //  as we don't want children to inherit RT priority
         struct sched_param sp = { .sched_priority = 99 };
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
-            logger->warn("Running demos without rt priority, consider running as root");
+            logger->warn("Running DEmOS without real-time priority, consider running as root");
         }
+
+        // configure CPU affinity for DEmOS
+        if (sched_setaffinity(0, demos_cpu.size(), demos_cpu.ptr()) == -1) {
+            logger->warn("Failed to set the CPU affinity for DEmOS");
+        }
+        logger->debug("DEmOS is running on CPUs '{}'", demos_cpu.as_list());
 
         // TODO: document that DEmOS cannot reliably schedule under 1 millisecond,
         //  because libev doesn't guarantee it
