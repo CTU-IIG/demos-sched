@@ -196,7 +196,7 @@ Example configs:
 Scheduled processes can cooperate with the DEmOS scheduler by using the
 `demos-sch` user library (`libdemos_sch_dep` dependency in meson in `./lib/`).
 
-See `./lib/demos-sch.h` for documentation of the API.
+See [./lib/demos-sch.h](./lib/demos-sch.h) for documentation of the API.
 
 
 ## Guide for writing configurations
