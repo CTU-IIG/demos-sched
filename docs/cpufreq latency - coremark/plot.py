@@ -8,15 +8,20 @@ import seaborn as sns
 import statistics
 from typing import NamedTuple, Sequence, Tuple
 
-FILE = "dataset.csv"
+SHOULD_SHOW = False
+
+FILE = "./dataset.csv"
+AVGS_FILE = "./fixed_averages.csv"
 FIGSIZE = (8, 4.5)
 
 WINDOW_LENGTH_S = 1 / 1000
 FREQS = ["600 MHz", "896 MHz", "1104 MHz", "1200 MHz"]
-FIXED_AVG_ITERS_PER_SEC = [6739.03414928, 10452.38503398, 13364.38873154, 14691.1160799]
+with open(AVGS_FILE) as fd:
+    FIXED_AVG_ITERS_PER_SEC =  [float(avg) for avg in fd.read().split(",")]
 
+FIG_TITLE = sys.argv[1]
 # which plots to render
-PLOTS = sys.argv[1:]
+PLOTS = sys.argv[2:]
 if len(PLOTS) == 0:
     PLOTS = ["freq", "period", "latency"]
     print("Rendering all plots... (freq, period, latency)")
@@ -38,7 +43,7 @@ PALETTE = sns.color_palette(desat=0.7)
 data = []
 with open(FILE, "r") as fd:
     for row in fd:
-        vals = row.split(";")
+        vals = row.split(",")
         label = vals[0].replace("_", "\n")
         is_fixed = "fixed" in label
         
@@ -68,9 +73,11 @@ def get_prop(prop_name: str, lst: Sequence[DataPoint] = data):
 
 if "freq" in PLOTS:
     fig, ax = plt.subplots(tight_layout=True, figsize=FIGSIZE)
-    sns.violinplot(data=get_prop("iters_per_s"), palette=get_prop("color"),
-            ax=ax, scale="width", inner="quartiles", saturation=1)
-    plt.setp(ax.collections, alpha=0.5)
+    sns.boxplot(data=get_prop("iters_per_s"), palette=get_prop("color"),
+            ax=ax, saturation=1)
+    #sns.violinplot(data=get_prop("iters_per_s"), palette=get_prop("color"),
+    #        ax=ax, scale="width", inner="quartiles", saturation=1)
+    #plt.setp(ax.collections, alpha=0.5)
 
     for i, avg in enumerate(get_prop("expected_iters")):
         if avg is None: continue
@@ -78,20 +85,22 @@ if "freq" in PLOTS:
 
     ax.grid(alpha=0.3)
 
-    ax.set_title("Coremark – 4 threads (A53 cluster)\nalternating frequencies in a 1ms interval")
+    ax.set_title(FIG_TITLE)
     ax.set_xticklabels(get_prop("label"), rotation=45)
     ax.set_ylabel("iterations / second")
 
     plt.savefig(".\charts\iterations_per_second.png")
     plt.savefig(".\charts\iterations_per_second.svg")
-    plt.show()
+    if SHOULD_SHOW: plt.show()
 
 
 if "period" in PLOTS:
     fig, ax = plt.subplots(tight_layout=True, figsize=FIGSIZE)
-    sns.violinplot(data=get_prop("periods_s"), palette=get_prop("color"),
-            ax=ax, scale="width", inner="quartiles", saturation=1)
-    plt.setp(ax.collections, alpha=0.5)
+    sns.boxplot(data=get_prop("periods_s"), palette=get_prop("color"),
+            ax=ax, saturation=1)
+    #sns.violinplot(data=get_prop("periods_s"), palette=get_prop("color"),
+    #        ax=ax, scale="width", inner="quartiles", saturation=1)
+    #plt.setp(ax.collections, alpha=0.5)
 
     for i, avg in enumerate(get_prop("expected_period")):
         if avg is None: continue
@@ -100,33 +109,35 @@ if "period" in PLOTS:
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, pos: "{:.0f} µs".format(1000 * 1000 * x)))
     ax.grid(alpha=0.3)
 
-    ax.set_title("Coremark – 4 threads (A53 cluster)\nalternating frequencies in a 1ms interval")
+    ax.set_title(FIG_TITLE)
     ax.set_xticklabels(get_prop("label"), rotation=45)
     ax.set_ylabel("iteration duration")
 
     plt.savefig(".\charts\iteration_period.png")
     plt.savefig(".\charts\iteration_period.svg")
-    plt.show()
+    if SHOULD_SHOW: plt.show()
 
 
 if "latency" in PLOTS:
     data_alt = [d for d in data if d.is_alternating]
     fig, ax = plt.subplots(tight_layout=True, figsize=FIGSIZE)
-    sns.violinplot(data=get_prop("latencies_s", data_alt), palette=get_prop("color", data_alt),
-            ax=ax, scale="width", inner="quartiles", saturation=1)
-    plt.setp(ax.collections, alpha=0.5)
+    sns.boxplot(data=get_prop("latencies_s", data_alt), palette=get_prop("color", data_alt),
+            ax=ax, saturation=1)
+    #sns.violinplot(data=get_prop("latencies_s", data_alt), palette=get_prop("color", data_alt),
+    #        ax=ax, scale="width", inner="quartiles", saturation=1)
+    #plt.setp(ax.collections, alpha=0.5)
 
     ax.set_ylim(bottom=0)
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, pos: "{:.0f} µs".format(1000 * 1000 * x)))
     ax.grid(alpha=0.3)
 
-    ax.set_title("Coremark – 4 threads (A53 cluster)\nalternating frequencies in a 1ms interval")
+    ax.set_title(FIG_TITLE)
     ax.set_xticklabels(get_prop("label", data_alt), rotation=45)
     ax.set_ylabel("frequency switch latency")
 
     plt.savefig(".\charts\latency.png")
     plt.savefig(".\charts\latency.svg")
-    plt.show()
+    if SHOULD_SHOW: plt.show()
 
 
 

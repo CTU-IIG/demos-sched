@@ -1,0 +1,10 @@
+*swp
+/build/
+/build-aarch64/
+
+tags
+Session.vim
+demos-sched.creator.user
+
+/.idea/
+/.vscode/
