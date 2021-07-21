@@ -55,8 +55,10 @@ static void print_help()
             "  -c <CONFIG_FILE>      path to configuration file\n"
             "  -C <CONFIG>           inline configuration in YAML format\n"
             // TODO: list supported policies and short descriptions, probably in a separate function
-            "  [-p <POWER_POLICY>]   name of selected power management policy; if multiple instances of DEmOS\n"
-            "                         are running in parallel, this parameter must not be passed to more than a single one\n"
+            "  [-p <POWER_POLICY>]   name and optional arguments of the selected power management policy;\n"
+            "                         <POWER_POLICY> has the following form: <NAME>[:ARG1[,ARG2[,...]]]; \n"
+            "                         if multiple instances of DEmOS are running in parallel, this parameter \n"
+            "                         must not be passed to more than a single one\n"
             "  [-g <CGROUP_NAME>]    name of root cgroups, default \"" << opt_demos_cg_name << "\"\n"
             "                         NOTE: this name must be unique for each running instance of DEmOS\n"
             "  [-m <WINDOW_MESSAGE>] print WINDOW_MESSAGE to stdout at the beginning of each window;\n"

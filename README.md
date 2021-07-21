@@ -53,28 +53,32 @@ Currently, the following `cgroup` hierarchies are required:
 
 ## Usage
 
-    Usage: demos-sched <OPTIONS>
-      -c <CONFIG_FILE>      path to configuration file
-      -C <CONFIG>           inline configuration in YAML format
-      [-p <POWER_POLICY>]   name of selected power management policy; if multiple instances of DEmOS
-                             are running in parallel, this parameter must not be passed to more than a single one
-      [-g <CGROUP_NAME>]    name of root cgroups, default "demos"
-                             NOTE: this name must be unique for each running instance of DEmOS
-      [-m <WINDOW_MESSAGE>] print WINDOW_MESSAGE to stdout at the beginning of each window;
-                             this may be useful for external synchronization with scheduler windows
-      [-M <MF_MESSAGE>]     print MF_MESSAGE to stdout at the beginning of each major frame
-      [-t <TIMEOUT_MS>]     scheduler timeout (milliseconds); if all scheduled processes do not exit in
-                             this interval, DEmOS stops them and exits
-      [-s]                  rerun itself via systemd-run to get access to unified cgroup hierarchy
-      [-d]                  dump config file without execution
-      [-h]                  print this message
-    To control logger output, use the following environment variables:
-      SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)
-        2 loggers are defined: 'main' and 'process'; to set a different log level for process logger,
-        use e.g. 'SPDLOG_LEVEL=debug,process=info'
-      DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time
-      DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, 
-        even when it is convinced that the attached terminal doesn't support it
+```
+Usage: demos-sched <OPTIONS>
+  -c <CONFIG_FILE>      path to configuration file
+  -C <CONFIG>           inline configuration in YAML format
+  [-p <POWER_POLICY>] name and optional arguments of the selected power management policy;
+                         <POWER_POLICY> has the following form: <NAME>[:ARG1[,ARG2[,...]]]; 
+                         if multiple instances of DEmOS are running in parallel, this parameter 
+                         must not be passed to more than a single one
+  [-g <CGROUP_NAME>]    name of root cgroups, default "demos"
+                         NOTE: this name must be unique for each running instance of DEmOS
+  [-m <WINDOW_MESSAGE>] print WINDOW_MESSAGE to stdout at the beginning of each window;
+                         this may be useful for external synchronization with scheduler windows
+  [-M <MF_MESSAGE>]     print MF_MESSAGE to stdout at the beginning of each major frame
+  [-t <TIMEOUT_MS>]     scheduler timeout (milliseconds); if all scheduled processes do not exit in
+                         this interval, DEmOS stops them and exits
+  [-s]                  rerun itself via systemd-run to get access to unified cgroup hierarchy
+  [-d]                  dump config file without execution
+  [-h]                  print this message
+To control logger output, use the following environment variables:
+  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)
+    2 loggers are defined: 'main' and 'process'; to set a different log level for the process logger,
+    use e.g. 'SPDLOG_LEVEL=debug,process=info'
+  DEMOS_PLAIN_LOG flag - if present, logs will not contain colors and time
+  DEMOS_FORCE_COLOR_LOG flag - if present, logger will always print colored logs, 
+    even when it is convinced that the attached terminal doesn't support it
+```
 
 Format of the configuration files is documented in the section [Guide for writing configurations](#Guide-for-writing-configurations).
 
