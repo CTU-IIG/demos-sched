@@ -37,6 +37,7 @@ jobs:
         run: nix-build test/test_build.nix --arg pkgsUnstable 'import <nixpkgs> {}'
 
   tests-unified-cgroup:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - {uses: actions/checkout@v2, with: {submodules: true, fetch-depth: 0}}
