@@ -1,5 +1,5 @@
 # there are 3 groups of rules in this Makefile:
-#  1) native build type selection - when building DEmOS natively, you must first select
+#  1) native build type selection - when building DEmOS natively, these allow to select
 #     the build type - one of $(BUILD_TYPES) (defined below)
 #  2) then, you can run `make all/clean/test` which builds DEmOS using the configured build type
 #  3) ARM64 cross-compilation in release mode - `make aarch64`
