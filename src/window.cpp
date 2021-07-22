@@ -59,6 +59,8 @@ void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_t
     }
 
     // option 1) run BE immediately after SC
+    // per-process frequency validation currently assumes option 2) here,
+    //  doesn't work correctly with option 1)
     // slice->start_be(current_time);
 
     // option 2) wait until all SC partitions finish

@@ -35,6 +35,9 @@ private:
     std::optional<std::filesystem::path> config_file_path{};
     int anonymous_partition_counter = 0;
 
+    void validate_config();
+    void validate_per_process_freq_feasibility();
+
     YAML::Node normalize_window(const YAML::Node &win, YAML::Node &partitions);
     YAML::Node normalize_partition(const YAML::Node &part, float total_budget);
     YAML::Node normalize_slice(const YAML::Node &slice, float win_length, YAML::Node &partitions);

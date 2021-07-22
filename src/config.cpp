@@ -302,6 +302,155 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
     return norm_win;
 }
 
+/**
+ * Check if per-process frequencies for the i.MX8 are feasible; that is, if each process
+ * is guaranteed to have the correct frequency set and there won't ever be 2 processes
+ * with different per-process frequency running on the same CPU cluster at the same time.
+ *
+ * MK: This is quite monolithic - if you have any idea how to split it up, feel free to do so.
+ *
+ * FIXME: currently, this whole section is i.MX8-specific; if it was moved somewhere where
+ *  the available cpufreq policies are already known, it could be generic for any CPU;
+ *  however, it would be system-dependent and could not be checked ahead-of-time on another machine
+ */
+void Config::validate_per_process_freq_feasibility()
+{
+    // i.MX8 frequency bitmap (4 possible frequencies)
+    using Imx8FreqMap = bitset<4>;
+    const std::array<cpu_set, 2> imx8_cpus{ 0b1111, 0b110000 };
+    const cpu_set imx8_all_cpus(0b111111);
+
+    // for each partition, find out which frequencies the processes inside are requesting
+    map<string, std::array<Imx8FreqMap, imx8_cpus.size()>> requested_freqs{};
+    for (const auto &part : config["partitions"]) {
+        Imx8FreqMap part_freqs_a53(0);
+        Imx8FreqMap part_freqs_a72(0);
+        for (const auto &proc : part["processes"]) {
+            if (proc["_a53_freq"]) part_freqs_a53.set(proc["_a53_freq"].as<size_t>());
+            if (proc["_a72_freq"]) part_freqs_a72.set(proc["_a72_freq"].as<size_t>());
+        }
+        requested_freqs[part["name"].as<string>()] = { part_freqs_a53, part_freqs_a72 };
+    }
+
+    // TODO: validate that all freq requests are used (e.g. if a process requests
+    //  an A53 freq, check that it ever runs on the A53 cluster)
+
+    // find all requested frequencies for each window (separately for SC and BE
+    //  partitions, as they run separately), and check if there are any collisions
+    // it is OK if there are multiple frequencies, all from the same partition;
+    //  it is also OK if multiple partitions require the same single frequency;
+    //  otherwise, a runtime collision may potentially occur and we throw an error
+    int window_i = -1;
+    bool collision_found = false;
+    for (const auto &win : config["windows"]) {
+        window_i++;
+        for (const string &part_key : { "sc_partition", "be_partition" }) {
+            std::array<Imx8FreqMap, imx8_cpus.size()> win_freqs{ 0, 0 };
+            for (const auto &slice : win["slices"]) {
+                if (!slice[part_key]) continue; // no SC/BE partition
+                auto slice_cpu = parse_cpu_set(slice["cpu"], imx8_all_cpus);
+
+                size_t i = 0;
+                // iterate in parallel over CPU clusters and corresponding requested frequencies
+                // we already checked that all partition references are valid, this lookup is safe
+                for (Imx8FreqMap req_freq : requested_freqs[slice[part_key].as<string>()]) {
+                    Imx8FreqMap &win_freq = win_freqs[i];
+                    cpu_set cluster_cpu = imx8_cpus[i];
+                    i++;
+
+                    if (req_freq.none()) continue; // no freq constraints
+                    // if there's no overlap with the cluster, skip it
+                    if (!(cluster_cpu & slice_cpu)) continue;
+
+                    if (win_freq.none() || (win_freq | req_freq).count() == 1) {
+                        // no previous constraints or a single compatible frequency, feasible so far
+                        win_freq |= req_freq;
+                    } else {
+                        // there are at least 2 different freqs, and as both sets are non-empty,
+                        //  that's a potential runtime collision
+                        // TODO: find the offending process tuple and report it in the error message
+                        collision_found = true;
+                        // don't throw the error, as that would only show the first one;
+                        //  instead, log it and then throw error after all checks are done
+                        logger->error("Unfeasible combination of fixed per-process frequencies was "
+                                      "specified in the configuration."
+                                      "\n\tThe collision occurs between processes in window #{},"
+                                      " between {} partitions on CPU cluster '{}'."
+                                      "\n\tA process from the partition '{}' collides with a "
+                                      "process from one of the previous partitions "
+                                      "scheduled inside the window.",
+                                      window_i,
+                                      part_key == "sc_partition" ? "SC" : "BE",
+                                      cluster_cpu.as_list(),
+                                      slice[part_key].as<string>());
+                    }
+                }
+            }
+        }
+    }
+
+    if (collision_found) {
+        throw runtime_error("Unfeasible per-process frequencies in configuration; "
+                            "see above for more detailed information");
+    }
+}
+
+/**
+ * Validates that all referenced partitions exist, slices don't have overlapping cpusets,
+ * and that per-process frequencies are feasible, if specified.
+ *
+ * It would be simpler, and significantly to do the validation using the created scheduler objects
+ * rather than the YAML config, but I want the validation to take place even when
+ * only dumping normalized config, and creating an intermediate struct-based config
+ * format is probably currently too much work for too little benefit.
+ */
+void Config::validate_config()
+{
+    // check if all references to partition names are valid
+    int window_i = -1;
+    for (const auto &win : config["windows"]) {
+        window_i++;
+        int slice_i = -1;
+        for (const auto &slice : win["slices"]) {
+            slice_i++;
+            for (const auto &part_key : { "sc_partition", "be_partition" }) {
+                if (!slice[part_key]) continue;
+                // FIXME: slow, create a std::set first for the partition names
+                auto searched_name = slice[part_key].as<string>();
+                for (const auto &part : config["partitions"]) {
+                    if (searched_name == part["name"].as<string>()) {
+                        goto found;
+                    }
+                }
+                throw runtime_error("Reference to unknown partition '" + searched_name +
+                                    "' in window #" + to_string(window_i) + ", slice #" +
+                                    to_string(slice_i));
+            found:;
+            }
+        }
+    }
+
+    // check if slices in each window have any CPU set overlaps
+    window_i = -1;
+    for (const auto &win : config["windows"]) {
+        window_i++;
+        cpu_set acc{};
+        for (const auto &slice : win["slices"]) {
+            auto cpu_str = slice["cpu"].as<string>();
+            auto slice_cpu = parse_cpu_set(slice["cpu"], 0x0);
+            // if a slice has `cpu: all`, there must not be any other slices in the window
+            // else, check for overlap with previous slices
+            if ((cpu_str == "all" && win["slices"].size() > 1) || acc & slice_cpu) {
+                throw runtime_error("Slices in window #" + to_string(window_i) +
+                                    " have overlapping CPU sets");
+            }
+            acc |= slice_cpu;
+        }
+    }
+
+    validate_per_process_freq_feasibility();
+}
+
 void Config::normalize()
 {
     if (!config.IsMap()) {
@@ -357,6 +506,7 @@ void Config::normalize()
     norm_config["windows"] = norm_windows;
 
     config = norm_config;
+    validate_config();
 }
 
 static Partition *find_partition(const string &name, Partitions &partitions)
@@ -364,7 +514,8 @@ static Partition *find_partition(const string &name, Partitions &partitions)
     for (auto &p : partitions) {
         if (p.get_name() == name) return &p;
     }
-    throw runtime_error("Could not find partition: " + name);
+    // already checked during config validation above
+    throw runtime_error("not reachable");
 }
 
 // TODO: Move this out of Config to new DemosSched class
@@ -441,6 +592,8 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
                   cpus.as_list(),
                   allowed_cpus.as_list(),
                   allowed_cpus.lowest());
+                // FIXME: this may cause silent collisions even
+                //  after we checked for overlaps during config validation
                 cpus.zero();
                 cpus.set(allowed_cpus.lowest());
 
