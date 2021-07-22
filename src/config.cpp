@@ -222,6 +222,8 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
 
     if (win["slices"] && (win["sc_partition"] || win["be_partition"]))
         throw runtime_error("Cannot have both 'slices' and '*_partition' in window definition");
+    if (win["slices"] && (win["cpu"]))
+        throw runtime_error("Cannot have both 'slices' and 'cpu' in window definition");
     if (win["slices"] && (win["sc_processes"] || win["be_processes"]))
         throw runtime_error("Cannot have both 'slices' and '*_processes' in window definition");
     if ((win["sc_partition"] && win["sc_processes"]) ||
@@ -238,13 +240,8 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
                 slices.push_back(
                   normalize_slice(slice, static_cast<float>(win_length), partitions));
             norm_win[k] = slices;
-        } else if (k == "sc_partition")
-            ;
-        else if (k == "be_partition")
-            ;
-        else if (k == "sc_processes")
-            ;
-        else if (k == "be_processes")
+        } else if (k == "cpu" || k == "sc_partition" || k == "be_partition" ||
+                   k == "sc_processes" || k == "be_processes")
             ;
         else
             throw runtime_error("Unexpected config key in window definition: " + k);
@@ -258,9 +255,10 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
     if (!norm_win["slices"]) {
         // support inline slice definition inside window
         Node slice;
-        slice["cpu"] = "all";
+        // set first to keep a more readable order
+        if (!win["cpu"]) slice["cpu"] = "all";
         for (const string &key :
-             { "sc_partition", "be_partition", "sc_processes", "be_processes" }) {
+             { "cpu", "sc_partition", "be_partition", "sc_processes", "be_processes" }) {
             if (win[key]) slice[key] = win[key];
         }
         norm_win["slices"].push_back(
