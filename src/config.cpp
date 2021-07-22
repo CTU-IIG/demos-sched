@@ -8,6 +8,21 @@ using namespace std;
 using namespace YAML;
 namespace fs = std::filesystem;
 
+template<typename T_all>
+static cpu_set parse_cpu_set(const string &cpulist, T_all all_cpus)
+{
+    // "all" = use all available CPUs
+    //  MK: imo, it would be nicer to use *, but that (along with most other
+    //   special characters) has special meaning in YAML, and must be quoted
+    if (cpulist == "all") return cpu_set(all_cpus);
+    return cpu_set(cpulist);
+}
+template<typename T_all>
+static cpu_set parse_cpu_set(const YAML::Node &node, T_all all_cpus)
+{
+    return parse_cpu_set<T_all>(node.as<string>(), all_cpus);
+}
+
 void Config::load_from_file(const string &file_name)
 {
     try {
@@ -37,7 +52,7 @@ static Node normalize_process(const Node &proc, float default_budget)
     if (proc.IsScalar()) {
         norm_proc["cmd"] = proc.as<string>();
     } else {
-        for (auto key : proc) {
+        for (const auto &key : proc) {
             auto k = key.first.as<string>();
             if (k == "cmd") {
                 // which shell command to run to start the process
@@ -119,7 +134,7 @@ Node Config::normalize_partition(
     if (part.IsSequence()) { // seq. of processes
         processes = normalize_processes(part, total_budget);
     } else if (part.IsMap()) {
-        for (auto key : part) {
+        for (const auto &key : part) {
             auto k = key.first.as<string>();
             if (k == "name")
                 norm_part[k] = part[k].as<string>();
@@ -185,7 +200,7 @@ Node Config::normalize_slice(const Node &slice,
 {
     Node norm_slice;
 
-    for (auto key : slice) {
+    for (const auto &key : slice) {
         auto k = key.first.as<string>();
         if (k == "cpu")
             norm_slice[k] = slice[k].as<string>();
@@ -210,10 +225,9 @@ Node Config::normalize_slice(const Node &slice,
 
     if (!norm_slice["cpu"]) {
         throw runtime_error("Missing cpu set in slice definition (`cpu` property)");
-    } else if (norm_slice["cpu"].as<string>() != "all") {
-        // validate that the cpulist is in correct format
-        cpu_set{ norm_slice["cpu"].as<string>() };
     }
+    // validate that the cpulist is in correct format
+    parse_cpu_set(norm_slice["cpu"], 0);
     return norm_slice;
 }
 
@@ -233,7 +247,7 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
         (win["be_partition"] && win["be_processes"]))
         throw runtime_error("Cannot have both '*_partition' and '*_processes' in the same window");
 
-    for (auto key : win) {
+    for (const auto &key : win) {
         auto k = key.first.as<string>();
         if (k == "length")
             norm_win[k] = win_length;
@@ -278,6 +292,11 @@ void Config::normalize()
         throw runtime_error("Config must be YAML mapping node");
     }
 
+    // TODO: allow setting power policy in the config file
+
+    // TODO: change `partitions` from list of definitions to a map from partition
+    //  name to process list
+
     // clang-format off
     bool set_cwd = config["set_cwd"]
         ? config_file_path
@@ -293,10 +312,8 @@ void Config::normalize()
     }
 
     string demos_cpu = config["demos_cpu"] ? config["demos_cpu"].as<string>() : "all";
-    if (demos_cpu != "all") {
-        // validate that the cpulist is in correct format
-        cpu_set{ demos_cpu };
-    }
+    // validate that the cpulist is in correct format
+    parse_cpu_set(demos_cpu, 0);
     config.remove("demos_cpu");
 
     Node norm_partitions;
@@ -349,10 +366,10 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
         logger->trace("Using current working directory for all processes");
     }
 
-    for (auto ypart : config["partitions"]) {
+    for (const auto &ypart : config["partitions"]) {
         partitions.emplace_back(
           c.freezer_cg, c.cpuset_cg, c.unified_cg, ypart["name"].as<string>());
-        for (auto yprocess : ypart["processes"]) {
+        for (const auto &yprocess : ypart["processes"]) {
             auto budget = chrono::milliseconds(yprocess["budget"].as<int>());
             auto budget_jitter = chrono::milliseconds(yprocess["jitter"].as<int>());
             partitions.back().add_process(c.loop,
@@ -370,16 +387,15 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
     cpu_set allowed_cpus;
     sched_getaffinity(0, allowed_cpus.size(), allowed_cpus.ptr());
 
-    auto demos_cpu_str = config["demos_cpu"].as<string>();
-    demos_cpuset = demos_cpu_str == "all" ? cpu_set(allowed_cpus) : cpu_set(demos_cpu_str);
+    demos_cpuset = parse_cpu_set(config["demos_cpu"], allowed_cpus);
 
-    for (auto ywindow : config["windows"]) {
+    for (const auto &ywindow : config["windows"]) {
         int length = ywindow["length"].as<int>();
 
         auto budget = chrono::milliseconds(length);
         Window &w = windows.emplace_back(c.loop, budget, c.power_policy);
 
-        for (auto yslice : ywindow["slices"]) {
+        for (const auto &yslice : ywindow["slices"]) {
             Partition *sc_part_ptr = nullptr, *be_part_ptr = nullptr;
             if (yslice["sc_partition"]) {
                 sc_part_ptr = find_partition(yslice["sc_partition"].as<string>(), partitions);
@@ -388,11 +404,7 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
                 be_part_ptr = find_partition(yslice["be_partition"].as<string>(), partitions);
             }
 
-            // "all" = use all available CPUs
-            //  MK: imo, it would be nicer to use *, but that (along with most other
-            //   special characters) has special meaning in YAML, and must be quoted
-            auto cpu_str = yslice["cpu"].as<string>();
-            cpu_set cpus = cpu_str == "all" ? cpu_set(allowed_cpus) : cpu_set(cpu_str);
+            cpu_set cpus = parse_cpu_set(yslice["cpu"], allowed_cpus);
 
             if ((cpus & allowed_cpus).count() == 0) {
                 logger->warn(
