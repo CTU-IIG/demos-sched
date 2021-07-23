@@ -22,7 +22,7 @@ using std::string;
 using CpuFrequencyHz = uint64_t;
 
 /**
- * NOTE: This class assumes that cpufreq is supported and write-able,
+ * NOTE: This class assumes that `cpufreq` is supported and write-able,
  *       and if `intel_pstate` driver is used, it is switched to passive mode.
  */
 class CpufreqPolicy
@@ -64,6 +64,11 @@ public: ////////////////////////////////////////////////////////////////////////
         , affected_cores{ read_affected_cpus() }
         , active{ affected_cores.count() > 0 }
     {
+        if (!active) {
+            logger->warn("Cpufreq policy '{}' is not active, as all affected cores are offline",
+                         name);
+        }
+
         if (original_governor == "userspace") {
             logger->warn(
               "`cpufreq` governor is already set to 'userspace'."
@@ -81,8 +86,10 @@ public: ////////////////////////////////////////////////////////////////////////
         fs::path freq_path(policy_dir / "scaling_setspeed");
         fd_freq = CHECK(open(freq_path.string().c_str(), O_RDWR | O_NONBLOCK));
 
-        logger->debug("Initialized a cpufreq policy object `{}`; (frequencies: min=`{}`, max=`{}`, "
-                      "available: `{}`)",
+        logger->debug("Initialized a `cpufreq` policy object '{}'; (affected CPUs: '{}', "
+                      "frequencies: min='{}', max='{}', "
+                      "available: '{}')",
+                      affected_cores.as_list(),
                       name,
                       freq_to_str(min_frequency),
                       freq_to_str(max_frequency),
@@ -98,7 +105,7 @@ public: ////////////////////////////////////////////////////////////////////////
     }
 
     /**
-     * Sets core frequency for all cores under this cpufreq policy.
+     * Sets core frequency for all cores under this `cpufreq` policy.
      *
      * NOTE: this call seems to be blocking, and on our i.MX8 board, it apparently takes
      *  on the order of 100µs to complete; the code in window.cpp is structured so that
@@ -113,11 +120,11 @@ public: ////////////////////////////////////////////////////////////////////////
         // this check is only called in debug builds, because cpufreq does its own checking
         RUN_DEBUG(validate_frequency(freq));
 
-        TRACE("Changing CPU frequency to `{}` for `{}`", freq_to_str(freq), name);
+        TRACE("Changing CPU frequency to '{}' for '{}'", freq_to_str(freq), name);
         // cpufreq uses kHz, we have Hz
         auto freq_str = std::to_string(freq / 1000);
         CHECK_MSG(write(fd_freq, freq_str.c_str(), freq_str.size()),
-                  "Could not set frequency for cpufreq policy `" + name + "`");
+                  "Could not set frequency for `cpufreq` policy '" + name + "'");
     }
 
 private: ///////////////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +175,7 @@ private: ///////////////////////////////////////////////////////////////////////
         auto is = file_open<std::ifstream>(policy_dir / "scaling_governor", false);
         string current_gov;
         if (!(is >> current_gov)) {
-            throw runtime_error("Failed to read current cpufreq governor for policy `" + name +
+            throw runtime_error("Failed to read current `cpufreq` governor for policy `" + name +
                                 "`");
         }
         return current_gov;
@@ -179,11 +186,11 @@ private: ///////////////////////////////////////////////////////////////////////
         if (!active) return;
         if (governor == current_governor) return;
 
-        logger->trace("Setting cpufreq governor for `{}` to `{}`", name, governor);
+        logger->trace("Setting `cpufreq` governor for '{}' to '{}'", name, governor);
 
         auto os = file_open<std::ofstream>(policy_dir / "scaling_governor", false);
         if (!(os << governor)) {
-            throw runtime_error("Failed to set cpufreq governor to `" + governor +
+            throw runtime_error("Failed to set `cpufreq` governor to `" + governor +
                                 "` for policy `" + name + "`");
         }
         current_governor = governor;

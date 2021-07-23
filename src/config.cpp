@@ -382,18 +382,19 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
             cpu_set cpus = cpu_str == "all" ? cpu_set(allowed_cpus) : cpu_set(cpu_str);
 
             if ((cpus & allowed_cpus).count() == 0) {
-                logger->warn("Slice is supposed to run on CPU cores `{}`, but DEmOS can only"
-                             "\n\trun on cores '{}' (the remaining cores are either not present on the"
-                             "\n\tcurrent system or DEmOS has restricted CPU affinity); the slice will"
-                             "\n\trun on core '{}' instead (the lowest allowed CPU core)",
-                             cpus.as_list(),
-                             allowed_cpus.as_list(),
-                             allowed_cpus.lowest());
+                logger->warn(
+                  "Slice is supposed to run on CPU cores '{}', but DEmOS can only"
+                  "\n\trun on cores '{}' (the remaining cores are either not present on the"
+                  "\n\tcurrent system or DEmOS has restricted CPU affinity); the slice will"
+                  "\n\trun on core '{}' instead (the lowest allowed CPU core)",
+                  cpus.as_list(),
+                  allowed_cpus.as_list(),
+                  allowed_cpus.lowest());
                 cpus.zero();
                 cpus.set(allowed_cpus.lowest());
 
             } else if ((cpus & allowed_cpus) != cpus) {
-                logger->warn("Slice will run on CPU cores `{}` instead of `{}`, as the remaining "
+                logger->warn("Slice will run on CPU cores '{}' instead of '{}', as the remaining "
                              "cores are either not available on current system or DEmOS is not "
                              "allowed to run on them due to configured process CPU affinity",
                              (cpus & allowed_cpus).as_list(),
