@@ -127,6 +127,31 @@ public: ////////////////////////////////////////////////////////////////////////
                   "Could not set frequency for `cpufreq` policy '" + name + "'");
     }
 
+    /** Get the n-th lowest frequency available on this `cpufreq` policy. */
+    [[nodiscard]] CpuFrequencyHz get_freq(size_t index) const
+    {
+        if (!available_frequencies) {
+            throw runtime_error(
+              "Cannot get frequency by index for `cpufreq` policy '" + name +
+              "', because the list of available frequencies is not available (some drivers do not "
+              "provide it, most notably the `intel_pstate` driver used on Intel processors)");
+        }
+        if (index >= available_frequencies->size()) {
+            throw runtime_error("Tried to get an out-of-bounds frequency #'" +
+                                std::to_string(index) + "' for `cpufreq` policy '" + name +
+                                "' (there are only '" +
+                                std::to_string(available_frequencies->size()) +
+                                "' defined frequencies)");
+        }
+        return available_frequencies->at(index);
+    }
+
+    void write_frequency_i(size_t index)
+    {
+        if (!active) return;
+        write_frequency(get_freq(index));
+    }
+
 private: ///////////////////////////////////////////////////////////////////////////////////////////
     static string freq_to_str(CpuFrequencyHz freq)
     {
