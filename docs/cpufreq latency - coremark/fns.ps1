@@ -1,6 +1,9 @@
 if (-not (Get-Variable SSH_DIR -ErrorAction Ignore)) {
 	throw "`$SSH_DIR not set."
 }
+if (-not (Get-Variable FREQS -ErrorAction Ignore)) {
+	throw "`$FREQS not set."
+}
 if (-not (Get-Variable FIG_TITLE -ErrorAction Ignore)) {
 	throw "`$FIG_TITLE not set."
 }
@@ -31,17 +34,21 @@ function sort-files {
 }
 
 function csv {
+	$null = mkdir -Force .\csv
+	
 	ls .\dataset -Directory | ? {-not $_.Name.StartsWith("_")} | % {
 		Select-String -Path $_\* -Pattern "Iterations/Sec" -Raw
 			| % {($_ -split ":")[1].Trim()}
 			| Join-String -Separator "," -OutputPrefix ($_.Name + ",")
-	} >.\dataset.csv
+	} >.\csv\dataset.csv
 	
 	ls .\dataset -Directory -Filter "*fixed*" | % {
 		Select-String -Path $_\* -Pattern "Iterations/Sec" -Raw
 			| % {($_ -split ":")[1].Trim()}
 			| measure -Average
-	} | Join-String Average "," >.\fixed_averages.csv
+	} | Join-String Average "," >.\csv\fixed_averages.csv
+	
+	$FREQS -join "," > .\csv\freqs.csv
 }
 
 function plot {

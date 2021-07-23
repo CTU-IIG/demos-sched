@@ -10,14 +10,16 @@ from typing import NamedTuple, Sequence, Tuple
 
 SHOULD_SHOW = False
 
-FILE = "./dataset.csv"
-AVGS_FILE = "./fixed_averages.csv"
+FILE = "./csv/dataset.csv"
+FREQS_FILE = "./csv/freqs.csv"
+AVGS_FILE = "./csv/fixed_averages.csv"
 FIGSIZE = (8, 4.5)
 
 WINDOW_LENGTH_S = 1 / 1000
-FREQS = ["600 MHz", "896 MHz", "1104 MHz", "1200 MHz"]
+with open(FREQS_FILE) as fd:
+    FREQS =  fd.readline().strip().split(",")
 with open(AVGS_FILE) as fd:
-    FIXED_AVG_ITERS_PER_SEC =  [float(avg) for avg in fd.read().split(",")]
+    FIXED_AVG_ITERS_PER_SEC =  [float(avg) for avg in fd.readline().strip().split(",")]
 
 FIG_TITLE = sys.argv[1]
 # which plots to render
