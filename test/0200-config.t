@@ -11,7 +11,10 @@ test_normalization() {
     local cfg_in=$2
     local cfg_out_expected=$3
 
+    echo "======== NEXT TEST =======================" >&2
     local cfg_out=$(demos-sched -d -C "$cfg_in" 2>&1)
+    # log the output for easier debugging when a test fails
+    echo "$cfg_out" >&2
     is "$cfg_out" "$cfg_out_expected" "$test_name"
 }
 
@@ -183,13 +186,13 @@ windows:
 
 export DEMOS_PLAIN_LOG=1
 test_normalization "missing budget in canonical config" \
-        "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
-		">>> [error] Exception: Missing budget in process definition"
+    "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
+    ">>> [error] Exception: Missing budget in process definition"
 test_normalization "missing cpu set for slice" \
-        "windows: [{length: 100, slices: [{}]}]" \
-        ">>> [error] Exception: Missing cpu set in slice definition (\`cpu\` property)"
+    "windows: [{length: 100, slices: [{}]}]" \
+    ">>> [error] Exception: Missing cpu set in slice definition (\`cpu\` property)"
 test_normalization "set_cwd: yes for inline config string fails" \
-		"set_cwd: yes" \
-		">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
+    "set_cwd: yes" \
+    ">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
 out=$(demos-sched -d -c <(echo "{}"))
 is $? 1 "config from FIFO file is not accepted without 'set_cwd: false'"
