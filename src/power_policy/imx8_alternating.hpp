@@ -34,11 +34,11 @@ public:
         }
 
         try {
-            f1_a53 = a53_pol.available_frequencies->at(std::stoul(a53_f1_str));
-            f2_a53 = a53_pol.available_frequencies->at(std::stoul(a53_f2_str));
+            f1_a53 = a53_pol.get_freq(std::stoul(a53_f1_str));
+            f2_a53 = a53_pol.get_freq(std::stoul(a53_f2_str));
 
-            f1_a72 = a72_pol.available_frequencies->at(std::stoul(a72_f1_str));
-            f2_a72 = a72_pol.available_frequencies->at(std::stoul(a72_f2_str));
+            f1_a72 = a72_pol.get_freq(std::stoul(a72_f1_str));
+            f2_a72 = a72_pol.get_freq(std::stoul(a72_f2_str));
         } catch (...) {
             throw_with_nested(
               runtime_error("All power policy arguments must be integers in the range <0, 3>"));

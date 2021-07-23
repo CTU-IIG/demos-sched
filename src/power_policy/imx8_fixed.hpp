@@ -30,8 +30,8 @@ public:
 
         CpuFrequencyHz a53_freq, a72_freq;
         try {
-            a53_freq = a53_pol.available_frequencies->at(std::stoul(a53_freq_i));
-            a72_freq = a72_pol.available_frequencies->at(std::stoul(a72_freq_i));
+            a53_freq = a53_pol.get_freq(std::stoul(a53_freq_i));
+            a72_freq = a72_pol.get_freq(std::stoul(a72_freq_i));
         } catch (...) {
             throw runtime_error("Both power policy arguments must be integers in the range <0, 3>");
         }
