@@ -1,23 +1,27 @@
 # tests the imx8_per_process power policy
+# we currently don't have a good way to test this in the automated test suite
+
+# in the 1st window, the policy should only switch frequencies for the A53 cluster;
+# in the 2nd window, only for the A72 cluster
 
 partitions:
   - name: SC1
     processes:
-      - cmd: echo proc00; sleep 3600
-        budget: 1000
+      - cmd: echo proc0; sleep 3600
+        budget: 500
+        _a53_freq: 3
+        _a72_freq: 2
+      - cmd: echo proc1; sleep 3600
+        budget: 500
         _a53_freq: 0
         _a72_freq: 0
-      - cmd: echo proc33; sleep 3600
-        budget: 1000
-        _a53_freq: 3
-        _a72_freq: 3
-      - cmd: echo proc12; sleep 3600
-        budget: 1000
-        _a53_freq: 1
-        _a72_freq: 2
 
 windows:
-  - length: 3000
+  - length: 1500
     slices:
-      - cpu: 0-1
+      - cpu: 0
+        sc_partition: SC1
+  - length: 1500
+    slices:
+      - cpu: 4
         sc_partition: SC1

@@ -3,6 +3,7 @@ tests = '''
 0020-basic.t
 0100-api.t
 0200-config.t
+0210-config_validation.t
 '''.split()
 
 foreach t: tests
