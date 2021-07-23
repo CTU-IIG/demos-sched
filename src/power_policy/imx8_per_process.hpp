@@ -36,11 +36,11 @@ public:
         // check if the process is requesting any specific frequency and
         //  if its current cpuset intersects with the A53/A72 cluster
         cpu_set proc_cpus = proc.part.current_cpus;
-        if (proc.a53_freq_i && proc_cpus & a53_cpus) {
-            a53_pol.write_frequency_i(proc.a53_freq_i.value());
+        if (proc.a53_freq && proc_cpus & a53_cpus) {
+            a53_pol.write_frequency(proc.a53_freq.value());
         }
-        if (proc.a72_freq_i && proc_cpus & a72_cpus) {
-            a72_pol.write_frequency_i(proc.a72_freq_i.value());
+        if (proc.a72_freq && proc_cpus & a72_cpus) {
+            a72_pol.write_frequency(proc.a72_freq.value());
         }
     }
 };

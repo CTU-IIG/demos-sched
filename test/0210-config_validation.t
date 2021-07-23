@@ -53,8 +53,8 @@ test_validation_fail "unfeasible per-process freq combination - A53" "{
             {cpu: 1, sc_partition: SC2},]}
     ],
     partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 1}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a53_freq: 0}]},
+        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 896}]},
+        {name: SC2, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
     ],
 }" "window #0, between SC partitions on CPU cluster '0-3'."
 
@@ -65,8 +65,8 @@ test_validation_fail "unfeasible per-process freq combination - A72" "{
             {cpu: 5, sc_partition: SC2},]}
     ],
     partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a72_freq: 1}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a72_freq: 0}]},
+        {name: SC1, processes: [{cmd: echo, budget: 1, _a72_freq: 1056}]},
+        {name: SC2, processes: [{cmd: echo, budget: 1, _a72_freq: 600}]},
     ],
 }" "window #0, between SC partitions on CPU cluster '4,5'."
 
@@ -77,8 +77,8 @@ test_validation_fail "unfeasible per-process freq combination - BE" "{
             {cpu: 1, be_partition: BE2},]}
     ],
     partitions: [
-        {name: BE1, processes: [{cmd: echo, budget: 1, _a53_freq: 1}]},
-        {name: BE2, processes: [{cmd: echo, budget: 1, _a53_freq: 0}]},
+        {name: BE1, processes: [{cmd: echo, budget: 1, _a53_freq: 896}]},
+        {name: BE2, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
     ],
 }" "window #0, between BE partitions on CPU cluster '0-3'."
 
@@ -89,8 +89,8 @@ test_validation_pass "collision between SC and BE is ignored" "{
             {cpu: 1, be_partition: BE1},]}
     ],
     partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 0}]},
-        {name: BE1, processes: [{cmd: echo, budget: 1, _a53_freq: 1}]},
+        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 896}]},
+        {name: BE1, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
     ],
 }"
 
@@ -100,8 +100,8 @@ test_validation_pass "single partition requesting multiple freqs is feasible" "{
     ],
     partitions: [
         {name: SC1, processes: [
-            {cmd: echo, budget: 1, _a53_freq: 0},
-            {cmd: echo, budget: 1, _a53_freq: 1},
+            {cmd: echo, budget: 1, _a53_freq: 896},
+            {cmd: echo, budget: 1, _a53_freq: 600},
         ]}
     ],
 }"
@@ -114,8 +114,8 @@ test_validation_pass "same frequency from multiple partitions is feasible" "{
         ]}
     ],
     partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 0}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a53_freq: 0}]},
+        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
+        {name: SC2, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
     ],
 }"
 
@@ -127,7 +127,7 @@ test_validation_pass "freqs on different clusters are feasible" "{
         ]}
     ],
     partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 0}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a72_freq: 1}]},
+        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
+        {name: SC2, processes: [{cmd: echo, budget: 1, _a72_freq: 1056}]},
     ],
 }"

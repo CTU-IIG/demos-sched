@@ -69,7 +69,7 @@ static Node normalize_process(const Node &proc, float default_budget)
                 norm_proc[k] = proc[k].as<bool>();
             } else if (k == "_a53_freq" || k == "_a72_freq") {
                 // TODO: when the interface is finalized, remove the leading underscore
-                norm_proc[k] = proc[k].as<int>();
+                norm_proc[k] = proc[k].as<unsigned int>();
             } else {
                 throw runtime_error("Unexpected config key: " + k);
             }
@@ -109,19 +109,6 @@ static Node normalize_process(const Node &proc, float default_budget)
 
     if (!norm_proc["init"]) {
         norm_proc["init"] = false;
-    }
-
-    if (norm_proc["_a53_freq"]) {
-        int a53_freq = norm_proc["_a53_freq"].as<int>();
-        if (a53_freq < 0 || a53_freq > 3) {
-            throw runtime_error("'_a53_freq' must be a frequency index in the interval <0, 3>");
-        }
-    }
-    if (norm_proc["_a72_freq"]) {
-        int a72_freq = norm_proc["_a72_freq"].as<int>();
-        if (a72_freq < 0 || a72_freq > 3) {
-            throw runtime_error("'_a72_freq' must be a frequency index in the interval <0, 3>");
-        }
     }
 
     return norm_proc;
@@ -302,6 +289,30 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
     return norm_win;
 }
 
+static unsigned int imx8_freq_i_from_freq(bool is_a53, size_t freq_MHz)
+{
+    // clang-format off
+    if (is_a53) {switch (freq_MHz) { // A53
+        case 600:  return 0;
+        case 896:  return 1;
+        case 1104: return 2;
+        case 1200: return 3;
+        default: break;
+    }} else {switch (freq_MHz) { // A72
+        case 600:  return 0;
+        case 1056: return 1;
+        case 1296: return 2;
+        case 1596: return 3;
+        default: break;
+    }}
+    // clang-format on
+    throw runtime_error(
+      "Frequency not supported by the "s + (is_a53 ? "A53" : "A72") + " cluster: '" +
+      to_string(freq_MHz) + "' MHz (supported frequencies: " +
+      (is_a53 ? "600 MHz, 896 MHz, 1104 MHz, 1200 MHz" : "600 MHz, 1056 MHz, 1296 MHz, 1596 MHz") +
+      ")");
+}
+
 /**
  * Check if per-process frequencies for the i.MX8 are feasible; that is, if each process
  * is guaranteed to have the correct frequency set and there won't ever be 2 processes
@@ -326,8 +337,15 @@ void Config::validate_per_process_freq_feasibility()
         Imx8FreqMap part_freqs_a53(0);
         Imx8FreqMap part_freqs_a72(0);
         for (const auto &proc : part["processes"]) {
-            if (proc["_a53_freq"]) part_freqs_a53.set(proc["_a53_freq"].as<size_t>());
-            if (proc["_a72_freq"]) part_freqs_a72.set(proc["_a72_freq"].as<size_t>());
+            if (proc["_a53_freq"]) {
+                auto freq = proc["_a53_freq"].as<size_t>();
+                // convert the frequency back to index, as it's easier to work with here
+                part_freqs_a53.set(imx8_freq_i_from_freq(true, freq));
+            }
+            if (proc["_a72_freq"]) {
+                auto freq = proc["_a72_freq"].as<size_t>();
+                part_freqs_a72.set(imx8_freq_i_from_freq(false, freq));
+            }
         }
         requested_freqs[part["name"].as<string>()] = { part_freqs_a53, part_freqs_a72 };
     }
@@ -541,12 +559,15 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
         for (const auto &yprocess : ypart["processes"]) {
             auto budget = chrono::milliseconds(yprocess["budget"].as<int>());
             auto budget_jitter = chrono::milliseconds(yprocess["jitter"].as<int>());
-            auto _a53_freq = yprocess["_a53_freq"]
-                               ? std::optional(yprocess["_a53_freq"].as<unsigned int>())
-                               : std::nullopt;
-            auto _a72_freq = yprocess["_a72_freq"]
-                               ? std::optional(yprocess["_a72_freq"].as<unsigned int>())
-                               : std::nullopt;
+            // the freqs are already checked during validation, they should be correct
+            auto _a53_freq =
+              yprocess["_a53_freq"]
+                ? std::optional(1000 * 1000 * yprocess["_a53_freq"].as<unsigned int>())
+                : std::nullopt;
+            auto _a72_freq =
+              yprocess["_a72_freq"]
+                ? std::optional(1000 * 1000 * yprocess["_a72_freq"].as<unsigned int>())
+                : std::nullopt;
             partitions.back().add_process(c.loop,
                                           yprocess["cmd"].as<string>(),
                                           process_cwd,
