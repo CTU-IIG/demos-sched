@@ -24,11 +24,11 @@ Process::Process(ev::loop_ref loop,
                  milliseconds budget,
                  milliseconds budget_jitter,
                  bool has_initialization)
+    : part(partition)
     // budget +- (jitter / 2)
-    : jitter_distribution_ms(-budget_jitter.count() / 2, budget_jitter.count() - budget_jitter.count() / 2)
+    , jitter_distribution_ms(-budget_jitter.count() / 2, budget_jitter.count() - budget_jitter.count() / 2)
     , loop(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
-    , part(partition)
     , cge(loop,
           partition.cge,
           name,

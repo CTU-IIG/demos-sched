@@ -76,6 +76,8 @@ public:
     void mark_completed();
     void mark_uncompleted();
 
+    Partition &part;
+
 private:
     std::uniform_int_distribution<long> jitter_distribution_ms;
 
@@ -84,7 +86,6 @@ private:
     ev::child child_w{ loop };
     int efd_continue; // new period eventfd
 
-    Partition &part;
     CgroupEvents cge;
     CgroupFreezer cgf;
 

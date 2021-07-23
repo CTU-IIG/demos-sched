@@ -53,6 +53,8 @@ public:
     // Note: `processes` MUST be located after all cgroups (cgc, cgf, cge) - Process destructors
     //  must run before the cgroup destructors to cleanup child cgroups in correct order
     Processes processes{};
+    /** Current cpu_set the partition is running under. */
+    cpu_set current_cpus{};
 
 public:
     Partition(Cgroup &freezer_parent,
