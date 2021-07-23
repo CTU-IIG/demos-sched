@@ -11,6 +11,7 @@ TODO: I think there is a subtle race condition here, where
  blocked and not run at all during next window.
  */
 Slice::Slice(ev::loop_ref loop,
+             PowerPolicy &power_policy,
              std::function<void(Slice &, time_point)> sc_done_cb,
              Partition *sc,
              Partition *be,
@@ -18,6 +19,7 @@ Slice::Slice(ev::loop_ref loop,
     : sc(sc)
     , be(be)
     , cpus(std::move(cpus))
+    , power_policy{ power_policy }
     , sc_done_cb(std::move(sc_done_cb))
     , timer(loop)
     , completion_cb_cached{ [this](Process &) { schedule_next(std::chrono::steady_clock::now()); } }
@@ -65,6 +67,8 @@ void Slice::start_next_process(time_point current_time)
     // if budget was shortened in previous window, this resets it back to full length
     running_process->reset_budget();
     timer.start(timeout);
+    // FIXME: it would probably make more sense to call this inside `resume()`
+    power_policy.on_process_start(*running_process);
 }
 
 void Slice::stop_current_process()

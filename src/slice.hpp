@@ -2,6 +2,7 @@
 
 #include "lib/cpu_set.hpp"
 #include "partition.hpp"
+#include "power_policy/_power_policy.hpp"
 #include "timerfd.hpp"
 #include <chrono>
 #include <ev++.h>
@@ -23,6 +24,7 @@ class Slice
 {
 public:
     Slice(ev::loop_ref loop,
+          PowerPolicy &power_policy,
           std::function<void(Slice &, time_point)> sc_done_cb,
           Partition *sc,
           Partition *be,
@@ -48,6 +50,7 @@ public:
     void stop(time_point current_time);
 
 private:
+    PowerPolicy &power_policy;
     std::function<void(Slice &, time_point)> sc_done_cb;
     Process *running_process = nullptr;
     Partition *running_partition = nullptr;

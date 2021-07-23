@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <process.hpp>
 
 class Window;
 
@@ -24,6 +25,9 @@ public:
     virtual void on_sc_start(Window &) {}
     virtual void on_be_start(Window &) {}
     virtual void on_window_end(Window &) {}
+
+    // TODO: check the performance impact, potentially hide it behind a compile-time flag
+    virtual void on_process_start(Process &) {}
 
     // it seems a bit weird to have what's essentially an input parsing function here,
     //  but imo it is still cleaner than including all defined policies in main.cpp

@@ -1,0 +1,23 @@
+# tests the imx8_per_process power policy
+
+partitions:
+  - name: SC1
+    processes:
+      - cmd: echo proc00; sleep 3600
+        budget: 1000
+        _a53_freq: 0
+        _a72_freq: 0
+      - cmd: echo proc33; sleep 3600
+        budget: 1000
+        _a53_freq: 3
+        _a72_freq: 3
+      - cmd: echo proc12; sleep 3600
+        budget: 1000
+        _a53_freq: 1
+        _a72_freq: 2
+
+windows:
+  - length: 3000
+    slices:
+      - cpu: 0-1
+        sc_partition: SC1

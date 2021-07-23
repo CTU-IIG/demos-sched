@@ -67,6 +67,9 @@ static Node normalize_process(const Node &proc, float default_budget)
                 // if true, we wait until the process completes initialization
                 //  before freezing it and starting normal scheduling
                 norm_proc[k] = proc[k].as<bool>();
+            } else if (k == "_a53_freq" || k == "_a72_freq") {
+                // TODO: when the interface is finalized, remove the leading underscore
+                norm_proc[k] = proc[k].as<int>();
             } else {
                 throw runtime_error("Unexpected config key: " + k);
             }
@@ -108,6 +111,19 @@ static Node normalize_process(const Node &proc, float default_budget)
         norm_proc["init"] = false;
     }
 
+    if (norm_proc["_a53_freq"]) {
+        int a53_freq = norm_proc["_a53_freq"].as<int>();
+        if (a53_freq < 0 || a53_freq > 3) {
+            throw runtime_error("'_a53_freq' must be a frequency index in the interval <0, 3>");
+        }
+    }
+    if (norm_proc["_a72_freq"]) {
+        int a72_freq = norm_proc["_a72_freq"].as<int>();
+        if (a72_freq < 0 || a72_freq > 3) {
+            throw runtime_error("'_a72_freq' must be a frequency index in the interval <0, 3>");
+        }
+    }
+
     return norm_proc;
 }
 
@@ -140,7 +156,8 @@ Node Config::normalize_partition(
                 norm_part[k] = part[k].as<string>();
             else if (k == "processes")
                 processes = normalize_processes(part[k], total_budget);
-            else if (k == "cmd" || k == "budget" || k == "jitter" || k == "init")
+            else if (k == "cmd" || k == "budget" || k == "jitter" || k == "init" ||
+                     k == "_a53_freq" || k == "_a72_freq")
                 ;
             else
                 throw runtime_error("Unexpected config key: " + k);
@@ -156,7 +173,8 @@ Node Config::normalize_partition(
     if (!norm_part["processes"]) {
         if (processes.IsNull()) {
             Node process;
-            for (const string &key : { "cmd", "budget", "jitter", "init" }) {
+            for (const string &key :
+                 { "cmd", "budget", "jitter", "init", "_a53_freq", "_a72_freq" }) {
                 if (part[key]) {
                     process[key] = part[key];
                 }
@@ -372,11 +390,19 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
         for (const auto &yprocess : ypart["processes"]) {
             auto budget = chrono::milliseconds(yprocess["budget"].as<int>());
             auto budget_jitter = chrono::milliseconds(yprocess["jitter"].as<int>());
+            auto _a53_freq = yprocess["_a53_freq"]
+                               ? std::optional(yprocess["_a53_freq"].as<unsigned int>())
+                               : std::nullopt;
+            auto _a72_freq = yprocess["_a72_freq"]
+                               ? std::optional(yprocess["_a72_freq"].as<unsigned int>())
+                               : std::nullopt;
             partitions.back().add_process(c.loop,
                                           yprocess["cmd"].as<string>(),
                                           process_cwd,
                                           budget,
                                           budget_jitter,
+                                          _a53_freq,
+                                          _a72_freq,
                                           yprocess["init"].as<bool>());
         }
     }

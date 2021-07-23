@@ -32,6 +32,8 @@ public:
             std::optional<std::filesystem::path> working_dir,
             std::chrono::milliseconds budget,
             std::chrono::milliseconds budget_jitter,
+            std::optional<unsigned int> a53_freq,
+            std::optional<unsigned int> a72_freq,
             bool has_initialization = false);
 
     /** Spawns the underlying system process. */
@@ -77,6 +79,8 @@ public:
     void mark_uncompleted();
 
     Partition &part;
+    const std::optional<unsigned int> a53_freq_i;
+    const std::optional<unsigned int> a72_freq_i;
 
 private:
     std::uniform_int_distribution<long> jitter_distribution_ms;
