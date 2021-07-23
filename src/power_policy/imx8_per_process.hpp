@@ -15,6 +15,8 @@ private:
     PowerManager pm{};
     CpufreqPolicy &a53_pol;
     CpufreqPolicy &a72_pol;
+    const cpu_set a53_cpus{0b001111};
+    const cpu_set a72_cpus{0b110000};
 
 public:
     PowerPolicy_Imx8_PerProcess()
@@ -31,12 +33,14 @@ public:
 
     void on_process_start(Process &proc) override
     {
-        // TODO: better bound checking
-        if (proc.a53_freq_i) {
-            a53_pol.write_frequency(a53_pol.available_frequencies->at(proc.a53_freq_i.value()));
+        // check if the process is requesting any specific frequency and
+        //  if its current cpuset intersects with the A53/A72 cluster
+        cpu_set proc_cpus = proc.part.current_cpus;
+        if (proc.a53_freq_i && proc_cpus & a53_cpus) {
+            a53_pol.write_frequency_i(proc.a53_freq_i.value());
         }
-        if (proc.a72_freq_i) {
-            a72_pol.write_frequency(a72_pol.available_frequencies->at(proc.a72_freq_i.value()));
+        if (proc.a72_freq_i && proc_cpus & a72_cpus) {
+            a72_pol.write_frequency_i(proc.a72_freq_i.value());
         }
     }
 };
