@@ -205,16 +205,19 @@ Configuration files are written in the YAML format. They can have
 either canonical or simplified form, with the latter being
 automatically converted to the former. Canonical form is most
 flexible, but for same cases a bit verbose. Verbosity can be reduced
-by using the simplified form. Both forms are described bellow.
+by using the simplified form. Both forms are described below.
 
 ### Canonical form of configuration file
 
 Configuration file is a mapping with the following keys:
-`set_cwd`, `partitions` and `windows`.
+`set_cwd`, `demos_cpu`, `partitions` and `windows`.
 
 - `set_cwd` (optional, default: true) is a boolean specifying whether all scheduled
   processes should have their working directory set to the directory of the configuration file; 
   this allows you to safely use relative paths inside the configuration file and scheduled programs
+- `demos_cpu` (optional, default: all) is a cpulist (see `slice.cpu` below),
+  defining the CPU affinity of DEmOS itself; this allows you to pin DEmOS
+  to a fixed CPU to prevent interference with the scheduled processes
 - `partitions` is an array of partition definitions.
   - *Partition definition* is a mapping with `name` and `processes` keys.
   - `processes` is an array of process definitions.
@@ -231,7 +234,7 @@ Configuration file is a mapping with the following keys:
     - `slices` is an array of slice definitions.
   - *Slice definition* is a mapping with the `cpu` key and optional
     `sc_partition` and `be_partition` keys.
-    - `cpu` is a string defining scheduling CPU constraints. The value can
+    - `cpu` is a string defining scheduling CPU constraints ("cpulist"). The value can
       specify a single CPU by its zero-based number (e.g. `cpu: 1`), or a
       range of CPUs (`cpu: 0-2`), or combination of both (`cpu:
       0,2,5-7`) or string `all`, which means all available CPUs.

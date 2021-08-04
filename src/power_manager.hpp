@@ -33,7 +33,7 @@ using std::string;
  * 0.6 GHz, 0.896 GHz, 1.104 GHz and 1.2GHz, with voltage varying accordingly.
  *
  *
- * ## CPU core groups (cpufreq policies)
+ * ## CPU core groups (`cpufreq` policies)
  * On some systems, the CPU frequencies may not be controlled separately per-core.
  * Instead, groups of cores are always running with the same configuration.
  * Linux represents this with the so called "cpufreq policies".
@@ -61,7 +61,7 @@ using std::string;
  * - ./scaling_setspeed = when scaling_governor is "userspace", writing here changes CPU frequency
  *
  *
- * ## intel_pstate
+ * ## `intel_pstate`
  * https://www.kernel.org/doc/html/v4.14/admin-guide/pm/intel_pstate.html
  * Intel CPUs have custom driver, which has an "active" and "passive" mode. In active mode,
  * the driver manages core p-states internally and only allows setting the max and min frequency.
@@ -115,7 +115,7 @@ private: ///////////////////////////////////////////////////////////////////////
     // use list over vector, because vector would require implementing move constructor
     //  for CpufreqPolicy, and for "random" access, there's already the `policy_by_name` map
     std::list<CpufreqPolicy> policies{};
-    /** Maps from policy name to matching cpufreq policy. */
+    /** Maps from policy name to matching `cpufreq` policy. */
     std::map<string, std::reference_wrapper<CpufreqPolicy>> policy_by_name{};
 
     using policy_iterator = std::list<CpufreqPolicy>::iterator;
@@ -159,7 +159,7 @@ public: ////////////////////////////////////////////////////////////////////////
             reset_intel_pstate_driver();
         }
         // this is done automatically in CpufreqPolicy destructor
-        logger->debug("Resetting cpufreq governors to original values");
+        logger->debug("Resetting `cpufreq` governors to original values");
     }
 
     /**
@@ -193,7 +193,7 @@ private: ///////////////////////////////////////////////////////////////////////
 
         // FIXME: is it guaranteed that there will be a `policy0`?
         fs::path path("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor");
-        logger->trace("Using following path to test `cpufreq` support: `{}`", path.string());
+        logger->trace("Using following path to test cpufreq support: '{}'", path.string());
         try {
             file_open<std::ofstream>(path);
         } catch (IOError &err) {
@@ -209,9 +209,8 @@ private: ///////////////////////////////////////////////////////////////////////
                 throw runtime_error(
                   "Cannot activate power management policy, as DEmOS doesn't have permission"
                   " to control CPU frequency scaling."
-                  " To provide access, either run DEmOS as root, or use a more granular mechanism "
-                  "to"
-                  " provide read-write access to files under the `/sys/devices/system/cpu/`"
+                  " To provide access, either run DEmOS as root, or use a more granular mechanism"
+                  " to provide read-write access to files under the `/sys/devices/system/cpu/`"
                   " directory. Alternatively, re-run DEmOS without explicitly setting power policy"
                   " to run without active power management.");
             }
@@ -257,7 +256,7 @@ private: ///////////////////////////////////////////////////////////////////////
     {
         if (original_intel_pstate_status == "passive") return;
 
-        logger->debug("Resetting `intel_pstate` driver mode to `{}`", original_intel_pstate_status);
+        logger->debug("Resetting `intel_pstate` driver mode to '{}'", original_intel_pstate_status);
         auto os = file_open<std::ofstream>("/sys/devices/system/cpu/intel_pstate/status");
         os << original_intel_pstate_status;
     }

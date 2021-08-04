@@ -9,8 +9,8 @@ using std::this_thread::sleep_for;
 
 int main()
 {
-    // disable stdout buffering to avoid synchronization issues for tests
-    setbuf(stdout, nullptr);
+    // make stdout line-buffered to avoid synchronization issues for tests
+    setvbuf(stdout, nullptr, _IOLBF, 0);
 
     if (demos_init() == -1) {
         err(1, "demos_init");

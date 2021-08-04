@@ -1,3 +1,5 @@
+# TODO: add IMX8 compile-time switch for all imx8-specific code
+
 project('demos-sched', ['cpp', 'c'],
 	default_options : [
 	  'cpp_std=c++17',

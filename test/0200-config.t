@@ -11,7 +11,10 @@ test_normalization() {
     local cfg_in=$2
     local cfg_out_expected=$3
 
+    echo "======== NEXT TEST =======================" >&2
     local cfg_out=$(demos-sched -d -C "$cfg_in" 2>&1)
+    # log the output for easier debugging when a test fails
+    echo "$cfg_out" >&2
     is "$cfg_out" "$cfg_out_expected" "$test_name"
 }
 
@@ -45,6 +48,7 @@ test_normalization "missing slice definition" \
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100}] }]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: SC
     processes:
@@ -64,6 +68,7 @@ test_normalization "partition definition in window" \
     windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -80,6 +85,7 @@ windows:
 test_normalization "empty window with only 'length' is kept empty" \
 "{windows: [{length: 1000}]}" \
 "set_cwd: false
+demos_cpu: all
 partitions: ~
 windows:
   - length: 1000"
@@ -89,6 +95,7 @@ test_normalization "partition definition in window with one process" \
     windows: [ {length: 500, sc_partition: {cmd: proc1, budget: 500} } ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -107,6 +114,7 @@ test_normalization "default budget" \
     windows: [ {length: 500, sc_partition: [{cmd: proc1}] } ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -127,6 +135,7 @@ test_normalization "process as string" \
     windows: [ {length: 500, sc_processes: proc} ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -145,6 +154,7 @@ test_normalization "Processes as string" \
     windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: anonymous_0
     processes:
@@ -168,6 +178,7 @@ test_normalization "short-form jitter" \
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 50}] }]
 }" \
 "set_cwd: false
+demos_cpu: all
 partitions:
   - name: SC
     processes:
@@ -183,13 +194,13 @@ windows:
 
 export DEMOS_PLAIN_LOG=1
 test_normalization "missing budget in canonical config" \
-        "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
-		">>> [error] Exception: Missing budget in process definition"
+    "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
+    ">>> [error] Exception: Missing budget in process definition"
 test_normalization "missing cpu set for slice" \
-        "windows: [{length: 100, slices: [{}]}]" \
-        ">>> [error] Exception: Missing cpu set in slice definition (\`cpu\` property)"
+    "windows: [{length: 100, slices: [{}]}]" \
+    ">>> [error] Exception: Missing cpu set in slice definition (\`cpu\` property)"
 test_normalization "set_cwd: yes for inline config string fails" \
-		"set_cwd: yes" \
-		">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
+    "set_cwd: yes" \
+    ">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
 out=$(demos-sched -d -c <(echo "{}"))
 is $? 1 "config from FIFO file is not accepted without 'set_cwd: false'"

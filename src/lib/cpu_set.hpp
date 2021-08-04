@@ -27,7 +27,7 @@ public:
     }
     cpu_set(std::string cpulist, bool fail = false) : cpu_set() {
         int ret = cpulist_parse(cpulist.c_str(), s, size(), fail);
-        if (ret != 0) throw std::runtime_error("cpulist_parse error");
+        if (ret != 0) throw std::runtime_error("Could not parse cpulist: " + cpulist);
     }
     ~cpu_set() { CPU_FREE(s); }
 

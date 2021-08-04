@@ -25,6 +25,7 @@ public:
     }
 };
 
+// TODO: use `if constexpr` instead of macro trickery
 #ifdef DEBUG
 #define ASSERT(expr)                                                                               \
     (static_cast<bool>(expr)                                                                       \
