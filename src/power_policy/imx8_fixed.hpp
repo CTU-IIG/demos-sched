@@ -9,11 +9,8 @@
  *
  * NOTE: this is a test power policy, the error messages are not very helpful
  */
-class PowerPolicy_Imx8_Fixed : public PowerPolicy
+class PowerPolicy_Imx8_Fixed : public PmPowerPolicy
 {
-private:
-    PowerManager pm{};
-
 public:
     /** *_freq_i - integer, range <0,3> */
     PowerPolicy_Imx8_Fixed(const std::string& a53_freq_i, const std::string& a72_freq_i)

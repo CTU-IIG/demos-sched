@@ -9,10 +9,9 @@
  *
  * NOTE: this is a test power policy, the error messages are not very helpful
  */
-class PowerPolicy_Imx8_PerProcess : public PowerPolicy
+class PowerPolicy_Imx8_PerProcess : public PmPowerPolicy
 {
 private:
-    PowerManager pm{};
     CpufreqPolicy &a53_pol;
     CpufreqPolicy &a72_pol;
     const cpu_set a53_cpus{0b001111};

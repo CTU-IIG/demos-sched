@@ -3,11 +3,8 @@
 #include "_power_policy.hpp"
 #include "power_manager.hpp"
 
-class PowerPolicy_FixedLow : public PowerPolicy
+class PowerPolicy_FixedLow : public PmPowerPolicy
 {
-private:
-    PowerManager pm{};
-
 public:
     PowerPolicy_FixedLow()
     {

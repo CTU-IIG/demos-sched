@@ -8,10 +8,9 @@
  *
  * NOTE: this is a test power policy, the error messages are not very helpful
  */
-class PowerPolicy_Imx8_Alternating : public PowerPolicy
+class PowerPolicy_Imx8_Alternating : public PmPowerPolicy
 {
 private:
-    PowerManager pm{};
     CpufreqPolicy &a53_pol = pm.get_policy("policy0");
     CpufreqPolicy &a72_pol = pm.get_policy("policy4");
     CpuFrequencyHz f1_a53 = 0;

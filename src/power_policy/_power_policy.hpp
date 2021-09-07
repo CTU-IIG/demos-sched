@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <power_manager.hpp>
 #include <process.hpp>
 
+// forward declaration to avoid circular dependency between PowerPolicy and Window
 class Window;
 
 /**
@@ -38,4 +40,14 @@ public:
      * `<policy_name>:<arg1>,<arg2>,...`
      */
     static std::unique_ptr<PowerPolicy> setup_power_policy(const std::string &policy_str);
+};
+
+/**
+ * Subclass of PowerPolicy, which is extended by power policy implementations
+ * which use PowerManager. In the rest of the codebase, you should accept
+ * the more general PowerPolicy interface instead of this one.
+ */
+class PmPowerPolicy : public PowerPolicy {
+protected:
+    PowerManager pm{};
 };
