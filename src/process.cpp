@@ -23,14 +23,15 @@ Process::Process(ev::loop_ref loop,
                  std::optional<std::filesystem::path> working_dir,
                  milliseconds budget,
                  milliseconds budget_jitter,
-                 std::optional<unsigned int> a53_freq,
-                 std::optional<unsigned int> a72_freq,
+                 std::optional<CpuFrequencyHz> a53_freq,
+                 std::optional<CpuFrequencyHz> a72_freq,
                  bool has_initialization)
     : part(partition)
     , a53_freq{ a53_freq }
     , a72_freq{ a72_freq }
     // budget +- (jitter / 2)
-    , jitter_distribution_ms(-budget_jitter.count() / 2, budget_jitter.count() - budget_jitter.count() / 2)
+    , jitter_distribution_ms(-budget_jitter.count() / 2,
+                             budget_jitter.count() - budget_jitter.count() / 2)
     , loop(loop)
     , efd_continue(CHECK(eventfd(0, EFD_SEMAPHORE)))
     , cge(loop,
@@ -77,7 +78,8 @@ void Process::exec()
         // END CHILD PROCESS
     } else {
         // PARENT PROCESS
-        logger_process->debug("Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
+        logger_process->debug(
+          "Running '{}' as PID '{}' (partition '{}')", argv, pid, part.get_name());
         child_w.start(pid, 0);
         // TODO: shouldn't we do this in the child process, so that we know the process
         //  is frozen before we start the command? as it is now, I think there's a possible
@@ -165,7 +167,8 @@ void Process::set_remaining_budget(milliseconds next_budget)
     ASSERT(next_budget > next_budget.zero());
     ASSERT(next_budget < budget);
     actual_budget = next_budget;
-    TRACE_PROCESS("Next budget for process '{}' shortened to '{} milliseconds'.", pid, next_budget.count());
+    TRACE_PROCESS(
+      "Next budget for process '{}' shortened to '{} milliseconds'.", pid, next_budget.count());
 }
 
 void Process::reset_budget()

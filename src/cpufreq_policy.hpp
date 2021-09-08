@@ -19,7 +19,27 @@ using std::runtime_error;
 using std::string;
 
 /** CPU core frequency, in Hz. */
-using CpuFrequencyHz = uint64_t;
+// using CpuFrequencyHz = uint64_t;
+struct CpuFrequencyHz
+{
+    uint64_t freq;
+    explicit CpuFrequencyHz(uint64_t freq)
+        : freq{ freq }
+    {}
+    bool operator==(const CpuFrequencyHz &rhs) const { return freq == rhs.freq; }
+    operator uint64_t() const { return freq; } // NOLINT(google-explicit-constructor)
+};
+
+template<>
+struct fmt::formatter<CpuFrequencyHz> : fmt::formatter<uint64_t>
+{
+    template<typename FormatContext>
+    auto format(CpuFrequencyHz const &freq, FormatContext &ctx)
+    {
+        return fmt::format_to(
+          ctx.out(), "{}{} MHz", freq.freq % 1000000 == 0 ? "" : "~", freq.freq / 1000000);
+    }
+};
 
 /**
  * NOTE: This class assumes that `cpufreq` is supported and write-able,
@@ -62,6 +82,8 @@ public: ////////////////////////////////////////////////////////////////////////
         , max_frequency{ read_freq_file(policy_dir / "scaling_max_freq") }
         , available_frequencies{ read_available_frequencies() }
         , affected_cores{ read_affected_cpus() }
+        // sometimes, the policy does not affect any cores (e.g. all controlled cores are offline);
+        //  attempting to set the frequency would then cause an IO error
         , active{ affected_cores.count() > 0 }
     {
         if (!active) {
@@ -91,8 +113,8 @@ public: ////////////////////////////////////////////////////////////////////////
                       "available: '{}')",
                       affected_cores.as_list(),
                       name,
-                      freq_to_str(min_frequency),
-                      freq_to_str(max_frequency),
+                      min_frequency,
+                      max_frequency,
                       get_available_freq_str());
     }
 
@@ -120,7 +142,7 @@ public: ////////////////////////////////////////////////////////////////////////
         // this check is only called in debug builds, because cpufreq does its own checking
         RUN_DEBUG(validate_frequency(freq));
 
-        TRACE("Changing CPU frequency to '{}' for '{}'", freq_to_str(freq), name);
+        TRACE("Changing CPU frequency to '{}' for '{}'", freq, name);
         // cpufreq uses kHz, we have Hz
         auto freq_str = std::to_string(freq / 1000);
         CHECK_MSG(write(fd_freq, freq_str.c_str(), freq_str.size()),
@@ -137,11 +159,10 @@ public: ////////////////////////////////////////////////////////////////////////
               "provide it, most notably the `intel_pstate` driver used on Intel processors)");
         }
         if (index >= available_frequencies->size()) {
-            throw runtime_error("Tried to get an out-of-bounds frequency #'" +
-                                std::to_string(index) + "' for `cpufreq` policy '" + name +
-                                "' (there are only '" +
-                                std::to_string(available_frequencies->size()) +
-                                "' defined frequencies)");
+            throw runtime_error(
+              "Tried to get an out-of-bounds frequency #'" + std::to_string(index) +
+              "' for `cpufreq` policy '" + name + "' (there are only '" +
+              std::to_string(available_frequencies->size()) + "' defined frequencies)");
         }
         return available_frequencies->at(index);
     }
@@ -153,23 +174,12 @@ public: ////////////////////////////////////////////////////////////////////////
     }
 
 private: ///////////////////////////////////////////////////////////////////////////////////////////
-    static string freq_to_str(CpuFrequencyHz freq)
-    {
-        return std::to_string(freq / 1000000) + " MHz";
-    }
-
     string get_available_freq_str()
     {
         if (!available_frequencies) {
             return "unknown";
         }
-        string str;
-        for (CpuFrequencyHz freq : available_frequencies.value()) {
-            str += freq_to_str(freq) + ", ";
-        }
-        // remove trailing ", "
-        str.resize(str.size() - 2);
-        return str;
+        return fmt::format("{}", fmt::join(available_frequencies.value(), ", "));
     }
 
     void validate_frequency(CpuFrequencyHz freq)
@@ -233,10 +243,10 @@ private: ///////////////////////////////////////////////////////////////////////
         }
 
         std::vector<CpuFrequencyHz> freqs;
-        CpuFrequencyHz freq_khz;
+        uint64_t freq_khz;
         while (is_freq >> freq_khz) {
             // convert from kHz (used by cpufreq) to Hz
-            freqs.push_back(freq_khz * 1000);
+            freqs.emplace_back(freq_khz * 1000);
         }
         ASSERT(is_freq.eof());
         return std::make_optional(freqs);
@@ -257,9 +267,9 @@ private: ///////////////////////////////////////////////////////////////////////
     static CpuFrequencyHz read_freq_file(const fs::path &path)
     {
         auto is = file_open<std::ifstream>(path);
-        CpuFrequencyHz freq;
+        uint64_t freq;
         is >> freq;
         // cpufreq uses kHz, we want Hz
-        return freq * 1000;
+        return CpuFrequencyHz{ freq * 1000 };
     }
 };

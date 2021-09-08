@@ -13,10 +13,10 @@ class PowerPolicy_Imx8_Alternating : public PmPowerPolicy
 private:
     CpufreqPolicy &a53_pol = pm.get_policy("policy0");
     CpufreqPolicy &a72_pol = pm.get_policy("policy4");
-    CpuFrequencyHz f1_a53 = 0;
-    CpuFrequencyHz f2_a53 = 0;
-    CpuFrequencyHz f1_a72 = 0;
-    CpuFrequencyHz f2_a72 = 0;
+    CpuFrequencyHz f1_a53;
+    CpuFrequencyHz f2_a53;
+    CpuFrequencyHz f1_a72;
+    CpuFrequencyHz f2_a72;
     bool f1_next = true;
 
 public:
@@ -24,6 +24,12 @@ public:
                                  const std::string &a53_f2_str,
                                  const std::string &a72_f1_str,
                                  const std::string &a72_f2_str)
+    try
+      : PmPowerPolicy{}
+      , f1_a53{ a53_pol.get_freq(std::stoul(a53_f1_str)) }
+      , f2_a53{ a53_pol.get_freq(std::stoul(a53_f2_str)) }
+      , f1_a72{ a72_pol.get_freq(std::stoul(a72_f1_str)) }
+      , f2_a72{ a72_pol.get_freq(std::stoul(a72_f2_str)) }
     {
         for (auto &p : pm.policy_iter()) {
             if (!p.available_frequencies) {
@@ -32,20 +38,12 @@ public:
             }
         }
 
-        try {
-            f1_a53 = a53_pol.get_freq(std::stoul(a53_f1_str));
-            f2_a53 = a53_pol.get_freq(std::stoul(a53_f2_str));
-
-            f1_a72 = a72_pol.get_freq(std::stoul(a72_f1_str));
-            f2_a72 = a72_pol.get_freq(std::stoul(a72_f2_str));
-        } catch (...) {
-            throw_with_nested(
-              runtime_error("All power policy arguments must be integers in the range <0, 3>"));
-        }
-
         // set fixed frequency if both "alternating" frequencies are the same
         if (f1_a53 == f2_a53) a53_pol.write_frequency(f1_a53);
         if (f1_a72 == f2_a72) a72_pol.write_frequency(f1_a72);
+    } catch (...) {
+        throw_with_nested(
+          runtime_error("All power policy arguments must be integers in the range <0, 3>"));
     }
 
     void on_window_start(Window &) override

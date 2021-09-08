@@ -73,8 +73,8 @@ public:
                      const std::optional<std::filesystem::path> &working_dir,
                      std::chrono::milliseconds budget,
                      std::chrono::milliseconds budget_jitter,
-                     std::optional<unsigned int> a53_freq,
-                     std::optional<unsigned int> a72_freq,
+                     std::optional<CpuFrequencyHz> a53_freq,
+                     std::optional<CpuFrequencyHz> a72_freq,
                      bool has_initialization);
 
     /** Spawns system processes for all added Process instances. */

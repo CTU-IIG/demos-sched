@@ -13,7 +13,7 @@ class PowerPolicy_Imx8_Fixed : public PmPowerPolicy
 {
 public:
     /** *_freq_i - integer, range <0,3> */
-    PowerPolicy_Imx8_Fixed(const std::string& a53_freq_i, const std::string& a72_freq_i)
+    PowerPolicy_Imx8_Fixed(const std::string &a53_freq_i, const std::string &a72_freq_i)
     {
         auto &a53_pol = pm.get_policy("policy0");
         auto &a72_pol = pm.get_policy("policy4");
@@ -25,15 +25,12 @@ public:
             }
         }
 
-        CpuFrequencyHz a53_freq, a72_freq;
         try {
-            a53_freq = a53_pol.get_freq(std::stoul(a53_freq_i));
-            a72_freq = a72_pol.get_freq(std::stoul(a72_freq_i));
-        } catch (...) {
-            throw runtime_error("Both power policy arguments must be integers in the range <0, 3>");
+            a53_pol.write_frequency_i(std::stoul(a53_freq_i));
+            a72_pol.write_frequency_i(std::stoul(a72_freq_i));
+        } catch (std::invalid_argument &) {
+            std::throw_with_nested(std::runtime_error(
+              "Both power policy arguments must be integers in the range <0, 3>"));
         }
-
-        a53_pol.write_frequency(a53_freq);
-        a72_pol.write_frequency(a72_freq);
     }
 };
