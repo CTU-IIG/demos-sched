@@ -80,8 +80,7 @@ public:
     void mark_uncompleted();
 
     Partition &part;
-    const std::optional<CpuFrequencyHz> a53_freq;
-    const std::optional<CpuFrequencyHz> a72_freq;
+    const std::array<std::optional<CpuFrequencyHz>, 2> requested_frequencies;
 
 private:
     std::uniform_int_distribution<long> jitter_distribution_ms;

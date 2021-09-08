@@ -33,6 +33,7 @@ Slice::Slice(ev::loop_ref loop,
 
 bool Slice::load_next_process(time_point current_time)
 {
+    ASSERT(running_process == nullptr);
     running_process = running_partition->seek_pending_process();
     if (running_process) {
         return true;
@@ -71,11 +72,15 @@ void Slice::start_next_process(time_point current_time)
     power_policy.on_process_start(*running_process);
 }
 
-void Slice::stop_current_process()
+void Slice::stop_current_process(bool mark_completed)
 {
+    ASSERT(running_process != nullptr);
+    // this way, the process will run a bit longer
+    //  if this call takes a long time to complete
+    power_policy.on_process_end(*running_process);
     timer.stop();
     running_process->suspend();
-    running_process->mark_completed();
+    if (mark_completed) running_process->mark_completed();
     running_process = nullptr;
 }
 
@@ -141,8 +146,7 @@ void Slice::stop(time_point current_time)
         running_process->set_remaining_budget(remaining);
     }
 
-    running_process->suspend();
-    running_process = nullptr;
+    stop_current_process(false);
 }
 
 // Called as a response to timeout or process completion.

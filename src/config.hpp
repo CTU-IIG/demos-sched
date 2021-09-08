@@ -36,7 +36,6 @@ private:
     int anonymous_partition_counter = 0;
 
     void validate_config();
-    void validate_per_process_freq_feasibility();
 
     YAML::Node normalize_window(const YAML::Node &win, YAML::Node &partitions);
     YAML::Node normalize_partition(const YAML::Node &part, float total_budget);

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 21
+plan_tests 20
 
 # set fixed log level for config tests; otherwise if user would run something
 #  like `SPDLOG_LEVEL=trace make test`, the output would include the logs and the tests would fail
@@ -41,12 +41,6 @@ out=$(demos-sched -C "{
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 250}]} ]
 }" 2>&1)
 is $? 1 "'jitter > 2 * budget' causes an error"
-
-out=$(demos-sched -C "{
-    windows: [ {length: 500, sc_partition: SC} ],
-    partitions: [ {name: SC, processes: [{cmd: echo, budget: 50, _a53_freq: 10}]} ]
-}" 2>&1)
-is $? 1 "CPU frequency out of range <0, 3> causes an error"
 
 test_normalization "missing slice definition" \
 "{

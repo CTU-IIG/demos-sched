@@ -14,8 +14,8 @@ static cpu_set parse_cpu_set(const string &cpulist, T_all all_cpus)
     // "all" = use all available CPUs
     //  MK: imo, it would be nicer to use *, but that (along with most other
     //   special characters) has special meaning in YAML, and must be quoted
-    if (cpulist == "all") return cpu_set(all_cpus);
-    return cpu_set(cpulist);
+    if (cpulist == "all") return { all_cpus };
+    return { cpulist };
 }
 template<typename T_all>
 static cpu_set parse_cpu_set(const YAML::Node &node, T_all all_cpus)
@@ -289,135 +289,10 @@ Node Config::normalize_window(const Node &win,  // in: window to normalize
     return norm_win;
 }
 
-static unsigned int imx8_freq_i_from_freq(bool is_a53, size_t freq_MHz)
-{
-    // clang-format off
-    if (is_a53) {switch (freq_MHz) { // A53
-        case 600:  return 0;
-        case 896:  return 1;
-        case 1104: return 2;
-        case 1200: return 3;
-        default: break;
-    }} else {switch (freq_MHz) { // A72
-        case 600:  return 0;
-        case 1056: return 1;
-        case 1296: return 2;
-        case 1596: return 3;
-        default: break;
-    }}
-    // clang-format on
-    throw runtime_error(
-      "Frequency not supported by the "s + (is_a53 ? "A53" : "A72") + " cluster: '" +
-      to_string(freq_MHz) + "' MHz (supported frequencies: " +
-      (is_a53 ? "600 MHz, 896 MHz, 1104 MHz, 1200 MHz" : "600 MHz, 1056 MHz, 1296 MHz, 1596 MHz") +
-      ")");
-}
-
 /**
- * Check if per-process frequencies for the i.MX8 are feasible; that is, if each process
- * is guaranteed to have the correct frequency set and there won't ever be 2 processes
- * with different per-process frequency running on the same CPU cluster at the same time.
+ * Validates that all referenced partitions exist and slices don't have overlapping cpusets.
  *
- * MK: This is quite monolithic - if you have any idea how to split it up, feel free to do so.
- *
- * FIXME: currently, this whole section is i.MX8-specific; if it was moved somewhere where
- *  the available cpufreq policies are already known, it could be generic for any CPU;
- *  however, it would be system-dependent and could not be checked ahead-of-time on another machine
- */
-void Config::validate_per_process_freq_feasibility()
-{
-    // i.MX8 frequency bitmap (4 possible frequencies)
-    using Imx8FreqMap = bitset<4>;
-    const std::array<cpu_set, 2> imx8_cpus{ 0b1111, 0b110000 };
-    const cpu_set imx8_all_cpus(0b111111);
-
-    // for each partition, find out which frequencies the processes inside are requesting
-    map<string, std::array<Imx8FreqMap, imx8_cpus.size()>> requested_freqs{};
-    for (const auto &part : config["partitions"]) {
-        Imx8FreqMap part_freqs_a53(0);
-        Imx8FreqMap part_freqs_a72(0);
-        for (const auto &proc : part["processes"]) {
-            if (proc["_a53_freq"]) {
-                auto freq = proc["_a53_freq"].as<size_t>();
-                // convert the frequency back to index, as it's easier to work with here
-                part_freqs_a53.set(imx8_freq_i_from_freq(true, freq));
-            }
-            if (proc["_a72_freq"]) {
-                auto freq = proc["_a72_freq"].as<size_t>();
-                part_freqs_a72.set(imx8_freq_i_from_freq(false, freq));
-            }
-        }
-        requested_freqs[part["name"].as<string>()] = { part_freqs_a53, part_freqs_a72 };
-    }
-
-    // TODO: validate that all freq requests are used (e.g. if a process requests
-    //  an A53 freq, check that it ever runs on the A53 cluster)
-
-    // find all requested frequencies for each window (separately for SC and BE
-    //  partitions, as they run separately), and check if there are any collisions
-    // it is OK if there are multiple frequencies, all from the same partition;
-    //  it is also OK if multiple partitions require the same single frequency;
-    //  otherwise, a runtime collision may potentially occur and we throw an error
-    int window_i = -1;
-    bool collision_found = false;
-    for (const auto &win : config["windows"]) {
-        window_i++;
-        for (const string &part_key : { "sc_partition", "be_partition" }) {
-            std::array<Imx8FreqMap, imx8_cpus.size()> win_freqs{ 0, 0 };
-            for (const auto &slice : win["slices"]) {
-                if (!slice[part_key]) continue; // no SC/BE partition
-                auto slice_cpu = parse_cpu_set(slice["cpu"], imx8_all_cpus);
-
-                size_t i = 0;
-                // iterate in parallel over CPU clusters and corresponding requested frequencies
-                // we already checked that all partition references are valid, this lookup is safe
-                for (Imx8FreqMap req_freq : requested_freqs[slice[part_key].as<string>()]) {
-                    Imx8FreqMap &win_freq = win_freqs[i];
-                    cpu_set cluster_cpu = imx8_cpus[i];
-                    i++;
-
-                    if (req_freq.none()) continue; // no freq constraints
-                    // if there's no overlap with the cluster, skip it
-                    if (!(cluster_cpu & slice_cpu)) continue;
-
-                    if (win_freq.none() || (win_freq | req_freq).count() == 1) {
-                        // no previous constraints or a single compatible frequency, feasible so far
-                        win_freq |= req_freq;
-                    } else {
-                        // there are at least 2 different freqs, and as both sets are non-empty,
-                        //  that's a potential runtime collision
-                        // TODO: find the offending process tuple and report it in the error message
-                        collision_found = true;
-                        // don't throw the error, as that would only show the first one;
-                        //  instead, log it and then throw error after all checks are done
-                        logger->error("Unfeasible combination of fixed per-process frequencies was "
-                                      "specified in the configuration."
-                                      "\n\tThe collision occurs between processes in window #{},"
-                                      " between {} partitions on CPU cluster '{}'."
-                                      "\n\tA process from the partition '{}' collides with a "
-                                      "process from one of the previous partitions "
-                                      "scheduled inside the window.",
-                                      window_i,
-                                      part_key == "sc_partition" ? "SC" : "BE",
-                                      cluster_cpu.as_list(),
-                                      slice[part_key].as<string>());
-                    }
-                }
-            }
-        }
-    }
-
-    if (collision_found) {
-        throw runtime_error("Unfeasible per-process frequencies in configuration; "
-                            "see above for more detailed information");
-    }
-}
-
-/**
- * Validates that all referenced partitions exist, slices don't have overlapping cpusets,
- * and that per-process frequencies are feasible, if specified.
- *
- * It would be simpler, and significantly to do the validation using the created scheduler objects
+ * It would be simpler to do the validation using created scheduler objects
  * rather than the YAML config, but I want the validation to take place even when
  * only dumping normalized config, and creating an intermediate struct-based config
  * format is probably currently too much work for too little benefit.
@@ -465,8 +340,6 @@ void Config::validate_config()
             acc |= slice_cpu;
         }
     }
-
-    validate_per_process_freq_feasibility();
 }
 
 void Config::normalize()

@@ -30,6 +30,7 @@ public:
 
     // TODO: check the performance impact, potentially hide it behind a compile-time flag
     virtual void on_process_start(Process &) {}
+    virtual void on_process_end(Process &) {}
 
     // it seems a bit weird to have what's essentially an input parsing function here,
     //  but imo it is still cleaner than including all defined policies in main.cpp

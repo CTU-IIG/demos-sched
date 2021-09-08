@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 14
+plan_tests 4
 
 # set fixed log level for config tests; otherwise if user would run something
 #  like `SPDLOG_LEVEL=trace make test`, the output would include the logs and the tests would fail
@@ -45,89 +45,3 @@ test_validation_fail "overlapping CPU sets inside window" "{
         {name: SC2, processes: {cmd: echo, budget: 1}},
     ],
 }" "overlapping CPU sets"
-
-test_validation_fail "unfeasible per-process freq combination - A53" "{
-    windows: [
-        {length: 1, slices: [
-            {cpu: 0, sc_partition: SC1},
-            {cpu: 1, sc_partition: SC2},]}
-    ],
-    partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 896}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
-    ],
-}" "window #0, between SC partitions on CPU cluster '0-3'."
-
-test_validation_fail "unfeasible per-process freq combination - A72" "{
-    windows: [
-        {length: 1, slices: [
-            {cpu: 4, sc_partition: SC1},
-            {cpu: 5, sc_partition: SC2},]}
-    ],
-    partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a72_freq: 1056}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a72_freq: 600}]},
-    ],
-}" "window #0, between SC partitions on CPU cluster '4,5'."
-
-test_validation_fail "unfeasible per-process freq combination - BE" "{
-    windows: [
-        {length: 1, slices: [
-            {cpu: 0, be_partition: BE1},
-            {cpu: 1, be_partition: BE2},]}
-    ],
-    partitions: [
-        {name: BE1, processes: [{cmd: echo, budget: 1, _a53_freq: 896}]},
-        {name: BE2, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
-    ],
-}" "window #0, between BE partitions on CPU cluster '0-3'."
-
-test_validation_pass "collision between SC and BE is ignored" "{
-    windows: [
-        {length: 1, slices: [
-            {cpu: 0, sc_partition: SC1},
-            {cpu: 1, be_partition: BE1},]}
-    ],
-    partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 896}]},
-        {name: BE1, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
-    ],
-}"
-
-test_validation_pass "single partition requesting multiple freqs is feasible" "{
-    windows: [
-        {length: 1, slices: [{cpu: 0, sc_partition: SC1}]}
-    ],
-    partitions: [
-        {name: SC1, processes: [
-            {cmd: echo, budget: 1, _a53_freq: 896},
-            {cmd: echo, budget: 1, _a53_freq: 600},
-        ]}
-    ],
-}"
-
-test_validation_pass "same frequency from multiple partitions is feasible" "{
-    windows: [
-        {length: 1, slices: [
-            {cpu: 0, be_partition: SC1},
-            {cpu: 1, be_partition: SC2},
-        ]}
-    ],
-    partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
-    ],
-}"
-
-test_validation_pass "freqs on different clusters are feasible" "{
-    windows: [
-        {length: 1, slices: [
-            {cpu: 0, be_partition: SC1},
-            {cpu: 4, be_partition: SC2},
-        ]}
-    ],
-    partitions: [
-        {name: SC1, processes: [{cmd: echo, budget: 1, _a53_freq: 600}]},
-        {name: SC2, processes: [{cmd: echo, budget: 1, _a72_freq: 1056}]},
-    ],
-}"

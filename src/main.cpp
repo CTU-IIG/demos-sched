@@ -208,8 +208,8 @@ int main(int argc, char *argv[])
         // this spawns the underlying system processes
         sched.setup();
 
-        // configure linux scheduler - set highest possible priority for demos
-        // should be called after child process creation (in `sched.setup()`),
+        // configure linux scheduler - set the highest possible priority for demos
+        // must be called after child process creation (in `sched.setup()`),
         //  as we don't want children to inherit RT priority
         struct sched_param sp = { .sched_priority = 99 };
         if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1) {
@@ -228,6 +228,9 @@ int main(int argc, char *argv[])
         // everything is set up now, start the event loop
         // the event loop terminates either on timeout (if set),
         //  SIGTERM, SIGINT (Ctrl-c), or when all scheduled processes exit
+        // FIXME: when a runtime error occurs, cgroups are not cleaned up, because
+        //  they're not empty; catch the exception here, attempt to cleanup (sched.initiate_shutdown),
+        //  then rethrow (if it fails, throw immediately)
         scheduler_timeout ? sched.run(scheduler_timeout.value()) : sched.run();
 
     } catch (const exception &e) {

@@ -27,8 +27,7 @@ Process::Process(ev::loop_ref loop,
                  std::optional<CpuFrequencyHz> a72_freq,
                  bool has_initialization)
     : part(partition)
-    , a53_freq{ a53_freq }
-    , a72_freq{ a72_freq }
+    , requested_frequencies{ a53_freq, a72_freq }
     // budget +- (jitter / 2)
     , jitter_distribution_ms(-budget_jitter.count() / 2,
                              budget_jitter.count() - budget_jitter.count() / 2)
