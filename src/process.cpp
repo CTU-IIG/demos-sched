@@ -28,6 +28,7 @@ Process::Process(ev::loop_ref loop,
                  bool has_initialization)
     : part(partition)
     , requested_frequencies{ a53_freq, a72_freq }
+    , argv(std::move(argv))
     // budget +- (jitter / 2)
     , jitter_distribution_ms(-budget_jitter.count() / 2,
                              budget_jitter.count() - budget_jitter.count() / 2)
@@ -38,7 +39,6 @@ Process::Process(ev::loop_ref loop,
           name,
           std::bind(&Process::populated_cb, this, _1)) // NOLINT(modernize-avoid-bind)
     , cgf(partition.cgf, name)
-    , argv(std::move(argv))
     , working_dir(std::move(working_dir))
     , budget(budget)
     , actual_budget(budget)

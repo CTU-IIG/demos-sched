@@ -58,10 +58,12 @@ public:
                     locking_processes[0]->requested_frequencies[i] != requested_freq) {
                     throw std::runtime_error(
                       fmt::format("Scheduled processes require different frequencies on the CPU "
-                                  "cluster '#{}': '{}', '{}'",
+                                  "cluster '#{}': '{}', '{}' (process 1: '{}', process 2: '{}')",
                                   i,
                                   locking_processes[0]->requested_frequencies[i].value(),
-                                  requested_freq.value()));
+                                  requested_freq.value(),
+                                  locking_processes[0]->argv,
+                                  proc.argv));
                 }
                 locking_processes.push_back(&proc);
                 policy.write_frequency(requested_freq.value());
@@ -69,7 +71,8 @@ public:
         }
     }
 
-    void on_process_end(Process &process) override {
+    void on_process_end(Process &process) override
+    {
         // remove the process from the list of locking processes
         for (auto &lp : locking_process_for_policy) {
             for (auto it = lp.begin(); it != lp.end(); it++) {

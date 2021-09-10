@@ -4,14 +4,14 @@
 #include <fcntl.h>
 #include <filesystem>
 #include <iostream>
+#include <random>
 #include <unistd.h>
 #include <vector>
-#include <random>
 
 #include "cgroup.hpp"
+#include "cpufreq_policy.hpp"
 #include "evfd.hpp"
 #include "timerfd.hpp"
-#include "cpufreq_policy.hpp"
 
 class Partition;
 
@@ -81,6 +81,7 @@ public:
 
     Partition &part;
     const std::array<std::optional<CpuFrequencyHz>, 2> requested_frequencies;
+    const std::string argv;
 
 private:
     std::uniform_int_distribution<long> jitter_distribution_ms;
@@ -93,7 +94,6 @@ private:
     CgroupEvents cge;
     CgroupFreezer cgf;
 
-    const std::string argv;
     const std::optional<std::filesystem::path> working_dir;
     const std::chrono::milliseconds budget;
     std::chrono::milliseconds actual_budget;
