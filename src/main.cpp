@@ -3,6 +3,7 @@
 #include "demos_scheduler.hpp"
 #include "lib/assert.hpp"
 #include "lib/check_lib.hpp"
+#include "power_policy/_power_policy.hpp"
 #include <sched.h>
 
 using namespace std;

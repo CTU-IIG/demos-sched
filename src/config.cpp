@@ -1,5 +1,6 @@
 #include "config.hpp"
 #include "log.hpp"
+#include "power_policy/_power_policy.hpp"
 #include <cmath>
 #include <exception>
 #include <lib/assert.hpp>

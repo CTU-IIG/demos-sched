@@ -1,5 +1,6 @@
 #include "slice.hpp"
 #include "log.hpp"
+#include "power_policy/_power_policy.hpp"
 #include <lib/assert.hpp>
 
 /*

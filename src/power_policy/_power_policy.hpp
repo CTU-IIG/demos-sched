@@ -3,9 +3,7 @@
 #include <memory>
 #include <power_manager.hpp>
 #include <process.hpp>
-
-// forward declaration to avoid circular dependency between PowerPolicy and Window
-class Window;
+#include <window.hpp>
 
 /**
  * A virtual interface, which is injected to other components of the scheduler,

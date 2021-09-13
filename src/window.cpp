@@ -1,5 +1,6 @@
 #include "window.hpp"
 #include "log.hpp"
+#include "power_policy/_power_policy.hpp"
 
 Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_, PowerPolicy &power_policy)
     : loop(loop_)

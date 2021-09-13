@@ -2,11 +2,12 @@
 
 #include "lib/cpu_set.hpp"
 #include "partition.hpp"
-#include "power_policy/_power_policy.hpp"
 #include "timerfd.hpp"
 #include <chrono>
 #include <ev++.h>
 #include <functional>
+
+class PowerPolicy;
 
 using time_point = std::chrono::steady_clock::time_point;
 

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "power_policy/_power_policy.hpp"
 #include "slice.hpp"
 #include <chrono>
 #include <ev++.h>
 #include <list>
 
 class Window;
+class PowerPolicy;
 
 using Windows = std::list<Window>;
 using time_point = std::chrono::steady_clock::time_point;
