@@ -68,6 +68,7 @@ public:
     ~CgroupCpuset();
 
     void set_cpus(cpu_set cpus);
+    const cpu_set& get_cpus() const { return current_cpus; }
 
 private:
     int fd_cpus;

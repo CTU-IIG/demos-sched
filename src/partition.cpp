@@ -67,7 +67,6 @@ void Partition::reset(bool move_to_first_proc,
 
     clear_completed_flag();
     cgc.set_cpus(cpus);
-    current_cpus = cpus;
     _completed_cb = process_completion_cb;
     // for BE partition, we don't want to reset to first process
     if (move_to_first_proc) {

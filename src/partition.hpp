@@ -54,7 +54,7 @@ public:
     //  must run before the cgroup destructors to cleanup child cgroups in correct order
     Processes processes{};
     /** Current cpu_set the partition is running under. */
-    cpu_set current_cpus{};
+    const cpu_set& current_cpus() { return cgc.get_cpus(); }
 
 public:
     Partition(Cgroup &freezer_parent,

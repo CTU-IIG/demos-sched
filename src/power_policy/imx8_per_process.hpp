@@ -43,7 +43,7 @@ public:
         ASSERT(proc.requested_frequencies.size() == policies.size());
         // check if the process is requesting any specific frequency and
         //  if its current cpuset intersects with the A53/A72 cluster
-        cpu_set proc_cpus = proc.part.current_cpus;
+        const cpu_set &proc_cpus = proc.part.current_cpus();
 
         for (size_t i = 0; i < policies.size(); i++) {
             auto &policy = *policies[i];
