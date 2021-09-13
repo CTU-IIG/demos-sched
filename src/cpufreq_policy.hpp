@@ -173,15 +173,6 @@ public: ////////////////////////////////////////////////////////////////////////
         write_frequency(get_freq(index));
     }
 
-private: ///////////////////////////////////////////////////////////////////////////////////////////
-    string get_available_freq_str()
-    {
-        if (!available_frequencies) {
-            return "unknown";
-        }
-        return fmt::format("{}", fmt::join(available_frequencies.value(), ", "));
-    }
-
     void validate_frequency(CpuFrequencyHz freq)
     {
         if (freq < min_frequency) {
@@ -203,6 +194,15 @@ private: ///////////////////////////////////////////////////////////////////////
                                 std::to_string(freq) +
                                 "` Hz, which is not listed as an available frequency for this CPU");
         }
+    }
+
+private: ///////////////////////////////////////////////////////////////////////////////////////////
+    string get_available_freq_str()
+    {
+        if (!available_frequencies) {
+            return "unknown";
+        }
+        return fmt::format("{}", fmt::join(available_frequencies.value(), ", "));
     }
 
     string read_governor()
