@@ -498,4 +498,6 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
             w.add_slice(sc_part_ptr, be_part_ptr, cpus);
         }
     }
+
+    c.power_policy.validate(windows);
 }

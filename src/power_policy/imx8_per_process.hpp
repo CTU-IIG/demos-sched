@@ -37,6 +37,26 @@ public:
                                     " - are you sure you're running DEmOS on an i.MX8?");
     }
 
+    // Validate that the requested frequencies are available
+    void validate(const Windows &windows) override
+    {
+        for (const Window &win : windows) {
+            for (const Slice &slice : win.slices) {
+                for (const Partition *part : { slice.sc, slice.be }) {
+                    if (!part) continue;
+                    for (const Process &proc : part->processes) {
+                        if (!proc.requested_frequency) continue;
+                        for (const CpuCluster &cluster : clusters) {
+                            if (!(slice.cpus & cluster.cf_policy.affected_cores)) continue;
+                            cluster.cf_policy.validate_frequency(proc.requested_frequency.value());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     void on_process_start(Process &proc) override
     {
         for (CpuCluster &cc : clusters) {

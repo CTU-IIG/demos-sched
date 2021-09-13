@@ -21,6 +21,8 @@ class PowerPolicy
 public:
     virtual ~PowerPolicy() = default;
 
+    virtual void validate(const Windows &) {}
+
     virtual void on_window_start(Window &) {}
     virtual void on_sc_start(Window &) {}
     virtual void on_be_start(Window &) {}
