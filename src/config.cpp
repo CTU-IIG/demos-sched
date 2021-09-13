@@ -416,6 +416,7 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
                                       Windows &windows,
                                       Partitions &partitions)
 {
+    bool ppf_warned = false;
     optional<filesystem::path> process_cwd{};
     if (config["set_cwd"].as<bool>()) {
         ASSERT(config_file_path != nullopt);
@@ -437,6 +438,10 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
                                ? std::optional(CpuFrequencyHz{
                                    1000 * 1000 * yprocess["frequency"].as<unsigned int>() })
                                : std::nullopt;
+            if (req_freq && !c.power_policy.supports_per_process_frequencies() && !ppf_warned) {
+                logger->warn("Per-processes frequency specified in the configuration, but not supported by the power policy.");
+                ppf_warned = true;
+            }
             partitions.back().add_process(c.loop,
                                           yprocess["cmd"].as<string>(),
                                           process_cwd,

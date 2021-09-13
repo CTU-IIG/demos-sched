@@ -55,6 +55,7 @@ public:
             }
         }
     }
+    bool supports_per_process_frequencies() override { return true; }
 
 
     void on_process_start(Process &proc) override

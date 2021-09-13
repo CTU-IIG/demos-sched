@@ -22,6 +22,7 @@ public:
     virtual ~PowerPolicy() = default;
 
     virtual void validate(const Windows &) {}
+    virtual bool supports_per_process_frequencies() { return false; }
 
     virtual void on_window_start(Window &) {}
     virtual void on_sc_start(Window &) {}
