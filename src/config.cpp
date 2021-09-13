@@ -67,7 +67,7 @@ static Node normalize_process(const Node &proc, float default_budget)
                 // if true, we wait until the process completes initialization
                 //  before freezing it and starting normal scheduling
                 norm_proc[k] = proc[k].as<bool>();
-            } else if (k == "_a53_freq" || k == "_a72_freq") {
+            } else if (k == "frequency") {
                 // TODO: when the interface is finalized, remove the leading underscore
                 norm_proc[k] = proc[k].as<unsigned int>();
             } else {
@@ -432,22 +432,16 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
         for (const auto &yprocess : ypart["processes"]) {
             auto budget = chrono::milliseconds(yprocess["budget"].as<int>());
             auto budget_jitter = chrono::milliseconds(yprocess["jitter"].as<int>());
-            // the freqs are already checked during validation, they should be correct
-            auto _a53_freq = yprocess["_a53_freq"]
+            auto req_freq = yprocess["frequency"]
                                ? std::optional(CpuFrequencyHz{
-                                   1000 * 1000 * yprocess["_a53_freq"].as<unsigned int>() })
-                               : std::nullopt;
-            auto _a72_freq = yprocess["_a72_freq"]
-                               ? std::optional(CpuFrequencyHz{
-                                   1000 * 1000 * yprocess["_a72_freq"].as<unsigned int>() })
+                                   1000 * 1000 * yprocess["frequency"].as<unsigned int>() })
                                : std::nullopt;
             partitions.back().add_process(c.loop,
                                           yprocess["cmd"].as<string>(),
                                           process_cwd,
                                           budget,
                                           budget_jitter,
-                                          _a53_freq,
-                                          _a72_freq,
+                                          req_freq,
                                           yprocess["init"].as<bool>());
         }
     }

@@ -27,8 +27,7 @@ void Partition::add_process(ev::loop_ref loop,
                             const optional<filesystem::path> &working_dir,
                             chrono::milliseconds budget,
                             chrono::milliseconds budget_jitter,
-                            std::optional<CpuFrequencyHz> a53_freq,
-                            std::optional<CpuFrequencyHz> a72_freq,
+                            std::optional<CpuFrequencyHz> req_freq,
                             bool has_initialization)
 {
     processes.emplace_back(loop,
@@ -38,8 +37,7 @@ void Partition::add_process(ev::loop_ref loop,
                            working_dir,
                            budget,
                            budget_jitter,
-                           a53_freq,
-                           a72_freq,
+                           req_freq,
                            has_initialization);
     proc_count++;
     current_proc = processes.begin();

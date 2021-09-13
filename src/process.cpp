@@ -23,11 +23,10 @@ Process::Process(ev::loop_ref loop,
                  std::optional<std::filesystem::path> working_dir,
                  milliseconds budget,
                  milliseconds budget_jitter,
-                 std::optional<CpuFrequencyHz> a53_freq,
-                 std::optional<CpuFrequencyHz> a72_freq,
+                 std::optional<CpuFrequencyHz> req_freq,
                  bool has_initialization)
     : part(partition)
-    , requested_frequencies{ a53_freq, a72_freq }
+    , requested_frequency(req_freq)
     , argv(std::move(argv))
     // budget +- (jitter / 2)
     , jitter_distribution_ms(-budget_jitter.count() / 2,

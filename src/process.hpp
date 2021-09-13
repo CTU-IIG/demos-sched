@@ -33,8 +33,7 @@ public:
             std::optional<std::filesystem::path> working_dir,
             std::chrono::milliseconds budget,
             std::chrono::milliseconds budget_jitter,
-            std::optional<CpuFrequencyHz> a53_freq,
-            std::optional<CpuFrequencyHz> a72_freq,
+            std::optional<CpuFrequencyHz> req_freq,
             bool has_initialization = false);
 
     /** Spawns the underlying system process. */
@@ -80,7 +79,7 @@ public:
     void mark_uncompleted();
 
     Partition &part;
-    const std::array<std::optional<CpuFrequencyHz>, 2> requested_frequencies;
+    const std::optional<CpuFrequencyHz> requested_frequency;
     const std::string argv;
 
 private:
