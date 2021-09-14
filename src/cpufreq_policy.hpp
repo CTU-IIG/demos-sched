@@ -192,12 +192,13 @@ public: ////////////////////////////////////////////////////////////////////////
               available_frequencies->end()) {
             throw runtime_error("Attempted to set CPU frequency for `" + name + "` to `" +
                                 std::to_string(freq) +
-                                "` Hz, which is not listed as an available frequency for this CPU");
+                                "` Hz, but this CPU supports only the following frequencies: " +
+                                get_available_freq_str());
         }
     }
 
 private: ///////////////////////////////////////////////////////////////////////////////////////////
-    string get_available_freq_str()
+    string get_available_freq_str() const
     {
         if (!available_frequencies) {
             return "unknown";
