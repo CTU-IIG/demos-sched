@@ -210,6 +210,8 @@ Node Config::normalize_slice(const Node &slice,
         auto k = key.first.as<string>();
         if (k == "cpu")
             norm_slice[k] = slice[k].as<string>();
+        else if (k == "frequency")
+            norm_slice[k] = slice[k].as<unsigned int>();
         else if (k == "sc_partition")
             // if process budget is not set, `0.6 * window length` is used as a default for SC
             //  partition; otherwise, SC partition would use up the whole budget, not leaving any
@@ -500,7 +502,16 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
                 cpus &= allowed_cpus;
             }
 
-            w.add_slice(sc_part_ptr, be_part_ptr, cpus);
+            auto req_freq = yslice["frequency"]
+                               ? std::optional(CpuFrequencyHz{
+                                   1000 * 1000 * yslice["frequency"].as<unsigned int>() })
+                               : std::nullopt;
+            if (req_freq && !c.power_policy.supports_per_slice_frequencies() && !ppf_warned) {
+                logger->warn("Per-slice frequency specified in the configuration, but not supported by the power policy.");
+                ppf_warned = true;
+            }
+
+            w.add_slice(sc_part_ptr, be_part_ptr, cpus, req_freq);
         }
     }
 

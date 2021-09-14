@@ -16,10 +16,12 @@ Slice::Slice(ev::loop_ref loop,
              std::function<void(Slice &, time_point)> sc_done_cb,
              Partition *sc,
              Partition *be,
+             std::optional<CpuFrequencyHz> req_freq,
              cpu_set cpus)
     : sc(sc)
     , be(be)
     , cpus(std::move(cpus))
+    , requested_frequency(req_freq)
     , power_policy{ power_policy }
     , sc_done_cb(std::move(sc_done_cb))
     , timer(loop)

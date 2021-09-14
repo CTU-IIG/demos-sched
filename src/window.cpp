@@ -8,10 +8,10 @@ Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_, PowerPolic
     , length(length_)
 {}
 
-Slice &Window::add_slice(Partition *sc, Partition *be, const cpu_set &cpus)
+Slice &Window::add_slice(Partition *sc, Partition *be, const cpu_set &cpus, std::optional<CpuFrequencyHz> req_freq)
 {
     auto sc_cb = [this](Slice &s, time_point t) { slice_sc_end_cb(s, t); };
-    return slices.emplace_back(loop, power_policy, sc_cb, sc, be, cpus);
+    return slices.emplace_back(loop, power_policy, sc_cb, sc, be, req_freq, cpus);
 }
 
 bool Window::has_sc_finished() const

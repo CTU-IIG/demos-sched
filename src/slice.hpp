@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cpufreq_policy.hpp"
 #include "lib/cpu_set.hpp"
 #include "partition.hpp"
 #include "timerfd.hpp"
@@ -29,6 +30,7 @@ public:
           std::function<void(Slice &, time_point)> sc_done_cb,
           Partition *sc,
           Partition *be,
+          std::optional<CpuFrequencyHz> req_freq,
           cpu_set cpus = cpu_set(0x1));
 
     Slice(const Slice &) = delete;
@@ -40,6 +42,8 @@ public:
     /** Best-effort partition running in this slice. */
     Partition *const be;
     const cpu_set cpus;
+    const std::optional<CpuFrequencyHz> requested_frequency;
+
 
     /**
      * Starts execution of SC partition, if present. Calls sc_done_cb

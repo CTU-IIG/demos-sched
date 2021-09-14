@@ -10,6 +10,7 @@
 #include "power_policy/imx8_alternating.hpp"
 #include "power_policy/imx8_fixed.hpp"
 #include "power_policy/imx8_per_process.hpp"
+#include "power_policy/imx8_per_slice.hpp"
 #include "power_policy/low.hpp"
 #include "power_policy/minbe.hpp"
 #include "power_policy/none.hpp"
@@ -47,6 +48,7 @@ static const std::map<std::string,
       PP("imx8_alternating", PowerPolicy_Imx8_Alternating, 4),
       PP("imx8_fixed", PowerPolicy_Imx8_Fixed, 2),
       PP("imx8_per_process", PowerPolicy_Imx8_PerProcess, 0),
+      PP("imx8_per_slice", PowerPolicy_Imx8_PerSlice, 0),
   };
 
 

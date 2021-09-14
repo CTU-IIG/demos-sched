@@ -4,6 +4,7 @@
 #include <chrono>
 #include <ev++.h>
 #include <list>
+#include <optional>
 
 class Window;
 class PowerPolicy;
@@ -30,7 +31,7 @@ public:
 
     Window(ev::loop_ref loop, std::chrono::milliseconds length, PowerPolicy &power_policy);
 
-    Slice &add_slice(Partition *sc, Partition *be, const cpu_set &cpus);
+    Slice &add_slice(Partition *sc, Partition *be, const cpu_set &cpus, std::optional<CpuFrequencyHz> req_freq);
     [[nodiscard]] bool has_sc_finished() const;
     void start(time_point current_time);
     void stop(time_point current_time);
