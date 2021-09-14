@@ -173,7 +173,7 @@ public: ////////////////////////////////////////////////////////////////////////
         write_frequency(get_freq(index));
     }
 
-    void validate_frequency(CpuFrequencyHz freq)
+    void validate_frequency(CpuFrequencyHz freq) const
     {
         if (freq < min_frequency) {
             throw runtime_error("Attempted to set CPU frequency for `" + name + "` to `" +
