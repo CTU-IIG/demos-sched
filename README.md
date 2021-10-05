@@ -406,3 +406,8 @@ partitions:
     src/cleanup_crash.sh
     ```
 
+# Citing
+
+If you find the DEmOS tool useful for your research, please consider citing our original paper in your publication list as follows:
+
+- O. Benedikt et al., "Thermal-Aware Scheduling for MPSoC in the Avionics Domain: Tooling and Initial Results," 2021 IEEE 27th International Conference on Embedded and Real-Time Computing Systems and Applications (RTCSA), 2021, pp. 159-168, doi: [10.1109/RTCSA52859.2021.00026](https://doi.org/10.1109/RTCSA52859.2021.00026).
