@@ -72,9 +72,13 @@ static void handle_cgroup_exc(stringstream &commands,
         }
     }
 
-    ASSERT(!unified_path.empty());
-    ASSERT(!freezer_path.empty());
-    ASSERT(!cpuset_path.empty());
+    for (auto [path, type] : {
+           make_pair(&unified_path, "unified"),
+           make_pair(&freezer_path, "freezer"),
+           make_pair(&cpuset_path, "cpuset"),
+         }) {
+        if (path->empty()) throw runtime_error(string(type) + " cgroup not found");
+    }
 
     stringstream commands, mount_cmds;
 
