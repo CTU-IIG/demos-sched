@@ -69,14 +69,16 @@ static std::unique_ptr<PowerPolicy> instantiate_power_policy(
     logger->info("Activating power management (power policy: '{}', args: '{}')",
                  policy_name,
                  fmt::join(policy_args, ","));
-
-    try {
-        return power_policies.at(policy_name)(policy_args);
-    } catch (const std::out_of_range &) {
+    if (power_policies.find(policy_name) == power_policies.end()) {
         std::string all_pp;
         for (auto const& [pp, val] : power_policies)
             all_pp += (all_pp.empty() ? "" : ", ") + pp;
         throw std::runtime_error("Unknown power policy selected: " + policy_name + "; available policies: " + all_pp);
+    }
+    try {
+        return power_policies.at(policy_name)(policy_args);
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Failed to initialize power policy " + policy_name + ": " + e.what());
     }
 }
 
