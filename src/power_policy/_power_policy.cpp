@@ -14,6 +14,7 @@
 #include "power_policy/low.hpp"
 #include "power_policy/minbe.hpp"
 #include "power_policy/none.hpp"
+#include "power_policy/per_process.hpp"
 
 
 // after multiple template-based attempts, a macro solution was chosen,
@@ -45,9 +46,10 @@ static const std::map<std::string,
       PP("minbe", PowerPolicy_MinBE, 0),
       PP("low", PowerPolicy_FixedLow, 0),
       PP("high", PowerPolicy_FixedHigh, 0),
+      PP("per_process", PowerPolicy_PerProcess, 0),
       PP("imx8_alternating", PowerPolicy_Imx8_Alternating, 4),
       PP("imx8_fixed", PowerPolicy_Imx8_Fixed, 2),
-      PP("imx8_per_process", PowerPolicy_Imx8_PerProcess, 0),
+      PP("imx8_per_process", PowerPolicy_Imx8_PerProcess, 0), // TODO make alias of PowerPolicy_PerProcess if it works correctly
       PP("imx8_per_slice", PowerPolicy_Imx8_PerSlice, 0),
   };
 
