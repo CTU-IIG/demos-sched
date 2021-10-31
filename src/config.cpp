@@ -69,7 +69,6 @@ static Node normalize_process(const Node &proc, float default_budget)
                 //  before freezing it and starting normal scheduling
                 norm_proc[k] = proc[k].as<bool>();
             } else if (k == "frequency") {
-                // TODO: when the interface is finalized, remove the leading underscore
                 norm_proc[k] = proc[k].as<unsigned int>();
             } else {
                 throw runtime_error("Unexpected config key: " + k);
