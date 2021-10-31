@@ -37,7 +37,7 @@ struct fmt::formatter<CpuFrequencyHz> : fmt::formatter<uint64_t>
     auto format(CpuFrequencyHz const &freq, FormatContext &ctx)
     {
         return fmt::format_to(
-          ctx.out(), "{}{} MHz", freq.freq % 1000000 == 0 ? "" : "~", freq.freq / 1000000);
+          ctx.out(), "{} MHz", freq.freq / 1000000.0);
     }
 };
 

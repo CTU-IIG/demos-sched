@@ -69,7 +69,7 @@ static Node normalize_process(const Node &proc, float default_budget)
                 //  before freezing it and starting normal scheduling
                 norm_proc[k] = proc[k].as<bool>();
             } else if (k == "frequency") {
-                norm_proc[k] = proc[k].as<unsigned int>();
+                norm_proc[k] = proc[k].as<double>();
             } else {
                 throw runtime_error("Unexpected config key: " + k);
             }
@@ -210,7 +210,7 @@ Node Config::normalize_slice(const Node &slice,
         if (k == "cpu")
             norm_slice[k] = slice[k].as<string>();
         else if (k == "frequency")
-            norm_slice[k] = slice[k].as<unsigned int>();
+            norm_slice[k] = slice[k].as<double>();
         else if (k == "sc_partition")
             // if process budget is not set, `0.6 * window length` is used as a default for SC
             //  partition; otherwise, SC partition would use up the whole budget, not leaving any
@@ -436,9 +436,9 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
             auto budget = chrono::milliseconds(yprocess["budget"].as<int>());
             auto budget_jitter = chrono::milliseconds(yprocess["jitter"].as<int>());
             auto req_freq = yprocess["frequency"]
-                               ? std::optional(CpuFrequencyHz{
-                                   1000 * 1000 * yprocess["frequency"].as<unsigned int>() })
-                               : std::nullopt;
+                              ? std::optional(CpuFrequencyHz{ static_cast<uint64_t>(
+                                  1000 * 1000 * yprocess["frequency"].as<double>()) })
+                              : std::nullopt;
             if (req_freq && !c.power_policy.supports_per_process_frequencies() && !ppf_warned) {
                 logger->warn("Per-processes frequency specified in the configuration, but not supported by the power policy.");
                 ppf_warned = true;
@@ -502,11 +502,12 @@ void Config::create_scheduler_objects(const CgroupConfig &c,
             }
 
             auto req_freq = yslice["frequency"]
-                               ? std::optional(CpuFrequencyHz{
-                                   1000 * 1000 * yslice["frequency"].as<unsigned int>() })
-                               : std::nullopt;
+                              ? std::optional(CpuFrequencyHz{ static_cast<uint64_t>(
+                                  1000 * 1000 * yslice["frequency"].as<double>()) })
+                              : std::nullopt;
             if (req_freq && !c.power_policy.supports_per_slice_frequencies() && !ppf_warned) {
-                logger->warn("Per-slice frequency specified in the configuration, but not supported by the power policy.");
+                logger->warn("Per-slice frequency specified in the configuration, but not "
+                             "supported by the power policy.");
                 ppf_warned = true;
             }
 
