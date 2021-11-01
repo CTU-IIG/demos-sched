@@ -25,11 +25,8 @@ private:
 public:
     PowerPolicy_PerProcess()
     {
-        for (auto &p : pm.policy_iter()) {
-            if (!p.available_frequencies)
-                throw runtime_error("Cannot list available frequencies for the CPU");
+        for (auto &p : pm.policy_iter())
             clusters.emplace_back(p);
-        }
     }
 
     // Validate that the requested frequencies are available
