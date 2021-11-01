@@ -58,6 +58,7 @@ public: ////////////////////////////////////////////////////////////////////////
     const string original_governor;
     const CpuFrequencyHz min_frequency;
     const CpuFrequencyHz max_frequency;
+    const CpuFrequencyHz original_scaling_max_frequency;
     // for small numbers of frequencies (under 12, on my machine), std::vector with linear search
     //  is faster than both std::set and std::unordered_set when checking if a frequency is valid
     // it also supports random access, which is convenient for writing power policies
@@ -80,6 +81,7 @@ public: ////////////////////////////////////////////////////////////////////////
         , original_governor{ current_governor }
         , min_frequency{ read_freq_file(policy_dir / "cpuinfo_min_freq") }
         , max_frequency{ read_freq_file(policy_dir / "cpuinfo_max_freq") }
+        , original_scaling_max_frequency{ read_freq_file(policy_dir / "scaling_max_freq") }
         , available_frequencies{ read_available_frequencies() }
         , affected_cores{ read_affected_cpus() }
         // sometimes, the policy does not affect any cores (e.g. all controlled cores are offline);
@@ -105,6 +107,16 @@ public: ////////////////////////////////////////////////////////////////////////
 
         write_governor("userspace");
 
+        if (original_scaling_max_frequency != max_frequency) {
+            logger->warn(
+              "Cpufreq policy '{}' has scaling_max_freq ({}) different from cpuinfo_max_freq ({}). "
+              "Setting scaling_max_freq to match cpuinfo_max_freq.",
+              name,
+              original_scaling_max_frequency,
+              max_frequency);
+            write_scaling_max_freq(max_frequency);
+        }
+
         fs::path freq_path(policy_dir / "scaling_setspeed");
         fd_freq = CHECK(open(freq_path.string().c_str(), O_RDWR | O_NONBLOCK));
 
@@ -121,6 +133,10 @@ public: ////////////////////////////////////////////////////////////////////////
     ~CpufreqPolicy()
     {
         close(fd_freq);
+
+        if (original_scaling_max_frequency != max_frequency)
+            write_scaling_max_freq(original_scaling_max_frequency);
+
         // reset governor to original value
         // if governor was not manually changed, this is a noop
         write_governor(original_governor);
@@ -230,6 +246,16 @@ private: ///////////////////////////////////////////////////////////////////////
                                 "` for policy `" + name + "`");
         }
         current_governor = governor;
+    }
+
+    void write_scaling_max_freq(CpuFrequencyHz freq)
+    {
+        int fd =
+          CHECK(open((policy_dir / "scaling_max_freq").string().c_str(), O_RDWR | O_NONBLOCK));
+        auto freq_str = std::to_string(freq / 1000);
+        CHECK_MSG(write(fd, freq_str.c_str(), freq_str.size()),
+                  "Could not set scaling_max_freq for `cpufreq` policy '" + name + "'");
+        close(fd);
     }
 
     std::optional<std::vector<CpuFrequencyHz>> read_available_frequencies()
