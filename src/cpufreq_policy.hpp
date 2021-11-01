@@ -78,8 +78,8 @@ public: ////////////////////////////////////////////////////////////////////////
         , fd_freq{ -1 } // opened after governor is changed
         , name{ policy_dir.filename() }
         , original_governor{ current_governor }
-        , min_frequency{ read_freq_file(policy_dir / "scaling_min_freq") }
-        , max_frequency{ read_freq_file(policy_dir / "scaling_max_freq") }
+        , min_frequency{ read_freq_file(policy_dir / "cpuinfo_min_freq") }
+        , max_frequency{ read_freq_file(policy_dir / "cpuinfo_max_freq") }
         , available_frequencies{ read_available_frequencies() }
         , affected_cores{ read_affected_cpus() }
         // sometimes, the policy does not affect any cores (e.g. all controlled cores are offline);
