@@ -10,7 +10,7 @@ partitions:
       - cmd: echo proc0; sleep 3600
         budget: 500
         frequency: 1200
-  - name: SC2
+  - name: BE1
     processes:
       - cmd: echo proc1; sleep 3600
         budget: 500
@@ -21,4 +21,4 @@ windows:
       - cpu: 0
         sc_partition: SC1
       - cpu: 4
-        be_partition: SC2
+        be_partition: BE1
