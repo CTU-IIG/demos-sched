@@ -100,6 +100,7 @@ void Slice::start_partition(Partition *part, time_point current_time, bool move_
 void Slice::start_sc(time_point current_time)
 {
     if (!sc) {
+        // if there's no SC partition, immediately signal that this slice can continue
         sc_done_cb(*this, current_time);
         return;
     }
