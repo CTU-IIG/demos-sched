@@ -66,10 +66,7 @@ public:
      */
     void set_remaining_budget(std::chrono::milliseconds next_budget);
 
-    /** Resets next budget to the default value. */
-    void reset_budget();
-
-    [[nodiscard]] std::chrono::milliseconds get_actual_budget();
+    [[nodiscard]] std::chrono::milliseconds get_actual_budget() const;
     [[nodiscard]] pid_t get_pid() const;
     [[nodiscard]] bool needs_initialization() const;
     [[nodiscard]] bool is_spawned() const;
@@ -120,4 +117,5 @@ private:
     void populated_cb(bool populated);
     void completed_cb();
     void child_terminated_cb(ev::child &w, [[maybe_unused]] int revents);
+    void reset_budget();
 };

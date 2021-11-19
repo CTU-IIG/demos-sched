@@ -227,7 +227,7 @@ Configuration file is a mapping with the following keys:
     - `cmd` is a string with a command to be executed (passed to `/bin/sh -c`).
     - `budget` specifies process budget in milliseconds.
     - `jitter` (optional, default: 0) specifies jitter in milliseconds that is applied
-      to the budget whenever the process is scheduled.
+      to the budget whenever the budget is replenished.
     - `init` (optional, default: false) is a boolean specifying if process
       should be allowed to initialize before scheduler starts.
 - `windows` is an array of window definitions.

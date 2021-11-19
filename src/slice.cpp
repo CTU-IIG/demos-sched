@@ -104,8 +104,6 @@ void Slice::start_next_process(time_point current_time)
     TRACE("Running process '{}' for '{} milliseconds'", running_process->get_pid(), budget.count());
     running_process->resume();
     timeout = current_time + budget;
-    // if budget was shortened in previous window, this resets it back to full length
-    running_process->reset_budget();
     timer.start(timeout);
     // FIXME: it would probably make more sense to call this inside `resume()`
     power_policy.on_process_start(*running_process);
@@ -120,6 +118,7 @@ void Slice::stop_current_process(bool mark_completed)
     timer.stop();
     running_process->suspend();
     if (mark_completed) running_process->mark_completed();
+
     running_process = nullptr;
 }
 

@@ -53,6 +53,7 @@ Process::Process(ev::loop_ref loop,
     // check that randomized budget cannot be negative
     // actual budget is `budget +- (jitter / 2)`
     ASSERT(2 * budget >= budget_jitter);
+    reset_budget(); // Apply initial budget jitter (if needed)
     suspend();
     completed_w.set(std::bind(&Process::completed_cb, this)); // NOLINT(modernize-avoid-bind)
     completed_w.start();
@@ -125,16 +126,9 @@ void Process::resume()
     cgf.unfreeze();
 }
 
-milliseconds Process::get_actual_budget()
+milliseconds Process::get_actual_budget() const
 {
-    if (budget != actual_budget) {
-        // a modified budget was stored, which should already be randomized, keep it
-        ASSERT(actual_budget > actual_budget.zero());
-        return actual_budget;
-    }
-    auto b = actual_budget + milliseconds(jitter_distribution_ms(gen));
-    ASSERT(b >= b.zero());
-    return b;
+    return actual_budget;
 }
 
 bool Process::needs_initialization() const
@@ -150,6 +144,7 @@ bool Process::is_pending() const
 void Process::mark_completed()
 {
     completed = true;
+    reset_budget();
 }
 
 void Process::mark_uncompleted()
@@ -178,7 +173,8 @@ void Process::set_remaining_budget(milliseconds next_budget)
 
 void Process::reset_budget()
 {
-    actual_budget = budget;
+    actual_budget = budget + milliseconds(jitter_distribution_ms(gen));
+    ASSERT(actual_budget >= milliseconds::zero());
 }
 
 /** Called when the cgroup is empty and we want to signal it to the parent partition. */
