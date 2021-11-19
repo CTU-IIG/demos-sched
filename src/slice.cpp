@@ -142,7 +142,7 @@ void Slice::stop(time_point current_time)
         //  for the next window); this may call sc_done_cb if this was the last process
         //  from the SC partition
         TRACE("Process ran out of budget exactly at the window end");
-        stop_current_process();
+        stop_current_process(true);
         load_next_process(current_time);
         // clear running_process set by load_next_process above, as we're not starting it now
         running_process = nullptr;
@@ -161,6 +161,6 @@ void Slice::stop(time_point current_time)
 // Called as a response to timeout or process completion.
 void Slice::schedule_next(time_point current_time)
 {
-    stop_current_process();
+    stop_current_process(true);
     start_next_process(current_time);
 }
