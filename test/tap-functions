@@ -224,7 +224,9 @@ ok(){
 
 
 okx(){
-	local command="$@"
+        # Join multiline command (in "$@") to a single line, stripping
+        # leading whitespace. Multiline $command violates TAP protocol.
+	local command=$(awk '{sub(/^[ \t]+/, ""); print}' ORS=' ' <<<"$@")
 
 	local line=
 	local output=
