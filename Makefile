@@ -38,7 +38,7 @@ release_logs: build/BUILD_TYPE_release_logs
 
 # this is quite slow (startup time goes from 50 ms to 270 ms on my laptop)
 # (most visible for tests, which take quite a bit longer to run, as they start DEmOS from scratch a lot)
-debug: MESON_OPTS=--debug -Db_sanitize=address,undefined --optimization=g -Dlib_verbose=true -Dtrace_logs=true
+debug: MESON_OPTS=--debug -Db_sanitize=address,undefined --optimization=g -Dlib_verbose=true -Dtrace_logs=true -Db_coverage=true
 debug: build/BUILD_TYPE_debug
 
 # configures DEmOS to log all heap allocations after initialization finishes
