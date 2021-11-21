@@ -2,6 +2,8 @@
 
 Scheduler for simulation of avionics multi-core workloads on Linux.
 
+[![codecov](https://codecov.io/gh/CTU-IIG/demos-sched/branch/master/graph/badge.svg?token=1U7CEIANZO)](https://codecov.io/gh/CTU-IIG/demos-sched)
+
 ## Compilation
 
 Initialize git submodules:

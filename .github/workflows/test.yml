@@ -26,6 +26,14 @@ jobs:
         run: nix-shell --run "make debug && make"
       - name: Tests (in debug mode)
         run: nix-shell --run "cd build && meson test --wrapper=sudo --print-errorlogs"
+      - name: Generate coverage report
+        run: nix-shell -p gcovr ninja --run "ninja -C build coverage-xml"
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./build/meson-logs
+          fail_ci_if_error: true
+          verbose: true
       - name: Aarch64
         run: nix-build --argstr crossSystem aarch64-linux
 
