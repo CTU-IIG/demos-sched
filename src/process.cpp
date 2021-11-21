@@ -11,10 +11,17 @@
 using namespace std::placeholders;
 using milliseconds = std::chrono::milliseconds;
 
-// C++ <random> is broken beyond any reason
-// this initialisation is not really uniform, but we don't need that here
-// see https://stackoverflow.com/questions/45069219/how-to-succinctly-portably-and-thoroughly-seed-the-mt19937-prng
-static std::mt19937 gen{ std::random_device{}() };
+static std::mt19937 gen([]() -> unsigned {
+    const char *seed = getenv("DEMOS_RAND_SEED");
+    if (seed) {
+        return std::stoi(std::string(seed));
+    } else {
+        // C++ <random> is broken beyond any reason
+        // this initialisation is not really uniform, but we don't need that here
+        // see https://stackoverflow.com/questions/45069219/how-to-succinctly-portably-and-thoroughly-seed-the-mt19937-prng
+        return std::random_device{}();
+    }
+}());
 
 Process::Process(ev::loop_ref loop,
                  const std::string &name,
