@@ -108,6 +108,7 @@ private:
         logger->info("Starting scheduler");
         memory_tracker::enable();
         auto start_time = std::chrono::steady_clock::now();
+        Slice::start_time = start_time;
         mf.start(start_time);
         if (timeout) {
             logger->debug("Scheduler will timeout in '{} ms'", timeout->count());

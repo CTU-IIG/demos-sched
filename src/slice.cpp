@@ -2,6 +2,33 @@
 #include "log.hpp"
 #include "power_policy/_power_policy.hpp"
 #include <lib/assert.hpp>
+#include <fstream>
+
+time_point Slice::start_time;
+
+static class ScheduleLogger
+{
+public:
+    ScheduleLogger()
+    {
+        const char *log = getenv("DEMOS_SCHEDULE_LOG");
+        if (!log) return;
+        if constexpr (enabled) {
+            schedule_out.open(log, std::ios_base::trunc);
+        } else {
+            throw runtime_error(
+              "DEMOS_SCHEDULE_LOG env. variable is not supported in release build");
+        }
+    }
+    void log(const std::string &msg)
+    {
+        if constexpr (enabled) schedule_out << msg;
+    }
+
+private:
+    static constexpr bool enabled = IF_DEBUG(true, false);
+    std::ofstream schedule_out{};
+} schedule_logger;
 
 /*
 TODO: I think there is a subtle race condition here, where
@@ -66,6 +93,12 @@ void Slice::start_next_process(time_point current_time)
         return start_next_process(current_time);
     }
 
+    using namespace std::chrono;
+    schedule_logger.log(fmt::format("{:6}: cpus={} cmd='{}' budget={}\n",
+                                    duration_cast<milliseconds>(current_time - start_time).count(),
+                                    cpus.as_list(),
+                                    running_process->argv,
+                                    budget.count()));
     TRACE("Running process '{}' for '{} milliseconds'", running_process->get_pid(), budget.count());
     running_process->resume();
     timeout = current_time + budget;

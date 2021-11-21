@@ -70,4 +70,7 @@ private:
     void stop_current_process(bool mark_completed);
     bool load_next_process(time_point current_time);
     void start_next_process(time_point current_time);
+
+public:
+    static time_point start_time; // Scheduler start time for schedule logging
 };
