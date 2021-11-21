@@ -1,11 +1,17 @@
 cxx = meson.get_compiler('cpp')
 
+version_h = vcs_tag(
+	input : 'version.h.in',
+	output : 'version.h',
+	command : ['git', 'describe', '--always'],
+)
+
 executable('demos-sched',
 	['main.cpp', 'memory_tracker.cpp', 'power_policy/_power_policy.cpp',
 	 'process.cpp', 'partition.cpp',
 	 'slice.cpp', 'window.cpp', 'majorframe.cpp',
 	 'cgroup.cpp', 'cgroup_setup.cpp', 'timerfd.cpp', 'evfd.cpp',
-	 'config.cpp', 'lib/cpuset.c', 'log.cpp'],
+	 'config.cpp', 'lib/cpuset.c', 'log.cpp', version_h],
 	cpp_args : cxx.get_supported_arguments(['-Wsuggest-attribute=const']) +
 		[ '-DHAVE_DECL_CPU_ALLOC' ] + # see cpuset.h
 		(get_option('buildtype').startswith('debug') ? [ '-DDEBUG' ] : []),

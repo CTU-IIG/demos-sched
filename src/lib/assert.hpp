@@ -32,10 +32,12 @@ public:
        ? void(0)                                                                                   \
        : throw assertion_error(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
 #define RUN_DEBUG(expr) void(expr)
+#define IF_DEBUG(yes, no) (yes)
 #else
 // type-check the assert expressions even in release mode, but don't run them
 //  (compiler should optimize this away into a no-op)
 // the inner (void)(expr) suppresses the "expression result unused" warning
 #define RUN_DEBUG(expr) void(true || ((void)(expr), false))
 #define ASSERT(expr) RUN_DEBUG(expr)
+#define IF_DEBUG(yes, no) (no)
 #endif

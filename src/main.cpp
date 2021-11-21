@@ -5,6 +5,7 @@
 #include "lib/check_lib.hpp"
 #include "power_policy/_power_policy.hpp"
 #include <sched.h>
+#include "version.h"
 
 using namespace std;
 
@@ -70,6 +71,7 @@ static void print_help()
             "                         this interval, DEmOS stops them and exits\n"
             "  [-s]                  rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
             "  [-d]                  dump config file without execution\n"
+            "  [-V]                  print demos-sched version and exit"
             "  [-h]                  print this message\n"
             "To control logger output, use the following environment variables:\n"
             "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n"
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
     bool systemd_run = false;
     std::optional<std::chrono::milliseconds> scheduler_timeout{};
 
-    while ((opt = getopt(argc, argv, "c:C:p:g:m:M:t:sdh")) != -1) {
+    while ((opt = getopt(argc, argv, "c:C:p:g:m:M:t:sdhV")) != -1) {
         switch (opt) {
             case 'c': // config file path
                 config_file = optarg;
@@ -117,6 +119,10 @@ int main(int argc, char *argv[])
                 break;
             case 'd': // dump config file without execution
                 dump_config = true;
+                break;
+            case 'V':
+                fmt::print("demos-sched version {} ({})\n", GIT_VERSION, IF_DEBUG("debug", "release"));
+                exit(0);
                 break;
             case 'h':
                 print_help();
