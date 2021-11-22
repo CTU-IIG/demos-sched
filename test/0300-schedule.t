@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . testlib
-plan_tests 16
+plan_tests 18
 
 
 if ! demos-sched -V | grep -q debug; then
@@ -117,3 +117,13 @@ is "$(< $DEMOS_SCHEDULE_LOG)" "\
     15: cpus=0 cmd='dummy BE' budget=4
     17: cpus=0 cmd='dummy BE' budget=2
     20: cpus=0 cmd='dummy BE' budget=9"
+
+# Maximum jitter - this triggers both extremes (reported with the following trace messages):
+# - Skipping process with empty effective budget (at time 2 and 4)
+# - Process ran out of budget exactly at the window end (at time 6)
+DEMOS_RAND_SEED=2 okx demos-sched -t 10 -C 'windows: [{length: 2, cpu: 0, sc_processes: [{cmd: dummy, budget: 1, jitter: 2}]}]'
+is "$(< $DEMOS_SCHEDULE_LOG)" "\
+     0: cpus=0 cmd='dummy' budget=1
+     6: cpus=0 cmd='dummy' budget=2
+     8: cpus=0 cmd='dummy' budget=1
+    10: cpus=0 cmd='dummy' budget=2"
