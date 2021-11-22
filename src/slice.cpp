@@ -62,6 +62,7 @@ void Slice::start_next_process(time_point current_time)
         //  this may simulate a process that occasionally has no work to do
         TRACE("Skipping process with empty effective budget");
         running_process->mark_completed();
+        running_process = nullptr;
         return start_next_process(current_time);
     }
 
