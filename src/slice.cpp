@@ -84,6 +84,14 @@ void Slice::start_next_process(time_point current_time)
     }
 
     auto budget = running_process->get_actual_budget();
+
+    using namespace std::chrono;
+    schedule_logger.log(fmt::format("{:6}: cpus={} cmd='{}' budget={}\n",
+                                    duration_cast<milliseconds>(current_time - start_time).count(),
+                                    cpus.as_list(),
+                                    running_process->argv,
+                                    budget.count()));
+
     if (budget == budget.zero()) {
         // if 2 * budget == jitter, the budget will occasionally be zero
         //  this may simulate a process that occasionally has no work to do
@@ -93,12 +101,6 @@ void Slice::start_next_process(time_point current_time)
         return start_next_process(current_time);
     }
 
-    using namespace std::chrono;
-    schedule_logger.log(fmt::format("{:6}: cpus={} cmd='{}' budget={}\n",
-                                    duration_cast<milliseconds>(current_time - start_time).count(),
-                                    cpus.as_list(),
-                                    running_process->argv,
-                                    budget.count()));
     TRACE("Running process '{}' for '{} milliseconds'", running_process->get_pid(), budget.count());
     running_process->resume();
     timeout = current_time + budget;

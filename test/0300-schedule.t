@@ -124,6 +124,8 @@ is "$(< $DEMOS_SCHEDULE_LOG)" "\
 DEMOS_RAND_SEED=2 okx demos-sched -t 10 -C 'windows: [{length: 2, cpu: 0, sc_processes: [{cmd: dummy, budget: 1, jitter: 2}]}]'
 is "$(< $DEMOS_SCHEDULE_LOG)" "\
      0: cpus=0 cmd='dummy' budget=1
+     2: cpus=0 cmd='dummy' budget=0
+     4: cpus=0 cmd='dummy' budget=0
      6: cpus=0 cmd='dummy' budget=2
      8: cpus=0 cmd='dummy' budget=1
     10: cpus=0 cmd='dummy' budget=2"
