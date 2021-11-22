@@ -68,12 +68,18 @@ bool Slice::load_next_process(time_point current_time)
     if (running_process) {
         return true;
     }
-    // no process found, we're done
-    // call cb if running SC partition
+
+    // no process found
     if (running_partition == sc) {
+        // for SC, we're done, call cb
         sc_done_cb(*this, current_time);
+        return false;
+    } else { // be
+        // for BE, clear the completed flag on all processes, and continue execution with the next
+        //  process; this way, BE processes may run multiple times in a single window
+        running_partition->clear_completed_flag();
+        return load_next_process(current_time);
     }
-    return false;
 }
 
 /** Finds and starts next unfinished process from current_partition. */

@@ -126,6 +126,9 @@ public:
     [[nodiscard]] bool is_empty() const;
     [[nodiscard]] std::string get_name() const;
 
+    /** Clears the completion flags on all processes in this partition. */
+    void clear_completed_flag();
+
     // both called by Process
     void proc_exit_cb(Process &proc);
     void completed_cb(Process &proc);
@@ -133,5 +136,4 @@ public:
 private:
     // cyclic queue
     void move_to_next_proc();
-    void clear_completed_flag();
 };

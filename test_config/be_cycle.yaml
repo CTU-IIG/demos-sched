@@ -1,0 +1,13 @@
+# Test that BE processes are executed in a cycle even in a single long window.
+
+partitions:
+  - name: BE1
+    processes:
+      # changing p<n> indent for better output readability
+      - {budget: 500, cmd: "while true; do echo 'p1'; sleep 0.1; done"}
+      - {budget: 500, cmd: "while true; do echo 'p 2'; sleep 0.1; done"}
+      - {budget: 500, cmd: "while true; do echo 'p  3'; sleep 0.1; done"}
+
+windows:
+  - length: 5000
+    be_partition: BE1
