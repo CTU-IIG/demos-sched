@@ -138,10 +138,14 @@ void Slice::stop(time_point current_time)
     if (remaining == remaining.zero()) {
         // window ended approximately at the same moment when the process timed out
         // Slice::stop is called before schedule_next due to higher timer priority
-        // we stop the running process and load the next one; this may call sc_done_cb
-        //  if this was the last process from the SC partition
+        // we stop the running process and load the next one (to prepare the partition
+        //  for the next window); this may call sc_done_cb if this was the last process
+        //  from the SC partition
+        TRACE("Process ran out of budget exactly at the window end");
         stop_current_process();
         load_next_process(current_time);
+        // clear running_process set by load_next_process above, as we're not starting it now
+        running_process = nullptr;
         return;
     }
 
