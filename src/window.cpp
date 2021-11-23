@@ -11,6 +11,7 @@ Window::Window(ev::loop_ref loop_, std::chrono::milliseconds length_, PowerPolic
 Slice &Window::add_slice(Partition *sc, Partition *be, const cpu_set &cpus, std::optional<CpuFrequencyHz> req_freq)
 {
     auto sc_cb = [this](Slice &s, time_point t) { slice_sc_end_cb(s, t); };
+    to_be_skipped.push_back(false);
     return slices.emplace_back(loop, power_policy, sc_cb, sc, be, req_freq, cpus);
 }
 
@@ -26,6 +27,7 @@ void Window::start(time_point current_time)
     for (auto &s : slices) {
         s.start_sc(current_time);
     }
+
     // call power policy handlers after we start the slices;
     //  this way, even if the CPU frequency switching is slow, the processes are
     //  still executing, although at an incorrect frequency;
@@ -65,10 +67,15 @@ void Window::slice_sc_end_cb([[maybe_unused]] Slice &slice, time_point current_t
     // slice->start_be(current_time);
 
     // option 2) wait until all SC partitions finish
+
     if (has_sc_finished()) {
         TRACE("Starting BE partitions");
-        for (auto &sp : slices) {
-            sp.start_be(current_time);
+        int i = 0;
+        for (auto &s : slices) {
+            if (!to_be_skipped[i]){
+                s.start_be(current_time);
+            }
+            i++;
         }
         // see `Window::start` for reasoning on why this is called AFTER partition start
         power_policy.on_be_start(*this);

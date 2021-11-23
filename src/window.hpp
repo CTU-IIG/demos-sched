@@ -5,6 +5,7 @@
 #include <ev++.h>
 #include <list>
 #include <optional>
+#include <vector>
 
 class Window;
 class PowerPolicy;
@@ -28,6 +29,7 @@ public:
     const std::chrono::milliseconds length;
     // use std::list as Slice doesn't have move and copy constructors
     std::list<Slice> slices{};
+    std::vector<bool> to_be_skipped;
 
     Window(ev::loop_ref loop, std::chrono::milliseconds length, PowerPolicy &power_policy);
 
