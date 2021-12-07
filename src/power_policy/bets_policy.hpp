@@ -7,6 +7,8 @@
 #include <iostream>
 #include "slice.hpp"
 #include <optional>
+#include <ctime>
+
 
 /**
  * Based on imx8_per_slice policy, intended for Best Effort Task Scheduler (BETS).
@@ -18,8 +20,11 @@ protected:
     //  for other CPU cluster layouts
     std::array<CpufreqPolicy *, 2> policies{ &pm.get_policy("policy0"), &pm.get_policy("policy4") };
     float upper_threshold;
-    float lower_threshold;      //TODO: another argument or is fixed margin of 2°C good enough?
-    bool reactive_policy_in_place = false;
+    float lower_threshold;
+    time_t timer;
+    const time_t limit = 3;
+    bool temperature_inertia_period = false;
+    int level = 0;
     const string temp_path_c0 = "/sys/devices/virtual/thermal/thermal_zone0/temp";
 
 public:
@@ -59,6 +64,29 @@ public:
         cp->write_frequency(freq);
     }
 
+    void change_level(){
+        if (this->temperature_inertia_period){
+            if (time(0) - this->timer >= this->limit){
+                this->temperature_inertia_period = false;
+            }
+            return;       //Change is already in progress
+        }
+
+        if (get_temperature_on_c0() > upper_threshold){
+            this->temperature_inertia_period = true;
+            this->timer = time(0);
+            this->level++;
+            return;
+        }
+
+        if (get_temperature_on_c0() < lower_threshold && level > 0){
+            this->temperature_inertia_period = true;
+            this->timer = time(0);
+            this->level--;
+            return;
+        }
+    }
+
     void on_window_start(Window &win) override
     {
         for (CpufreqPolicy *cp : policies) {
@@ -79,12 +107,10 @@ public:
                 }
             }
             if (freq.has_value()) {
-                if ((!reactive_policy_in_place && get_temperature_on_c0() <= upper_threshold) ||
-                        (reactive_policy_in_place && get_temperature_on_c0() <= lower_threshold)) {
-                    reactive_policy_in_place = false;
+                change_level();
+                if (this->level == 0){
                     cp->write_frequency(freq.value());
                 } else {
-                    reactive_policy_in_place = true;
                     execute_policy(cp, freq.value(), win);
                 }
             }
