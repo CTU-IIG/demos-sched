@@ -2,6 +2,7 @@
 
 #include "bets_policy.hpp"
 
+
 /**
  * In case of temperature threshold overstepping lower frequencies by one step (if possible).
  *

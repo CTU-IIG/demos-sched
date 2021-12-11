@@ -8,6 +8,8 @@
 #include "slice.hpp"
 #include <optional>
 #include <ctime>
+#include <numeric>
+#include <vector>
 
 
 /**
@@ -22,16 +24,19 @@ protected:
     float upper_threshold;
     float lower_threshold;
     time_t timer;
-    const time_t limit = 3;
+    const time_t limit = 10;
     bool temperature_inertia_period = false;
     int level = 0;
     const string temp_path_c0 = "/sys/devices/virtual/thermal/thermal_zone0/temp";
+    std::vector<float> temperatures;
+    int oldest = 0;
 
 public:
     Bets_policy(const std::string &temperature_threshold)
     {
         upper_threshold = std::stof(temperature_threshold);
-        lower_threshold = upper_threshold - 2;
+        lower_threshold = upper_threshold - 1;
+        temperatures = std::vector<float>(10);
         for (auto &p : pm.policy_iter())
             if (!p.available_frequencies)
                 throw runtime_error("Cannot list available frequencies for the CPU"
@@ -60,11 +65,19 @@ public:
         return temp / 1000.0;
     }
 
+    float get_temp(){
+        this->temperatures[oldest] = this->get_temperature_on_c0();
+        oldest = (oldest + 1) % temperatures.size();
+        float sum = std::accumulate(this->temperatures.begin(), this->temperatures.end(), 0);
+        return sum / this->temperatures.size();
+    }
+
     virtual void execute_policy(CpufreqPolicy *cp, CpuFrequencyHz &freq, Window &win){
         cp->write_frequency(freq);
     }
 
     void change_level(){
+        float avg_temp = this->get_temp();
         if (this->temperature_inertia_period){
             if (time(0) - this->timer >= this->limit){
                 this->temperature_inertia_period = false;
@@ -72,17 +85,19 @@ public:
             return;       //Change is already in progress
         }
 
-        if (get_temperature_on_c0() > upper_threshold){
+        if (avg_temp > upper_threshold){
             this->temperature_inertia_period = true;
             this->timer = time(0);
             this->level++;
+            std::cout << "level=" << this->level << std::endl;
             return;
         }
 
-        if (get_temperature_on_c0() < lower_threshold && level > 0){
+        if (avg_temp < lower_threshold && level > 0){
             this->temperature_inertia_period = true;
             this->timer = time(0);
             this->level--;
+            std::cout << "level=" << this->level << std::endl;
             return;
         }
     }
