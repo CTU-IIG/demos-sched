@@ -15,6 +15,10 @@
 #include "power_policy/minbe.hpp"
 #include "power_policy/none.hpp"
 #include "power_policy/per_process.hpp"
+#include "power_policy/bets_skip.hpp"
+#include "power_policy/bets_soft_throttle.hpp"
+#include "power_policy/bets_hard_throttle.hpp"
+
 
 
 // after multiple template-based attempts, a macro solution was chosen,
@@ -51,6 +55,9 @@ static const std::map<std::string,
       PP("imx8_fixed", PowerPolicy_Imx8_Fixed, 2),
       PP("imx8_per_process", PowerPolicy_Imx8_PerProcess, 0), // TODO make alias of PowerPolicy_PerProcess if it works correctly
       PP("imx8_per_slice", PowerPolicy_Imx8_PerSlice, 0),
+      PP("bets_skip", Bets_skip, 1),
+      PP("bets_soft_throttle", Bets_soft_throttle, 1),
+      PP("bets_hard_throttle", Bets_hard_throttle, 1),
   };
 
 

@@ -1,0 +1,49 @@
+#pragma once
+
+#include "bets_policy.hpp"
+#include <map>
+#include <limits>
+#include <iostream>
+
+/**
+ * In case of temperature threshold overstepping set frequencies to the lowest possible frequency.
+ *
+ * Based on imx8_per_slice policy.
+ */
+class Bets_skip : public Bets_policy
+{
+private:
+    std::map<std::string, int> skip_counter;
+public:
+    Bets_skip(const std::string &temperature_threshold) : Bets_policy(temperature_threshold) {}
+
+    void execute_policy(CpufreqPolicy *cp, CpuFrequencyHz &freq, Window &win) override {
+        cp->write_frequency(freq);
+
+        int min = std::numeric_limits<int>::max();
+        std::string candidate;
+        int i = 0;
+        for (auto &s : win.slices){
+            std::string key = s.be->get_name();
+            if (!skip_counter.count(key)){
+                skip_counter.insert(std::pair<std::string, int>(key, 0));
+                min = 0;
+                candidate = key;
+            } else {
+                if (skip_counter[key] < min){
+                    min = skip_counter[key];
+                    candidate = key;
+                }
+            }
+            i++;
+        }
+        for (auto pair : win.to_){
+            win.to_be_skipped[j] = false;
+        }
+
+        for (int j = 0; j < )
+
+        win.to_be_skipped[candidate] = true;
+    }
+};
+
