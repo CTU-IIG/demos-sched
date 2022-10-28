@@ -1,48 +1,57 @@
-#!/usr/bin/env bash
-. testlib
-plan_tests 20
+#!/usr/bin/env bats
+load testlib
 
 # set fixed log level for config tests; otherwise if user would run something
 #  like `SPDLOG_LEVEL=trace make test`, the output would include the logs and the tests would fail
 export SPDLOG_LEVEL=warning
 
 test_normalization() {
-    local test_name=$1
-    local cfg_in=$2
-    local cfg_out_expected=$3
+    local cfg_in=$1
+    local cfg_out_expected=$2
 
-    echo "======== NEXT TEST =======================" >&2
-    local cfg_out=$(demos-sched -d -C "$cfg_in" 2>&1)
+    run demos-sched -d -C "$cfg_in"
     # log the output for easier debugging when a test fails
-    echo "$cfg_out" >&2
-    is "$cfg_out" "$cfg_out_expected" "$test_name"
+    echo "$output"
+    [[ $output = "$cfg_out_expected" ]]
 }
 
-out=$(demos-sched -C "{ windows: [], partitions: [], garbage: garbage}" 2>&1)
-is $? 1 "garbage causes failure"
-like "$out" "garbage" "garbage reported"
+@test "garbage in config is reported" {
+    run ! demos-sched -C "{ windows: [], partitions: [], garbage: garbage}"
+    [[ $output =~ "garbage" ]]
+}
 
-out=$(demos-sched -C '-d' 2>&1)
-is $? 1 "non-map config causes failure"
-like "$out" "must be YAML mapping node" "non-map config reported"
+@test "non-map config reported" {
+    run -1 demos-sched -C '-d'
+    [[ $output =~ "must be YAML mapping node" ]]
+}
 
-out=$(demos-sched -d -C "{}")
-like "$out" "set_cwd: false" "set_cwd defaults to false for inline config"
-out=$(demos-sched -d -c <(echo "set_cwd: false"))
-is $? 0 "config from FIFO file is accepted with 'set_cwd: false'"
-# we cannot use <(), as demos detects special files and throws error (tested below)
-tmp_config=$(mktemp)
-echo "{}" > "$tmp_config"
-out=$(demos-sched -d -c "$tmp_config")
-like "$out" "set_cwd: true" "set_cwd defaults to true for config file"
+@test "set_cwd defaults to false for inline config" {
+    run -0 demos-sched -d -C "{}"
+    [[ $output =~ "set_cwd: false" ]]
+}
 
-out=$(demos-sched -C "{
+@test "config from FIFO file is accepted with 'set_cwd: false'" {
+    run -0 demos-sched -d -c <(echo "set_cwd: false")
+}
+
+@test "set_cwd defaults to true for config file" {
+    # we cannot use <(), as demos detects special files and throws error (tested below)
+    tmp_config=$(mktemp)
+    echo "{}" > "$tmp_config"
+    run -0 demos-sched -d -c "$tmp_config"
+    [[ $output =~ "set_cwd: true" ]]
+}
+
+@test "'jitter > 2 * budget' causes an error" {
+    run -1 demos-sched -C \
+"{
     windows: [ {length: 500, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 250}]} ]
-}" 2>&1)
-is $? 1 "'jitter > 2 * budget' causes an error"
+}"
+}
 
-test_normalization "missing slice definition" \
+@test "missing slice definition" {
+    test_normalization \
 "{
     windows: [ {length: 500, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100}] }]
@@ -61,9 +70,10 @@ windows:
     slices:
       - cpu: all
         sc_partition: SC"
+}
 
-
-test_normalization "partition definition in window" \
+@test "partition definition in window" {
+    test_normalization \
 "{
     windows: [ {length: 500, sc_partition: [{cmd: proc1, budget: 500}] } ]
 }" \
@@ -81,16 +91,20 @@ windows:
     slices:
       - cpu: all
         sc_partition: anonymous_0"
+}
 
-test_normalization "empty window with only 'length' is kept empty" \
+@test "empty window with only 'length' is kept empty" {
+    test_normalization \
 "{windows: [{length: 1000}]}" \
 "set_cwd: false
 demos_cpu: all
 partitions: ~
 windows:
   - length: 1000"
+}
 
-test_normalization "partition definition in window with one process" \
+@test "partition definition in window with one process" {
+    test_normalization \
 "{
     windows: [ {length: 500, sc_partition: {cmd: proc1, budget: 500} } ]
 }" \
@@ -108,8 +122,10 @@ windows:
     slices:
       - cpu: all
         sc_partition: anonymous_0"
+}
 
-test_normalization "default budget" \
+@test "default budget" {
+    test_normalization \
 "{
     windows: [ {length: 500, sc_partition: [{cmd: proc1}] } ]
 }" \
@@ -127,10 +143,12 @@ windows:
     slices:
       - cpu: all
         sc_partition: anonymous_0"
+}
 
 # This is the case, why we need sc_processes and cannot reuse
 # sc_partition here.
-test_normalization "process as string" \
+@test "process as string" {
+    test_normalization \
 "{
     windows: [ {length: 500, sc_processes: proc} ]
 }" \
@@ -148,8 +166,10 @@ windows:
     slices:
       - cpu: all
         sc_partition: anonymous_0"
+}
 
-test_normalization "Processes as string" \
+@test "Processes as string" {
+    test_normalization \
 "{
     windows: [ {length: 500, sc_processes: [proc1, proc2]} ]
 }" \
@@ -171,8 +191,10 @@ windows:
     slices:
       - cpu: all
         sc_partition: anonymous_0"
+}
 
-test_normalization "short-form jitter" \
+@test "short-form jitter" {
+    test_normalization \
 "{
     windows: [ {length: 100, sc_partition: SC} ],
     partitions: [ {name: SC, processes: [{cmd: echo, budget: 100, jitter: 50}] }]
@@ -191,16 +213,29 @@ windows:
     slices:
       - cpu: all
         sc_partition: SC"
+}
 
-export DEMOS_PLAIN_LOG=1
-test_normalization "missing budget in canonical config" \
-    "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
-    ">>> [error] Exception: Missing budget in process definition"
-test_normalization "missing cpu set for slice" \
-    "windows: [{length: 100, slices: [{}]}]" \
-    ">>> [error] Exception: Missing cpu set in slice definition (\`cpu\` property)"
-test_normalization "set_cwd: yes for inline config string fails" \
-    "set_cwd: yes" \
-    ">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
-out=$(demos-sched -d -c <(echo "{}"))
-is $? 1 "config from FIFO file is not accepted without 'set_cwd: false'"
+@test "missing budget in canonical config" {
+    export DEMOS_PLAIN_LOG=1
+    test_normalization \
+        "{partitions: [ name: p1, processes: [ cmd: proc1 ] ], windows: [{length: 100, sc_partition: p1}]}" \
+        ">>> [error] Exception: Missing budget in process definition"
+}
+
+@test "missing cpu set for slice" {
+    export DEMOS_PLAIN_LOG=1
+    test_normalization \
+        "windows: [{length: 100, slices: [{}]}]" \
+        ">>> [error] Exception: Missing cpu set in slice definition (\`cpu\` property)"
+}
+
+@test "set_cwd: yes for inline config string fails" {
+    export DEMOS_PLAIN_LOG=1
+    test_normalization \
+        "set_cwd: yes" \
+        ">>> [error] Exception: 'set_cwd' cannot be used in inline config string"
+}
+
+@test "config from FIFO file is not accepted without 'set_cwd: false'" {
+    run -1 demos-sched -d -c <(echo "{}")
+}

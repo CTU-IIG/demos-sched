@@ -1,4 +1,4 @@
-{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, spdlog, extraAttrs ? {}, withSubmodules ? false }:
+{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, spdlog, bats, extraAttrs ? {}, withSubmodules ? false }:
 let
   spdlog_dev = if builtins.hasAttr "dev" spdlog then spdlog.dev else spdlog;
   libev-patched = libev.overrideAttrs (attrs: rec {
@@ -37,4 +37,5 @@ in stdenv.mkDerivation ({
   nativeBuildInputs = [ meson ninja perl pkg-config ];
   buildInputs = []
                 ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp spdlog_dev ];
+  checkInputs = [ bats ];
 } // extraAttrs)

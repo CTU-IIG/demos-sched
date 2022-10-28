@@ -1,7 +1,8 @@
-#!/usr/bin/env bash
-. testlib
-plan_tests 2
+#!/usr/bin/env bats
 
-out=$(demos-sched -h)
-is $? 0 "exit code"
-like "$(head -n1 <<<$out)" "Usage: demos-sched" "help printed"
+load testlib
+
+@test "-h prints help" {
+    run -0 demos-sched -h
+    [[ ${lines[0]} =~ "Usage: demos-sched" ]]
+}

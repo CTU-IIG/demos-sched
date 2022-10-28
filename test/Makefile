@@ -1,2 +1,2 @@
 all:
-	prove --merge --directives *.t
+	bats *.t

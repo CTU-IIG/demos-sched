@@ -8,6 +8,8 @@ tests = '''
 0300-schedule.t
 '''.split()
 
+bats = find_program('bats', required: false)
+
 foreach t: tests
-	test(t, find_program(t), protocol: 'tap', workdir: meson.current_source_dir(), is_parallel: false)
+	test(t, bats, args: [ t ], protocol: 'tap', workdir: meson.current_source_dir(), is_parallel: false)
 endforeach

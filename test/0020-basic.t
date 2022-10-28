@@ -1,22 +1,28 @@
-#!/usr/bin/env bash
-. testlib
-plan_tests 5
+#!/usr/bin/env bats
+load testlib
 
-out=$(demos-sched -C "bad config")
-is $? 1 "bad config => exit code 1"
-demos-sched -C "{windows: [], partitions: []}"
-is $? 1 "empty config => exit code 1"
+@test "bad config" {
+    run -1 demos-sched -C "bad config"
+}
 
-out=$(demos-sched -C "{
-    windows: [ {length: 50, slices: [ { cpu: 0, sc_partition: SC1 }] } ],
-    partitions: [ { name: SC1, processes: [ { cmd: echo hello, budget: 500 } ] } ]
-}")
-is "$out" "hello" "hello is printed"
+@test "empty config" {
+    run -1 demos-sched -C "{windows: [], partitions: []}"
+}
 
-okx demos-sched -C '{windows: [{length: 100, sc_partition: [ true ]}]}'
+@test "executing echo hello (canonical config)" {
+    run -0 demos-sched -C "{
+        windows: [ {length: 50, slices: [ { cpu: 0, sc_partition: SC1 }] } ],
+        partitions: [ { name: SC1, processes: [ { cmd: echo hello, budget: 500 } ] } ]
+    }"
+    [[ $output =~ "hello" ]]
+}
 
-# Tests that demos correctly prints synchronization messages
-out=$(demos-sched -m "<WINDOW>" -M "<MF>" -C '
+@test "executing true (simplified config)" {
+    run -0 demos-sched -C '{windows: [{length: 100, sc_partition: [ true ]}]}'
+}
+
+@test "correct printing of synchronization messages" {
+    run -0 --separate-stderr demos-sched -m "<WINDOW>" -M "<MF>" -C '
 windows:
   - length: 60
     slices: [{cpu: 0, sc_partition: SC1}]
@@ -28,8 +34,8 @@ windows:
 partitions:
   - name: SC1
     processes: [{budget: 1000, cmd: api-test 1 2 3}]
-')
-is "$out" '<MF>
+'
+    [[ $output = '<MF>
 <WINDOW>
 1
 <WINDOW>
@@ -37,5 +43,5 @@ is "$out" '<MF>
 <WINDOW>
 3
 <MF>
-<WINDOW>' \
-"Synchronization messages are correctly printed"
+<WINDOW>' ]]
+}
