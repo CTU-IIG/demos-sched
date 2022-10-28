@@ -1,2 +1,2 @@
 all:
-	bats *.t
+	bats .

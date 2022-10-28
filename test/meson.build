@@ -1,11 +1,11 @@
 tests = '''
-0010-help.t
-0020-basic.t
-0100-api.t
-0200-config.t
-0210-config_validation.t
-0220-test-configs.t
-0300-schedule.t
+0010-help.bats
+0020-basic.bats
+0100-api.bats
+0200-config.bats
+0210-config_validation.bats
+0220-test-configs.bats
+0300-schedule.bats
 '''.split()
 
 bats = find_program('bats', required: false)
