@@ -1,13 +1,15 @@
 #!/usr/bin/env bats
 load testlib
 
-if ! demos-sched -V | grep -q debug; then
-    echo >&2 "DEMOS_SCHEDULE_LOG not supported in release builds"
-    exit 1
-fi
+setup() {
+    run -0 demos-sched -V
+    if ! [[ $output =~ "debug" ]]; then
+        skip "DEMOS_SCHEDULE_LOG not supported in release builds"
+    fi
+    export DEMOS_SCHEDULE_LOG=demos-schedule.log
+}
 
 # Ask demos-sched to store the executed "schedule" in a file
-export DEMOS_SCHEDULE_LOG=demos-schedule.log
 
 expect_schedule_log() {
     if ! [[ $(< $DEMOS_SCHEDULE_LOG) = "$1" ]]; then
