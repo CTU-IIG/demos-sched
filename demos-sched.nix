@@ -1,4 +1,4 @@
-{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, spdlog, bats, extraAttrs ? {}, withSubmodules ? false }:
+{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, spdlog, bats, gcovr, extraAttrs ? {}, withSubmodules ? false }:
 let
   spdlog_dev = if builtins.hasAttr "dev" spdlog then spdlog.dev else spdlog;
   libev-patched = libev.overrideAttrs (attrs: rec {
@@ -34,7 +34,7 @@ in stdenv.mkDerivation ({
   src = if withSubmodules then srcWithSubmodules else builtins.fetchGit { url = ./.; };
   # Delete subprojects if building with Nix-provided dependencies
   patchPhase = lib.optionalString (!withSubmodules) "rm -rf subprojects";
-  nativeBuildInputs = [ meson ninja perl pkg-config bats ];
+  nativeBuildInputs = [ meson ninja perl pkg-config bats gcovr ];
   buildInputs = []
                 ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp spdlog_dev ];
 } // extraAttrs)

@@ -28,7 +28,7 @@ jobs:
       - name: Tests (in debug mode)
         run: nix-shell --run "cd build && meson test --wrapper=sudo --print-errorlogs"
       - name: Generate coverage report
-        run: nix-shell -p gcovr ninja --run "ninja -C build coverage-xml"
+        run: nix-shell --run "ninja -C build coverage-xml"
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
