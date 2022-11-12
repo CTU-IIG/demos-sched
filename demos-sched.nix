@@ -29,12 +29,13 @@ let
       copySub $srcSpdlog $out/subprojects/spdlog
     '';
   };
+  bats-wl = bats.withLibraries (p: [ p.bats-support p.bats-assert ]);
 in stdenv.mkDerivation ({
   name = "demos-sched";
   src = if withSubmodules then srcWithSubmodules else builtins.fetchGit { url = ./.; };
   # Delete subprojects if building with Nix-provided dependencies
   patchPhase = lib.optionalString (!withSubmodules) "rm -rf subprojects";
-  nativeBuildInputs = [ meson ninja perl pkg-config bats gcovr ];
+  nativeBuildInputs = [ meson ninja perl pkg-config bats-wl gcovr ];
   buildInputs = []
                 ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp spdlog_dev ];
 } // extraAttrs)

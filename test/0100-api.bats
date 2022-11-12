@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
 load testlib
+bats_load_library bats-support
+bats_load_library bats-assert
 
 @test "running api-test outside of demos-sched fails" {
     run ! api-test
@@ -51,12 +53,13 @@ partitions:
   - name: SC2
     processes: [{cmd: api-init-test, budget: 50, init: yes}]
 '
-    [[ $output = \
-"init start
+    assert_output - <<EOF
+init start
 init start
 init done
 init done
-<test>" ]]
+<test>
+EOF
 }
 
 
