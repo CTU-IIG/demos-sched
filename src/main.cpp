@@ -71,7 +71,7 @@ static void print_help()
             "                         this interval, DEmOS stops them and exits\n"
             "  [-s]                  rerun itself via systemd-run to get access to unified cgroup hierarchy\n"
             "  [-d]                  dump config file without execution\n"
-            "  [-V]                  print demos-sched version and exit"
+            "  [-V]                  print demos-sched version and exit\n"
             "  [-h]                  print this message\n"
             "To control logger output, use the following environment variables:\n"
             "  SPDLOG_LEVEL=<level> (see https://spdlog.docsforge.com/v1.x/api/spdlog/cfg/helpers/load_levels/)\n"
