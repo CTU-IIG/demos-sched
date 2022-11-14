@@ -6,7 +6,12 @@ let
   pkgsMeson-0-49-2 = import (builtins.fetchTarball {
     url = "https://github.com/nixos/nixpkgs/archive/4599f2bb9a5a6b1482e72521ead95cb24e0aa819.tar.gz";
     sha256 = "04xr4xzcj64d5mf4jxzn5fsbz74rmf90qddp3jcdwj4skyik946d";
-  }) { };
+  }) {
+    overlays = [
+      # Use bats from unstable (we need bats.withLibraries)
+      (final: prev: { bats = pkgsUnstable.bats; })
+    ];
+  };
   demosSchedWithCC = { pkgs, cc, overrideMesonCC ? false, withSubmodules ? false }:
     let
       myStdenv = with pkgs; (overrideCC stdenv (builtins.getAttr cc pkgs));
