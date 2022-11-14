@@ -35,7 +35,8 @@ in stdenv.mkDerivation ({
   src = if withSubmodules then srcWithSubmodules else builtins.fetchGit { url = ./.; };
   # Delete subprojects if building with Nix-provided dependencies
   patchPhase = lib.optionalString (!withSubmodules) "rm -rf subprojects";
-  nativeBuildInputs = [ meson ninja perl pkg-config bats-wl gcovr ];
+  nativeBuildInputs = [ meson ninja perl pkg-config gcovr ]
+                      ++ lib.optional (stdenv.buildPlatform == stdenv.hostPlatform) [ bats-wl ];
   buildInputs = []
                 ++ lib.optional (!withSubmodules) [ libev-patched libyamlcpp spdlog_dev ];
 } // extraAttrs)

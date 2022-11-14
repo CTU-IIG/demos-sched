@@ -8,7 +8,7 @@ tests = '''
 0300-schedule.bats
 '''.split()
 
-bats = find_program('bats', required: false)
+bats = find_program('bats', required: false, disabler: true)
 
 foreach t: tests
 	test(t, bats, args: [ t ], protocol: 'tap', workdir: meson.current_source_dir(), is_parallel: false)
