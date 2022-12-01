@@ -4,6 +4,8 @@
 #include "lib/check_lib.hpp"
 #include <fstream>
 #include <sstream>
+#include <sys/statfs.h>
+#include <linux/magic.h>
 
 using namespace std;
 
@@ -49,6 +51,11 @@ static void handle_cgroup_exc(stringstream &commands,
     string unified_path, freezer_path, cpuset_path;
     string cpus, mems;
 
+    struct statfs sfs;
+    CHECK(statfs("/sys/fs/cgroup", &sfs));
+
+    bool cgroup_v2 = (sfs.f_type == CGROUP2_SUPER_MAGIC);
+
     // Get information about our current cgroups
     {
         int num;
@@ -72,12 +79,20 @@ static void handle_cgroup_exc(stringstream &commands,
         }
     }
 
-    for (auto [path, type] : {
-           make_pair(&unified_path, "unified"),
-           make_pair(&freezer_path, "freezer"),
-           make_pair(&cpuset_path, "cpuset"),
-         }) {
-        if (path->empty()) throw runtime_error(string(type) + " cgroup not found");
+
+    {
+        // Check that we are in all needed cgroups
+        auto paths_needed = std::vector({ make_pair(&unified_path, "unified") });
+        if (!cgroup_v2)
+            paths_needed.insert(paths_needed.end(),
+                                {
+                                  make_pair(&freezer_path, "freezer"),
+                                  make_pair(&cpuset_path, "cpuset"),
+                                });
+
+        for (auto [path, type] : paths_needed) {
+            if (path->empty()) throw runtime_error(string(type) + " cgroup not found");
+        }
     }
 
     stringstream commands, mount_cmds;
