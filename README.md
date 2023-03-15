@@ -9,7 +9,7 @@ Scheduler for simulation of avionics multi-core workloads on Linux.
 Initialize git submodules:
 
     git update-ref refs/heads/master.trac origin/master.trac
-    git submodule update --init
+    git -c protocol.file.allow=always submodule update --init
 
 We use the Meson build system. On Debian-based distro, it can be
 installed by:
