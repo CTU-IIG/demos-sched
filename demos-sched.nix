@@ -1,6 +1,7 @@
-{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, spdlog, bats, gcovr, extraAttrs ? {}, withSubmodules ? false }:
+{ stdenv, lib, meson, ninja, perl, pkg-config, libev, libyamlcpp, spdlog, bats, gcovr, fmt, fmt_8 ? fmt, extraAttrs ? {}, withSubmodules ? false }:
 let
-  spdlog_dev = if builtins.hasAttr "dev" spdlog then spdlog.dev else spdlog;
+  spdlog_ = spdlog.override { fmt = fmt_8; };
+  spdlog_dev = if builtins.hasAttr "dev" spdlog_ then spdlog_.dev else spdlog_;
   libev-patched = libev.overrideAttrs (attrs: rec {
     pname = attrs.pname or "libev";
     version = "4.31";
