@@ -1,0 +1,53 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: DEmOS
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Michal
+    family-names: Sojka
+    affiliation: Czech Technical University in Prague
+    orcid: 'https://orcid.org/0000-0002-8738-075X'
+  - given-names: Matěj
+    family-names: Kafka
+    affiliation: Czech Technical University in Prague
+repository-code: 'https://github.com/CTU-IIG/demos-sched'
+license: GPL-3.0
+preferred-citation:
+  type: conference-paper
+  title: "Thermal-Aware Scheduling for MPSoC in the Avionics Domain: Tooling and Initial Results"
+  authors:
+    - given-names: Ondřej
+      family-names: Benedikt
+      orcid: 'https://orcid.org/0000-0002-7365-844X'
+      affiliation: Czech Technical University in Prague
+    - given-names: Michal
+      family-names: Sojka
+      affiliation: Czech Technical University in Prague
+      orcid: 'https://orcid.org/0000-0002-8738-075X'
+    - given-names: Pavel
+      family-names: Zaykov
+      affiliation: Honeywell International s.r.o.
+    - given-names: David
+      family-names: Hornof
+      affiliation: Czech Technical University in Prague
+    - given-names: Matěj
+      family-names: Kafka
+      affiliation: Czech Technical University in Prague
+    - given-names: Přemysl
+      family-names: Šůcha
+      affiliation: Czech Technical University in Prague
+      orcid: 'https://orcid.org/0000-0003-4895-157X'
+    - given-names: Zdeněk
+      family-names: Hanzálek
+      affiliation: Czech Technical University in Prague
+      orcid: 'https://orcid.org/0000-0002-8135-1296'
+  collection-title: 27th International Conference on Embedded and Real-Time Computing Systems and Applications (RTCSA)
+  year: 2021
+  identifiers:
+    - type: doi
+      value: 10.1109/RTCSA52859.2021.00026
